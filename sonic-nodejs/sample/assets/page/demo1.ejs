@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <%- (require('./tpls/common_meta'))() %>
+    <title>demo1</title>
+    <%- (require('./tpls/common_header'))() %>
+</head>
+<body>
+<%- (require('./tpls/common_body_header'))() %>
+<h1>
+    <!--sonicdiff-->服务端时间是：
+    <%= (new Date()).toLocaleString() %>
+    <!--sonicdiff-end-->
+</h1>
+
+</body>
+</html>

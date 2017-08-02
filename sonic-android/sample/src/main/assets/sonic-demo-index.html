@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="application/javascript">
+        var _pageTime = {};
+        _pageTime.startTime = new Date;
+    </script>
+    <title>SONIC</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+            color: #777;
+            margin-top: 20px;
+        }
+        .sonic-wrapper {
+            padding: 0 12px;
+        }
+        .sonic-wrapper h1 {
+            font-size: 18px;
+            font-weight: 400;
+            color: #000;
+        }
+        .sonic-wrapper h2 {
+            font-size: 14px;
+            color: #000;
+        }
+        .sonic-wrapper p {
+            font-size: 14px;
+            color: #777;
+            line-height: 1.6em;
+        }
+        .sonic-wrapper img {
+            width: 100%;
+        }
+        .sonic-wrapper table {
+            width: 100%;
+        }
+        .sonic-wrapper table img {
+            width: 100%;
+        }
+        .sonic_des {display:none;}
+    </style>
+</head>
+<body>
+<div class="sonic-wrapper">
+    <h1>Sonic：轻量级的高性能的Hybrid框架</h1>
+    <p>Sonic是腾讯QQ会员团队研发的一个轻量级的高性能的Hybrid框架，专注于提升H5页面首屏加载速度，让H5页面的体验更加接近原生，提升用户体验及用户留存率。</p>
+    <span id="data1Content">
+    <!--sonicdiff-data1-->
+    <p>示例：</p>
+    <img src="//mc.vip.qq.com/img/img-1.png?max_age=2592000" alt="">
+    <!--sonicdiff-data1-end-->
+    </span>
+    <span id="des0" class="sonic_des">
+        <h2>非Sonic模式 点击到页面打开耗时:<span id="pageTime0"></span></h2>
+        <p>普通直出的方式</p>
+    </span>
+    <span id="des1" class="sonic_des">
+        <h2>首次访问 点击到页面打开耗时:<span id="pageTime1"></span></h2>
+        <p>用户第一次访问，本地无缓存;使用直出的方式，终端生成缓存。</p>
+    </span>
+    <span id="des2" class="sonic_des">
+        <h2>模版更新 点击到页面打开耗时:<span id="pageTime2"></span></h2>
+        <p>本地模版跟服务器模版不一样;缓存失效，清除缓存，重新加载页面。</p>
+    </span>
+    <span id="des3" class="sonic_des">
+        <h2>数据更新 点击到页面打开耗时:<span id="pageTime3"></span></h2>
+        <p>模板一致，数据变更;针对页面局部数据变化的场景，Sonic会预先加载本地缓存再将变化部分的数据异步更新，提升用户体验。</p>
+    </span>
+    <span id="des4" class="sonic_des">
+        <h2>完全缓存 点击到页面打开耗时:<span id="pageTime4"></span></h2>
+        <p>本地数据与服务器数据完全一样;直接使用缓存，页面秒开。</p>
+    </span>
+        <h2>页面打开速度效果对比</h2>
+    <p>以手机QQ-VIP中心首页为例，在接入Sonic框架之后，页面打开速度在数据更新场景下优化提升42%，页面内容不变的场景下(完全cache模式)优化提升50%以上。</p>
+
+    <table>
+        <tr>
+            <td>原有直出页面：</td>
+            <td>Sonic改造页面：</td>
+        </tr>
+        <tr>
+            <td><img src="//imgcache.gtimg.cn/ACT/svip_act/act_img/public/201707/1499049810_nosonic.gif?max_age=2592000" alt=""></td>
+            <td><img src="//imgcache.gtimg.cn/ACT/svip_act/act_img/public/201707/1499049823_sonic.gif?max_age=2592000" alt=""></td>
+        </tr>
+    </table>
+        <h2>Sonic实现原理简介</h2>
+    <p>Sonic框架使用终端应用层原生传输通道取代系统浏览器内核自身资源传输通道来请求页面主资源，在移动终端初始化的同时并行请求页面主资源并做到流式拦截，减少传统方案上终端初始化耗时长导致页面主资源发起请求时机慢或传统并行方案下必须等待主资源完成下载才能交给内核加载的影响。另外通过客户端和服务器端双方遵守Sonic格式规范(通过在html内增加注释代码区分模板和数据)，该框架能做到智能地对页面内容进行动态缓存和增量更新，减少对网络的依赖，节省用户流量，加快页面打开速度。</p>
+</div>
+<script>
+    _pageTime.jsendtTime = new Date();
+</script>
+<script src="http://open.mobile.qq.com/sdk/qqapi.js?_bid=152"></script>
+<script src="http://imgcache.gtimg.cn/club/platform/lib/seajs/sea-with-plugin-2.2.1.js?_bid=250&max_age=2592000" id="seajsnode"></script>
+<script>;var BJ_REPORT=function(r){if(r.BJ_REPORT)return r.BJ_REPORT;var e=[],n={},t={id:0,pid:0,uin:0,url:"//badjs.vip.qq.com/badjs",combo:1,ext:null,level:4,ignore:[],random:0,delay:100,submit:null,repeat:1,pvrandom:0,errrandom:0,furl:"0"},o=2,i=0,a=function(r,e){return Object.prototype.toString.call(r)==="[object "+(e||"Object")+"]"},u=function(r){var e=typeof r;return"object"===e&&!!r},c=function(r){return null===r?!0:a(r,"Number")?!1:!r},s=r.onerror;r.onerror=function(e,n,t,o,u){var c=e;i++,u&&u.stack&&(c=f(u)),a(c,"Event")&&(c+=c.type?"--"+c.type+"--"+(c.target?c.target.tagName+"::"+c.target.src:""):""),y.push({msg:c,target:n,rowNum:t,colNum:o}),j(),s&&s.apply(r,arguments)};var d=function(r){try{if(r.stack){var e=r.stack.match("https?://[^\n]+");e=e?e[0]:"";var n=e.match(":(\\d+):(\\d+)");n||(n=[0,0,0]);var t=f(r);return{msg:t,rowNum:n[1],colNum:n[2],target:e.replace(n[0],"")}}return r.name&&r.message&&r.description?{msg:JSON.stringify(r)}:r}catch(o){return r}},f=function(r){var e=r.stack.replace(/\n/gi,"").split(/\bat\b/).slice(0,9).join("@").replace(/\?[^:]+/gi,""),n=r.toString();return e.indexOf(n)<0&&(e=n+"@"+e),e},p=function(r,e){var n=[],o=[],i=[];if(u(r)){r.level=r.level||t.level;for(var a in r){var s=r[a];if(!c(s)){if(u(s))try{s=JSON.stringify(s)}catch(d){s="[BJ_REPORT detect value stringify error] "+d.toString()}i.push(a+":"+s),n.push(a+"="+encodeURIComponent(s)),o.push(a+"["+e+"]="+encodeURIComponent(s))}}}return[o.join("&"),i.join(","),n.join("&")]},l=[],m=function(r){var e=new RegExp("badjspv");if(e.test(r)||(r=g(r)),t.submit)t.submit(r);else{var n=new Image;l.push(n),n.src=r}},v=function(){var r=!1,e=new RegExp("debug=1"),n=new RegExp("badjs=1");n.test(document.cookie)&&(r=!0),(n.test(document.location.href)||e.test(document.location.href))&&(r=!0);var t=navigator.userAgent.toLowerCase();return/sq\_[\d\.]+\_\d+\_hdb/.test(t)&&(r=!0),r},g=function(r){return r+="&ic="+i,v()&&(r+="&ig=1"),r},h=function(r){if(!u(r))return!0;var e=r.msg,o=n[e]=(parseInt(n[e],10)||0)+1;return o>t.repeat},R=[],b=0,j=function(r){if(t.report){for(;e.length;){var n=!1,o=e.shift();if(!h(o)){var i=p(o,R.length);if(a(t.ignore,"Array"))for(var u=0,c=t.ignore.length;c>u;u++){var s=t.ignore[u];if(a(s,"RegExp")&&s.test(i[1])||a(s,"Function")&&s(o,i[1])){n=!0;break}}n||(t.combo?R.push(i[0]):m(t.report+i[2]+"&_t="+ +new Date),t.onReport&&t.onReport(t.id,o))}}var d=R.length;if(d){var f=function(){clearTimeout(b),m(t.report+R.join("&")+"&count="+R.length+"&_t="+ +new Date),b=0,R=[]};r?f():b||(b=setTimeout(f,t.delay))}}},y={push:function(r){if(1===t.random||v());else{var n=Math.round(9*Math.random()+1);if(0===t.errrandom){if(9!=n)return y}else{var o=10*t.errrandom/10;if(o>=1||t.errrandom<.1);else{for(var i=10*t.errrandom,a=[],c=1;i>=c;c++)a.push(c);if(!_(n,a))return y}}}var s=u(r)?d(r):{msg:r};return t.ext&&!s.ext&&(s.ext=t.ext),e.push(s),j(),y},report:function(r){return r&&y.push(r),j(!0),y},info:function(r){return r?(u(r)?r.level=2:r={msg:r,level:2},y.push(r),y):y},debug:function(r){return r?(u(r)?r.level=1:r={msg:r,level:1},y.push(r),y):y},init:function(r){if(u(r))for(var n in r)t[n]=r[n];var i=parseInt(t.id,10);return i&&(w(),/qq\.com$/gi.test(location.hostname)&&(t.url||(t.url="//badjs.vip.qq.com/badjs"),t.uin||(t.uin=parseInt((document.cookie.match(/\buin=\D+(\d+)/)||[])[1],10))),t.report=(t.url||"/badjs")+"?id="+i+"&pid="+t.pid+"&uin="+t.uin+"&v="+o+"&from="+encodeURIComponent(y.referrer())+"&furl="+encodeURIComponent(t.furl)+"&"),e.length&&j(),y},referrer:function(){var r="";try{r=window.top.document.referrer}catch(e){if(window.parent)try{r=window.parent.document.referrer}catch(n){r=""}}return""===r&&(r=document.referrer),r},__onerror__:r.onerror},_=function(r,e){for(var n in e)if(r==e[n])return!0},w=function(){var r="//badjs.vip.qq.com/badjspv?id="+t.id+"&pid="+t.pid+"&v="+o+"&furl="+encodeURIComponent(t.furl);if(1==t.random||v())m(r);else{var e=Math.round(99*Math.random()+1);if(0===t.pvrandom)9==e&&m(r);else{var n=100*t.pvrandom/100;if(n>=1||t.pvrandom<.01)m(r);else{for(var i=100*t.pvrandom,a=[],u=1;i>=u;u++)a.push(u);_(e,a)&&m(r)}}}};return"undefined"!=typeof console&&console.error&&setTimeout(function(){var r=((location.hash||"").match(/([#&])BJ_ERROR=([^&$]+)/)||[])[2];r&&console.error("BJ_ERROR",decodeURIComponent(r).replace(/(:\d+:\d+)\s*/g,"$1\n"))},0),y}(window);"undefined"!=typeof exports&&("undefined"!=typeof module&&module.exports&&(exports=module.exports=BJ_REPORT),exports.BJ_REPORT=BJ_REPORT);</script>
+<script>
+    if(window.BJ_REPORT) {
+        (function(){
+            var bjParam = {id:38,pvrandom:0.1,errrandom:1,furl:'h5.vip.qq.com/p/sonic/mc/vipcenterv5', ignore:[/(QzoneApp|publicTube|load failed|DCReport|qw is not defined|object Event|XMLHttpRequest)/i]};
+                        BJ_REPORT.init(bjParam);
+        })();
+    }
+    seajs.config({
+        base: 'http://imgcache.gtimg.cn/club/platform/examples/',
+        localcache:{
+            //浏览器缓存时间
+            maxAge: 2592000,
+            openLocalStorageCache: 0
+        },
+        maxFile : {
+
+        },
+        debug:1,
+        //别名
+        alias:{
+            'zepto': 'lib/zepto/zepto'
+        },
+        paths:{
+            'lib' : 'http://imgcache.gtimg.cn/club/platform/lib'
+        },
+        manifest:{
+            "lib/zepto/zepto": "1.1.3",
+            "lib/sonic/sonic": "3-1"
+        }
+    });
+
+    seajs.use(["zepto", "lib/sonic/sonic"],function($, sonic){
+        /**
+         * 后置函数 sonic或普通模式 执行页面初始化等操作
+         */
+        function afterInit(sonicStatus){
+            $('.sonic_des').css('display', 'none');
+            $('#des'+sonicStatus).css('display', 'block');
+            //耗时分析(上报)
+            var performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime
+            var pageTime = _pageTime.jsendtTime - performanceJson.clickTime;
+            $("#pageTime"+sonicStatus).text(pageTime+'ms');
+        }
+                /**
+         * sonic业务逻辑 diff数据处理，后置函数执行，状态上报
+         * @param sonicStatus
+         * @param reportSonicStatus
+         * @param sonicUpdateData
+         */
+        window.sonicStartTime = new Date;
+        //0-状态获取失败 1-sonic首次 2-页面刷新 3-局部刷新 4-完全cache
+        sonic.getSonicData(function(sonicStatus, reportSonicStatus, sonicUpdateData){
+            if(sonicStatus == 1){
+                //首次没有特殊的逻辑处理，直接执行sonic完成后的逻辑，比如上报等
+            }else if(sonicStatus == 2){
+
+            }else if(sonicStatus == 3){
+                //局部刷新的时候需要更新页面的数据块和一些JS操作
+                var html = '';
+                var id = '';
+                var elementObj = '';
+                for(var key in sonicUpdateData){
+                    id = key.substring(1,key.length-1);
+                    html = sonicUpdateData[key];
+                    elementObj = document.getElementById(id+'Content');
+                    elementObj.innerHTML = html;
+                }
+
+            }else if(sonicStatus == 4){
+
+            }
+            afterInit(reportSonicStatus);
+        });
+            });
+
+</script>
+</body>
+</html>

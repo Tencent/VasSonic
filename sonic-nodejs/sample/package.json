@@ -1,0 +1,21 @@
+{
+  "name": "koa-example",
+  "version": "1.0.0",
+  "description": "sonic demo with koa",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sonic"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "sonic_differ": "^1.0.0",
+    "koa": "^2.2.0",
+    "koa-is-json": "^1.0.0",
+    "pm2": "^2.4.6",
+    "through2": "^2.0.3"
+  }
+}

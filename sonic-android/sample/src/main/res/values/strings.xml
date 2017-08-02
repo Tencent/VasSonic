@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">sonic</string>
+    <string name="default_no_sonic">Load Without Sonic</string>
+    <string name="sonic">Load With Sonic</string>
+    <string name="sonic_preload">DO Sonic Preload</string>
+    <string name="sonic_offline">Load Sonic With Offline Cache</string>
+    <string name="reset_clear">Clean Up Cache</string>
+    <string name="tencent_vas_team">腾讯增值技术团队出品</string>
+</resources>

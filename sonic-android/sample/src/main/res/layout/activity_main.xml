@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.widget.RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.tencent.sonic.demo.MainActivity">
+
+    <ImageView
+        android:id="@+id/iv_slogan"
+        android:layout_margin="40dp"
+        android:layout_marginTop="50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="centerInside"
+        android:src="@drawable/slogan" />
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_below="@id/iv_slogan"
+        android:layout_above="@+id/tv_vas_team"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_default_mode"
+            style="@style/SonicButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.02"
+            android:text="@string/default_no_sonic" />
+
+        <Button
+            android:id="@+id/btn_sonic"
+            style="@style/SonicButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.02"
+            android:text="@string/sonic" />
+
+        <Button
+            android:id="@+id/btn_sonic_preload"
+            style="@style/SonicButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.02"
+            android:text="@string/sonic_preload"
+            />
+
+        <Button
+            android:id="@+id/btn_sonic_with_offline"
+            style="@style/SonicButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.02"
+            android:text="@string/sonic_offline"
+            />
+
+        <Button
+            android:id="@+id/btn_reset"
+            style="@style/SonicButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.02"
+            android:text="@string/reset_clear"
+            />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_vas_team"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tencent_vas_team"
+        android:layout_margin="30dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"/>
+
+
+</android.widget.RelativeLayout>

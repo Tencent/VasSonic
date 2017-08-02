@@ -1,0 +1,37 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "com.tencent.sonic"
+        minSdkVersion 19
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+    // compile sdk from jcenter
+    compile 'com.tencent.sonic:sdk:1.0.0'
+
+    // compile sonic-sdk from local path
+    // compile project(path: ':sdk')
+
+    compile 'com.android.support:appcompat-v7:25.2.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha7'
+    testCompile 'junit:junit:4.12'
+}

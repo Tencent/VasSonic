@@ -1,0 +1,126 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:support-annotations:25.2.0'
+}
+
+
+// sdk info
+version = "1.0.0" // sdk version num
+group = "com.tencent.sonic" // maven group id for the artifact
+def SITE_URL = "https://github.com/Tencent/VasSonic" // web site url
+def GIT_URL = "https://github.com/Tencent/VasSonic.git" // git url
+
+// maven task
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                // default configs
+                packaging 'jar'
+                description 'a lightweight and high-performance hybrid framework'
+                name 'VasSonic Hybrid Framework'
+                url SITE_URL
+
+                // set up licenses
+                licenses {
+                    license {
+                        name 'BSD 3-Clause License'
+                        url 'https://github.com/Tencent/VasSonic/blob/master/LICENSE'
+                    }
+                }
+
+                // developers
+                developers {
+                    developer {
+                        id 'lovekidchen'
+                        name 'lovekidchen'
+                        email 'lovekidchen@gmail.com'
+                    }
+                }
+
+                // scm
+                scm {
+                    connection GIT_URL
+                    developerConnection GIT_URL
+                    url SITE_URL
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+afterEvaluate {
+    javadoc.classpath += files(android.libraryVariants.collect { variant ->
+        variant.javaCompile.classpath.files
+    })
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        repo = "sonic"
+        name = "sonic-sdk"
+        websiteUrl = SITE_URL
+        vcsUrl = GIT_URL
+        licenses = ["BSD 3-Clause"]
+        publish = true
+    }
+}

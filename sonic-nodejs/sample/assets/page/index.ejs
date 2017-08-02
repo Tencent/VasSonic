@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <%- (require('./tpls/common_meta'))() %>
+    <title>sonic demo</title>
+    <%- (require('./tpls/common_header'))() %>
+</head>
+<body>
+<%- (require('./tpls/common_body_header'))() %>
+<ul class="ui-list ui-list-text">
+	<a href="/demo3?sonicStatus=1"><li class="ui-arrowlink">首次进入</li></a>
+	<a href="/demo3?sonicStatus=2"><li class="ui-arrowlink">页面刷新</li></a>
+    <a href="/demo3?sonicStatus=3"><li class="ui-arrowlink">局部刷新</li></a>
+    <a href="/demo3?sonicStatus=4"><li class="ui-arrowlink">完全缓存</li></a>
+</ul>
+</body>
+</html>

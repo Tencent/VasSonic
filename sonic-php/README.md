@@ -1,4 +1,4 @@
-## VasSonic for Nodejs
+## VasSonic for PHP
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
@@ -6,8 +6,7 @@
 
 ## Getting started
 
-## How to use for front-end
-
+## How to use for PHP
 Here is a simple demo shows how to use Sonic for front-end.
 ```Html
 <html>
@@ -86,7 +85,6 @@ Here is a simple demo shows how to use Sonic for front-end.
 </body>
 </html>
 ```
-
 ### Step 1:
 Specify template and data by inserting different comment anchor. The data will be wrapped with anchor ```<!-- sonicdiff-moduleName -->```  ```<!-- sonicdiff-moduleName-end -->```. The other part of html is template.
 ```Html
@@ -126,65 +124,18 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ```
 
 ## How to use for Server
-
-## Node.js Version
-
-### 1、Introduction
-
-This is the server part of VasSonic Project.
-
-### 2、Step
-
-1）Node Version > 7.0
-
-2）install **sonic_differ** module
+## PHP Version
+Download and import ```sonic.php```. Then add following code.
+```PHP
+require_once(PATH."/sonic.php");
 
 
-```Node.js
-npm install sonic_differ --save
-```
-
-3）import **sonic_differ** module
-
-```Node.js
-const sonic_differ = require('sonic_differ');
-```
-
-4）Intercept and process data from server in Sonic mode.
-
-i）First, create a Sonic cache struct like following code.
-
-```Node.js
-let sonic = {
-    buffer: [],
-    write: function (chunk, encoding) {
-        let buffer = chunk;
-        let ecode = encoding || 'utf8';
-        if (!Buffer.isBuffer(chunk)) {
-            buffer = new Buffer(chunk, ecode);
-        }
-        sonic.buffer.push(buffer);
-    }
-};
-```
-
-ii）Second, Intercept the data from server and use `sonic_differ` module to process
-
-```Node.js
-response.on('data', (chunk, encoding) => {
-    sonic.write(chunk, encoding)
-});
-response.on('end', () => {
-    let result = differ(ctx, Buffer.concat(sonic.buffer));
-    sonic.buffer = [];
-    if (result.cache) {
-        //304 Not Modified, return nothing.
-        return ''
-    } else {
-        //other Sonic status.
-        return result.data
-    }
-});
+if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
+// Check if Sonic is needed or not 
+    util_sonic::start();
+    $this->_index_v5($uin);
+    util_sonic::end();
+}
 ```
 
 ## Support

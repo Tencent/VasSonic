@@ -496,6 +496,14 @@ response.on('end', () => {
 });
 ```
 
+## Support
+Any problem?
+
+1. Learn more from sample.
+2. Read the source code.
+3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
+4. Contact us for help.
+
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 

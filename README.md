@@ -4,22 +4,28 @@
 
 ---
  Sonic is a lightweight and high-performance Hybrid framework which is intended to speed up the first screen of websites working on Android and IOS platform.
- Not only does Sonic supports the static or dynamic websites which are rendered by server, but it is also compatible with web offline resource perfectly.
+ Not only does VasSonic supports the static or dynamic websites which are rendered by server, but it is also compatible with web offline resource perfectly.
 
- Sonic uses custom url connection instead of original network connection to request the index html, so it can request resource in advance or parallel to avoid waiting for the view initialization.
- In this parallel case, Sonic can read and render partial data by WebKit kernel without spending too much time waiting for the end of data stream.
+ VasSonic uses custom url connection instead of original network connection to request the index html, so it can request resource in advance or parallel to avoid waiting for the view initialization.
+ In this parallel case, VasSonic can read and render partial data by WebKit kernel without spending too much time waiting for the end of data stream.
 
- Sonic can cache html cleverly according to Sonic Specification obeyed by client and server.
- Sonic Specification specify template and data by inserting different comment anchor, templates are bigger parts of html which stay the same or changed rarely , in contradiction data, which is the smaller and constantly change part of html.
- According to this, Sonic request less data by incremental updating templates and data, the websites are faster and feel more like native application.
- In conclusion, Sonic effectively enhance the user experience and increase click rate, retention rate and other indicators.
+ VasSonic can cache html cleverly according to VasSonic Specification obeyed by client and server.
+ VasSonic Specification specify template and data by inserting different comment anchor, templates are bigger parts of html which stay the same or changed rarely , in contradiction data, which is the smaller and constantly change part of html.
+ According to this, VasSonic request less data by incremental updating templates and data, the websites are faster and feel more like native application.
+ In conclusion, VasSonic effectively enhance the user experience and increase click rate, retention rate and other indicators.
 
+ pic 1: default mode
+![default mode][1]    
 
+pic 2: VasSonic mode。
+![VasSonic mode][2]
+
+ 
 ## Getting started
 ### How to use in Android
 #### build.gradle:
 
-Add Sonic gradle plugin as a dependency in your module's build.gradle
+Add VasSonic gradle plugin as a dependency in your module's build.gradle
 ```gradle
 compile 'com.tencent.sonic:sdk:1.0.0'
 ```
@@ -90,7 +96,7 @@ public class SonicSessionClientImpl extends SonicSessionClient {
 }
 ```
 #### Android Demo
-Here is a demo shows how to create an Android activity which uses the Sonic Framework
+Here is a demo shows how to create an Android activity which uses the VasSonic Framework
 ```Java
 public class SonicTestActivity extends Activity {
     WebView webView;
@@ -493,6 +499,7 @@ response.on('end', () => {
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 
-
+[1]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120005424.gif
+[2]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120029897.gif
 
 

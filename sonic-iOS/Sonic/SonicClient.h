@@ -25,24 +25,32 @@
  * Manage all sonic sessions.
  */
 @interface SonicClient : NSObject
+
+/* Return the unique identifier for current user */
 @property (nonatomic,readonly)NSString *currentUserUniq;
+
+/* Return the global custom User-Agent */
 @property (nonatomic,readonly)NSString *userAgent;
 
+/* Share the instance */
 + (SonicClient *)sharedClient;
 
 /**
  * Set an unique identifier for the user.
  * We can use the identifier to create different cache dir for different users.
+ 
+ * @param userIdentifier the unique identifier for the special user
  */
 - (void)setCurrentUserUniqIdentifier:(NSString *)userIdentifier;
 
 /**
- * Clear all session memory and file caches.
+ * @brief Clear all session memory and file caches.
  */
 - (void)clearAllCache;
 
 /**
  * Clear session memory and file caches with URL.
+ * @param url
  */
 - (void)removeCacheByUrl:(NSString *)url;
 
@@ -53,8 +61,9 @@
 
 /**
  * Use this API to add a domain-ip pair to connect server directly with ip in following requests.
- * Domain: www.qq.com
- * e.g ip: 8.8.8.8
+ 
+ * @param domain host from url like www.qq.com
+ * @param ipAddress e.g 8.8.8.8
  */
 - (void)addDomain:(NSString *)domain withIpAddress:(NSString *)ipAddress;
 
@@ -65,6 +74,8 @@
 
 /**
  * Set global custom User-Agent.
+ 
+ * @param aUserAgent the custom User-Agent
  */
 - (void)setGlobalUserAgent:(NSString *)aUserAgent;
 

@@ -46,7 +46,6 @@ Add Sonic.framework as a dependency in your main project. Then ```@import Sonic`
         
         self.url = aUrl;
         
-        self.clickTime = (long long)[[NSDate date]timeIntervalSince1970]*1000; 
         //Create a Sonic session with url.
         [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self];
     }
@@ -97,6 +96,14 @@ Add Sonic.framework as a dependency in your main project. Then ```@import Sonic`
         [callback invokeMethod:@"getDiffDataCallback" withArguments:@[jsonStr]];
         
     }];
+}
+```
+### Step5: Remove sonic session for the webDelegate.
+```Objective-C
+
+- (void)dealloc
+{
+[[SonicClient sharedClient] removeSessionWithWebDelegate:self];
 }
 ```
 

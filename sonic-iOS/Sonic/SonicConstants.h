@@ -50,26 +50,37 @@ typedef NS_ENUM(NSUInteger, SonicURLProtocolAction) {
     SonicURLProtocolActionDidFaild,
 };
 
+/* Sonic error code */
 typedef NS_ENUM(NSInteger, SonicErrorType) {
     
+    /* File i/o faild */
     SonicErrorType_IOE = -901,
     
+    /* Time out */
     SonicErrorType_TOE = -902,
     
+    /* HTML file verify faild */
     SonicErrorType_HTML_VERIFY_FAIL = -1001,
     
+    /* Setup up the cache directory faild */
     SonicErrorType_MAKE_DIR_ERROR = -1003,
     
+    /* Save file faild */
     SonicErrorType_WRITE_FILE_FAIL = -1004,
     
+    /* Split the HTML to template and dynamic data faild */
     SonicErrorType_SPLIT_HTML_FAIL = -1005,
     
+    /* Merge the server data and local dynamic data faild */
     SonicErrorType_MERGE_DIFF_DATA_FAIL = -1006,
     
+    /* Server response data can not verify */
     SonicErrorType_SERVER_DATA_EXCEPTION = -1007,
     
+    /* Merge the template and dynamic data to build HTML faild */
     SonicErrorType_BUILD_HTML_ERROR = -1008,
     
+    /* NSURLProtocol recieve action faild */
     SonicErrorType_URLPROTOCOL_ERROR = -1009,
     
 };

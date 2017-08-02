@@ -22,53 +22,57 @@
 #import "SonicConstants.h"
 
 /**
- * @brief Manage the memory caches and file cache for all sonic sessions.
+ * Manage the memory caches and file cache for all sonic sessions.
  */
 @interface SonicCache : NSObject
 
 /**
- * @brief Return an cache manage instance,it can create or update memory cache and file.
+ * Return an cache manage instance,it can create or update memory cache and file.
  * cache for each sonic session.
  */
 + (SonicCache *)shareCache;
 
 /**
- *@result Success for YES, faild for NO.
+ * Success for YES, faild for NO.
  */
 - (BOOL)setupCacheDirectory;
 
 /**
- *@brief Clear memory and file cache.
+ * Clear memory and file cache.
  */
 - (void)clearAllCache;
 
 /**
- * @brief  Delete memory and file cache.
+ * Delete memory and file cache.
+ 
  * @param sessionID  an session id to find the memory cache item.
  */
 - (void)removeCacheBySessionID:(NSString *)sessionID;
 
 /**
- * @brief Check if sever disable sonic request.
+ * Check if sever disable sonic request.
+ 
  * @param sessionID  an session id to find saved config params.
  * @result Return if need disable sonic mode for web request.
  */
 - (BOOL)isServerDisableSonic:(NSString *)sessionID;
 
 /**
- * @brief Set a timestamp to record server disable sonic request start.
+ * Set a timestamp to record server disable sonic request start.
  * @param sessionID  an session id to find saved config params.
  */
 - (void)saveServerDisabeSonicTimeNow:(NSString *)sessionID;
 
 /**
- * @brief Remove the recorded timestamp to enable sonic request.
+ * Remove the recorded timestamp to enable sonic request.
+ 
  * @param sessionID  an session id to find saved config params.
  */
 - (void)removeServerDisableSonic:(NSString *)sessionID;
 
 /**
- * @brief Return the dynamic data which split from HTML.
+ * Return the dynamic data which split from HTML.
+ 
  * @param sessionID  an session id to find memory cache item.
  * @result return the dynamic data from memory cache item,
  * if the memory cache item doesn't exist, the create and read data,
@@ -78,7 +82,8 @@
 - (NSDictionary *)dynamicDataBySessionID:(NSString *)sessionID;
 
 /**
- * @brief Return the template string which split from HTML.
+ * Return the template string which split from HTML.
+ 
  * @param sessionID  an session id to find memory cache item.
  * @result return template string from memory cache item,
  * if the memory cache item doesn't exist, the create and read data,
@@ -88,16 +93,17 @@
 - (NSString *)templateStringBySessionID:(NSString *)sessionID;
 
 /**
- * @brief Check if there is memory cache or file cache.
- * @param sessionID  an session id to find memory cache item.
+ * Check if there is memory cache or file cache.
+ 
+ * @param sessionID an session id to find memory cache item.
  * @result If there is not exist an memory cache item and file cache data not exist
  * either, then return NO.
- 
  */
 - (BOOL)isFirstLoad:(NSString *)sessionID;
 
 /**
  * @brief Split the HTML to dynamic data and template string.
+ 
  * @param html the HTML document downloaded by sonic session.
  */
 - (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html;
@@ -113,6 +119,7 @@
 
 /**
  * @brief First time to save htmlData
+ 
  * First time we need split the HTML in two parts: template and dynamic data
  * by the "<sonic-diff" tags.
  * @param htmlData the data download by sonic session,it is the whole HTML document.
@@ -126,6 +133,7 @@
 
 /**
  * @brief Generate the new HTML cache with server upate "jsonData".
+ 
  * @param jsonData The server update data.
  * @param headers the response headers from sonic session.
  * @param url the sonic URL which use to create sessionID for cache item name.
@@ -136,16 +144,17 @@
                        withUrl:(NSString *)url;
 
 /**
- * @brief   Get the memory cache item by sessionID.
+ * @brief Get the memory cache item by sessionID.
  * If there no memory cache exist,then create an new item
            If there has file cache exist,then read require data into memory.
+ 
  * @param sessionID  an session id to find memory cache item.
  * @result If cache is not exist then return nil.
  */
 - (SonicCacheItem *)cacheForSession:(NSString *)sessionID;
 
 /**
- * @brief Get the file cache update timestamp.
+ * Get the file cache update timestamp.
  */
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
 

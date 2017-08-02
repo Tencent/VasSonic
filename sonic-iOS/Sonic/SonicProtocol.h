@@ -20,7 +20,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- * Use this protocal to trasfer data to sonic session, when you provide custom SonicConnection.
+ * @brief Use this protocal to trasfer data to sonic session, when you provide custom SonicConnection.
  */
 @class SonicSession;
 @protocol SonicSessionProtocol <NSObject>
@@ -28,43 +28,43 @@
 @required
 
 /**
- * Call when the network connection did recieve response.
+ * @brief Call when the network connection did recieve response.
  */
 - (void)session:(SonicSession *)session didRecieveResponse:(NSHTTPURLResponse *)response;
 
 /**
- * Call when the network connection did load data.
+ * @brief Call when the network connection did load data.
  */
 - (void)session:(SonicSession *)session didLoadData:(NSData *)data;
 
 /**
- * Call when the network connection did fail.
+ * @brief Call when the network connection did fail.
  */
 - (void)session:(SonicSession *)session didFaild:(NSError *)error;
 
 /**
- * Call when the network connection did finish load.
+ * @brief Call when the network connection did finish load.
  */
 - (void)sessionDidFinish:(SonicSession *)session;
 
 @end
 
 /**
- * Notify the webView holder what happened during the connection.
+ * @brief Notify the webView holder what happened during the connection.
  */
 @protocol SonicSessionDelegate <NSObject>
 
 @required
 
 /**
- * Sonic session call the delegate to reload request
+ * @brief Sonic session call the delegate to reload request
  */
 - (void)session:(SonicSession *)session requireWebViewReload:(NSURLRequest *)request;
 
 @optional
 
 /**
- * Sonic request will be sent, you can do some custom actions, e.g. add custom header fields, set cookie etc.
+ * @brief Sonic request will be sent, you can do some custom actions, e.g. add custom header fields, set cookie etc.
  */
 - (void)sessionWillRequest:(SonicSession *)session;
 

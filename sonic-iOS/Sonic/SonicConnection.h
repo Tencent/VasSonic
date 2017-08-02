@@ -35,9 +35,16 @@
 
 /**
  * Check if this request class can use SonicConnection to load
+ 
+ * @param request the request passed by the SonicSession
  */
 + (BOOL)canInitWithRequest:(NSURLRequest *)request;
 
+/**
+ * SonicSession will pass the request to the connection
+ 
+ * @param aRequest the request passed by the SonicSession
+ */
 - (instancetype)initWithRequest:(NSURLRequest *)aRequest;
 
 /**

@@ -53,8 +53,10 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
  */
 @interface SonicSession : NSObject<SonicSessionProtocol>
 
+/** If there is no memory cache and file cache exist */
 @property (nonatomic,assign)BOOL isFirstLoad;
 
+/** Url for current session */
 @property (nonatomic ,copy)NSString *url;
 
 /** Generated from MD5 of URL. */
@@ -69,7 +71,7 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 /** Notify the webView holder what happened during the connection.*/
 @property (nonatomic,assign)id<SonicSessionDelegate> delegate;
 
-/**SonicSession use this callback to notify SonicClient when it finished. */
+/** SonicSession use this callback to notify SonicClient when it finished. */
 @property (nonatomic,copy)SonicSessionCompleteCallback completionCallback;
 
 /** Check if all data did finish updated */

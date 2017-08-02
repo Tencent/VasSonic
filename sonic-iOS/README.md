@@ -15,7 +15,7 @@ Add Sonic.framework as a dependency in your main project. Then register ```Sonic
 @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
 ```
 
-## Step2: Implement custom ```SonicSessionDelegate```
+### Step2: Implement custom ```SonicSessionDelegate```
 ```Objective-C
 #pragma mark - Sonic Session Delegate
 /*

@@ -1,9 +1,10 @@
-#Sonic Standard模式实现原理
+# Sonic Standard模式实现原理
 ---
 从前面介绍的sonic的基本原理可以知道，sonic分为Quick模式和Standard模式。本文介绍Standard模式的基本实现原理。
 根据本地缓存的数据情况可以将Quick模式下的sonic分为无缓存和有缓存模式。对于有缓存模式又可以分为完全缓存、局部刷新和全局刷新（也就是模版变更），下面就看下这几种模式的执行流程。
 无论是哪种执行模式，核心的思想都是并行，即充分利用webview初始化的时间进行一些数据的处理(webview的初始化耗时还是挺多的)。在包含webview的activity启动时会一边进行webview的初始化逻辑，一边并行的执行sonic的逻辑。
-##一，无缓存模式
+
+## 一，无缓存模式
 无缓存模式下的核心思想就是在webview初始化之前建立自己的网络连接，利用webview初始化的时间尽可能多的读取网络的数据，在webview需要数据的时候将自己从网络读取的数据交给webview处理。
 代码执行流程为：
 <img src = "sonicStandardModeFirst.png" width=100% height=100%>
@@ -14,16 +15,18 @@
 
 因此在webview发起资源拦截时pendingWebResourceStream存在两种可能，一种时网络数据还没完全读完的桥接流，另一种是网络数据已经完全读完的数据流。如果是桥接流的话在webview渲染完成关闭桥接流的时候会进行模版分割，数据保存等操作。如果是已读完的数据流的话就会在将pendingWebResourceStream数据给内核之后继续在子线程中执行模版分割，数据保存等操作。
 
-##二，有缓存模式：
+## 二，有缓存模式：
 有缓存模式的核心思想也是在webview初始化之前先读取本地的数据，同时建立自己的网络连接，通过网络连接获取服务器最新的数据。在webview需要数据的时候将本地或服务器返回的新的数据交给webview处理。
 有缓存模式又可以分为完全缓存、局部刷新、模板变更。下面依次介绍这几种模式。
-###1，完全缓存：
+
+### 1，完全缓存：
 所谓完全缓存就是本地的数据跟服务器的数据是完全一样的。
 代码执行流程为
 <img src = "sonicStandardModeCache.png" width=100% height=100%>
 
 左边webview的执行逻辑跟首次基本一致。右边sonic的执行逻辑前面几步跟首次的逻辑也基本一致，不同的地方开始于通过SonicCacheInterceptor获取的本地cacahe数据是不为空的，会将本地的数据包装为一个InputStream，在webview发起资源拦截的时候将这个InputStream交给内核渲染。同时通过SonicSessionConnection向服务器请求最新数据，由于服务器返回304，没有数据更新，整个sonic的流程执行完毕。
-###2，局部刷新：
+
+### 2，局部刷新：
 局部刷新就是本地的数据跟服务器的数据相比，只有data部分有变化，模板跟服务器一样。
 代码执行流程为：
 <img src = "sonicStandardModeDataUpdate.png" width=100% height=100%>
@@ -31,7 +34,8 @@
 左边webview的流程跟前面介绍的基本一样，不一样的地方后面会讲。右边sonic的逻辑前面几步跟完全缓存的时候一样，会先讲本地的数据包装成一个InputStream赋值给SonicSession 的pendingWebResourceStream，接着通过SonicSessionConnection获取服务器的回包数据。这种模式下服务器的回包数据是html的data部分的内容。将这个data跟本地的data做diff，就会得到页面刷新需要的diffData，有了这个diffData之后会将它保存在SonicSession的pendingDiffData变量中。接着通过SonicUtils的buildHtml将服务器返回的data跟本地的模版数据拼接成新的html内容。有了新的html内容之后判断webview的资源拦截是否有发起（通过SonicSession的wasInterceptInvoked来判断），如果有发起的话就将新的html内容保存在本地，然后流程执行完毕。如果这是webview还没有发起资源拦截的话就会将pendingDiffData置空，同时将新的html包装成一个InputStream赋值给pendingWebResourceStream，然后执行最后的数据保存等操作。
 
 通过上面的介绍可以知道在数据更新模式下，webview发起资源拦截的时候有可能得到两种值，一种是之前本地数据组成的输入流，在这种情况下页面调用js获取diffData的时候会将保存的diffData给到页面，让页面执行刷新操作；另一种是由服务器返回的data跟本地模版组成的最新的html包装成的输入流，这种情况下页面展示的就是最新的数据，在获取diffData的时候就不会有返回值了。
-###3，模版变更
+
+### 3，模版变更
 模板变更是本地的数据跟服务器数据相比，本地的模板跟服务器的模板不一样。
 代码执行流程为：
 <img src = "sonicStandardModeTemplateChange.png" width=100% height=100%>

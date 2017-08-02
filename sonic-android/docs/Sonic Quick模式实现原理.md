@@ -5,7 +5,7 @@
 
 无论是哪种执行模式，核心的思想都是并行，即充分利用webview初始化的时间进行一些数据的处理(webview的初始化耗时还是挺多的)。在包含webview的activity启动时会一边进行webview的初始化逻辑，一边并行的执行sonic的逻辑。
 
-##一，无缓存模式
+## 一，无缓存模式
 
 无缓存模式下的核心思想就是在webview初始化之前建立自己的网络连接，利用webview初始化的时间尽可能多的读取网络的数据，在webview需要数据的时候将自己从网络读取的数据交给webview处理。
 
@@ -25,7 +25,7 @@ Sonic在post消息到主线程之后会通过SonicSessionConnection建立一个U
 
 以上就是在quick模式下sonic首次的基本逻辑。这里有个问题要注意，就是主线程在处理sonic post的消息之前都会判断webview是否ready（初始化完毕），只有webview ready的情况才会执行对应的操作。如果webview没有ready的话就会把对应的消息存起来，直到webview ready的时候再执行对应的逻辑。
 	
-##二，有缓存模式
+## 二，有缓存模式
 
 有缓存模式的核心思想也是在webview初始化之前先读取本地的数据，同时建立自己的网络连接，通过网络连接获取服务器最新的数据。在webview需要数据的时候将本地或服务器返回的新的数据交给webview处理。
 有缓存模式又可以分为完全缓存、局部刷新、模板变更。下面依次介绍这几种模式。
@@ -46,7 +46,7 @@ Sonic在post消息到主线程之后会通过SonicSessionConnection建立一个U
 之前说过在数据刷新模式下会post一个CLIENT_CORE_MSG_PRE_LOAD的消息到主线程，主线程如果有执行到这个消息（因为有可能被remove掉）的话就会调用webview的loadDataWithBaseUrl将本地的数据交给内核渲染，同时将本地变量wasLoadDataInvoked置为true。
 当主线程接收到CLIENT_CORE_MSG_DATA_UPDATE的消息时会先判断wasLoadDataInvoked是否为true，即判断webview之前是否有掉过loadDataWithBaseUrl方法，如果有的话就会调用SonicSessionClient的callJacaScript方法将diffData给到页面，从而刷新页面如果wasLoadDataInvoked为false的话就调loadDataWithBaseUrl把最新的数据（服务器返回的数据跟本地模版合成的数据）给到webview去渲染。
 	
-###3，模版变更
+### 3，模版变更
 模板变更是本地的数据跟服务器数据相比，本地的模板跟服务器的模板不一样。
 代码执行流程：
 <img src = "sonicQuickModeTemplateChange.png" width=100% height=100%>

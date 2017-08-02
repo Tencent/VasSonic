@@ -1,14 +1,14 @@
 # Sonic接入指引
 ----
-##1.Sdk引入配置
+## 1.Sdk引入配置
 在模块的build.gradle文件里面加入
 
 ```
 compile 'com.tencent.sonic:sdk:1.0.0'
 ```
 
-##2.代码接入
-###(1).创建一个类继承SonicRuntime
+## 2.代码接入
+### (1).创建一个类继承SonicRuntime
 SonicRuntime类主要提供sonic运行时环境，包括Context、用户UA、ID(用户唯一标识，存放数据时唯一标识对应用户)等等信息。以下代码展示了SonicRuntime的几个方法。
 ```java
 public class HostSonicRuntime extends SonicRuntime {
@@ -47,7 +47,7 @@ public class HostSonicRuntime extends SonicRuntime {
 }
 ```
 
-###(2).创建一个类继承SonicSessionClinet
+### (2).创建一个类继承SonicSessionClinet
 
 SonicSessionClient主要负责跟webView的通信，比如调用webView的loadUrl、loadDataWithBaseUrl等方法。
 
@@ -74,7 +74,7 @@ public class SonicSessionClientImpl extends SonicSessionClient {
     }
 }
 ```
-###(3).新建包含webView的Activity(或者Fragment等)，在activity中完成sonic的接入。这里通过简单的demo展示如何接入
+### (3).新建包含webView的Activity(或者Fragment等)，在activity中完成sonic的接入。这里通过简单的demo展示如何接入
 
 ```java
 public class SonicTestActivity extends Activity {

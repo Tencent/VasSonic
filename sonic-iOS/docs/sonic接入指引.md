@@ -1,19 +1,19 @@
 
 
-1. 引入头文件，声明协议
+## 1. 引入头文件，声明协议
 
- (1.1)将Sonic.framework或者Sonic源码拖入工程
+### (1.1)将Sonic.framework或者Sonic源码拖入工程
 
       在AppDelegate中注册SonicURLProtocol:
 
       [NSURLProtocol registerClass:[SonicURLProtocol class]];
 
- (1.2)引入 @import Sonic;
+### (1.2)引入 @import Sonic;
 
       @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
 
 
-2. 实现SonicSessionDelegate
+## 2. 实现SonicSessionDelegate
 
 #pragma mark - Sonic Session Delegate
 
@@ -33,7 +33,7 @@
     [self.webView loadRequest:request];
 }
 
-3. 在WebView的ViewController中接入Sonic使用 (Sample:SonicWebViewController)
+## 3. 在WebView的ViewController中接入Sonic使用 (Sample:SonicWebViewController)
 
 /*
  * 在初始化ViewController的时候发起sonic的请求
@@ -76,7 +76,7 @@
     }
 }
 
-4. 调用获取差异的接口，传递sonic会话的结果信息
+## 4. 调用获取差异的接口，传递sonic会话的结果信息
 
 /*
  * 此接口由页面驱动，由前端sonic组件向终端发起请求获取会话结果

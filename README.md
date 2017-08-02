@@ -23,13 +23,13 @@
  
 ## Getting started
 
-[终端接入指引-Android版本](sonic-android\README.md)
+[终端接入指引-Android版本](https://github.com/Tencent/VasSonic/blob/master/sonic-android/README.md)
 
-[终端接入指引-iOS版本](sonic-iOS\README.md)
+[终端接入指引-iOS版本](https://github.com/Tencent/VasSonic/blob/master/sonic-iOS/README.md)
 
-[前后台接入指引-Nodejs版本](sonic-nodejs\README.md)
+[前后台接入指引-Nodejs版本](https://github.com/Tencent/VasSonic/blob/master/sonic-nodejs/README.md)
 
-[前后台接入指引-PHP版本](sonic-php\README.md)
+[前后台接入指引-PHP版本](https://github.com/Tencent/VasSonic/blob/master/sonic-php/README.md)
 
 ## Support
 Any problem?

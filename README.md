@@ -1,10 +1,6 @@
-# ReadMe
-
-标签（空格分隔）： 未分类
-
----
-
-# Sonic readme
+## VasSonic
+[![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 
 ---
  Sonic is a lightweight and high-performance Hybrid framework which is intended to speed up the first screen of websites working on Android and IOS platform.
@@ -19,9 +15,9 @@
  In conclusion, Sonic effectively enhance the user experience and increase click rate, retention rate and other indicators.
 
 
-##Getting started
-###How to use in Android
-####build.gradle:
+## Getting started
+### How to use in Android
+#### build.gradle:
 
 Add Sonic gradle plugin as a dependency in your module's build.gradle
 ```gradle
@@ -93,7 +89,7 @@ public class SonicSessionClientImpl extends SonicSessionClient {
     }
 }
 ```
-####Android Demo
+#### Android Demo
 Here is a demo shows how to create an Android activity which uses the Sonic Framework
 ```Java
 public class SonicTestActivity extends Activity {
@@ -202,7 +198,7 @@ public class SonicTestActivity extends Activity {
 }
 ```
 
-####How to use in IOS
+#### How to use in IOS
 Step 1: import and declare 
 Add Sonic.framework as a dependency in your main project. Then register ```SonicURLProtocol``` in AppDelegate and import ```Sonic.h```:
 ```Objective-C
@@ -302,7 +298,7 @@ Step4: Interacts with websites by JavaScript callback.
     }];
 }
 ```
-####How to use for front-end
+#### How to use for front-end
 Here is a simple demo shows how to use Sonic for front-end.
 ```Html
 <html>
@@ -381,7 +377,7 @@ Here is a simple demo shows how to use Sonic for front-end.
 </body>
 </html>
 ```
-#####Step 1:
+##### Step 1:
 Specify template and data by inserting different comment anchor. The data will be wrapped with anchor ```<!-- sonicdiff-moduleName -->```  ```<!-- sonicdiff-moduleName-end -->```. The other part of html is template.
 ```Html
     <div id="data1Content">
@@ -398,7 +394,7 @@ Specify template and data by inserting different comment anchor. The data will b
     <div id = "data3">data3</div>
 ```
 
-#####Step 2:
+##### Step 2:
 Receives diff data from mobile client through JavaScript interface. The JavaScript interface of demo was involved when websites are finish. But the time when inferface was involved is not immutable, websites can decide whenever they want.
 ```Html
 <script type="text/javascript">
@@ -408,7 +404,7 @@ Receives diff data from mobile client through JavaScript interface. The JavaScri
 </script>
 ```
 
-#####Step 3:
+##### Step 3:
 Handle different status received from mobile client. The demo shows how to find and replace the data of specified anchor according to the diff data come from mobile client, then the website is updated.
 ```Html
 //step 3 Handle the response from mobile client which include Sonic response code and diff data.  
@@ -419,8 +415,8 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-####How to use for Server
-#####PHP Version
+#### How to use for Server
+##### PHP Version
 Download and import ```sonic.php```. Then add following code.
 ```PHP
 require_once(PATH."/sonic.php");
@@ -434,7 +430,7 @@ if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
 }
 ```
 
-#####Node.js Version
+##### Node.js Version
 
 1、Introduction
 
@@ -493,51 +489,9 @@ response.on('end', () => {
     }
 });
 ```
-##Documents
----
-See the official [Sonic website](http://www.qq.com) 
 
-## download
----
-###android 
-Add the dependency to your project build.gradle file in androidstudio
-```
-dependencies {  
-  compile 'xxxx:sonic:1.0'
-}
-```
-
-###ios：
-```
-pod Sonic ～1.0
-```
-
-###node：
-Download sonic dependency packages via npm
-
-
-```tnpm install sonic_differ --save```
-###php：
-Download the [sonic.php](http://www.qq.com) file to the local
-
-##Access
----
-follow the [access guide](http://www.qq.com )to access sonic quickly
-
-##Example
----
-See the official [Sonic example](http://www.qq.com) 
-
-##Sonic Community
----
-sonic 问题交流的地方
-
-
-##License
----
-Sonic is under the [BSD license](http://www.qq.com )
-
-[指向github中对应的license文件](http://www.qq.com)在此输入正文
+## License
+VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 
 
 

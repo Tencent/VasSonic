@@ -8,7 +8,8 @@
 
 ## How to use in IOS
 ### Step 1: import and declare 
-Add Sonic.framework as a dependency in your main project or import source files into your project. Then register ```SonicURLProtocol``` in AppDelegate and ```@import Sonic```:
+Build Sonic.framework for different platform,such as simulator or device;
+Add Sonic.framework as a dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` in the ```AppDelegate```  :
 ```Objective-C
 [NSURLProtocol registerClass:[SonicURLProtocol class]];
 

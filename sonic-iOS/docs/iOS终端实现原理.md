@@ -37,7 +37,7 @@
 
 ### 3.模版更新
 	有网页缓存情况下，二次进入打开页面前先载入完整的html页面缓存，并且在sonic线程发起请求获取可变的数据部分；在网络回包响应中通过template-change字段判定发生模板更新，这里旧的模板和数据已经无法使用，模板更新返回的是一个全新全量的html网页，对网页按照首次加载的模式进行处理，对网页数据进行正则匹配，拆分成模板和数据分别保存，保存成功后保存完整的html网页，然后通过session的回调让UIWebView重新发起一次请求，以便在NSURLProtocol层将新的网页数据返回给UIWebView展示出来；
-<img src="templateChange.png" width=70% height=70%>
+<img src="TemplateChange.png" width=70% height=70%>
 
 ### 4.完全缓存
 

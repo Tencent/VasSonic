@@ -206,7 +206,7 @@ public class SonicTestActivity extends Activity {
 
 #### How to use in IOS
 Step 1: import and declare 
-Add Sonic.framework as a dependency in your main project. Then register ```SonicURLProtocol``` in AppDelegate and import ```Sonic.h```:
+Add Sonic.framework as a dependency in your main project or import source files into your project. Then register ```SonicURLProtocol``` in AppDelegate and ```@import Sonic```:
 ```Objective-C
 [NSURLProtocol registerClass:[SonicURLProtocol class]];
 
@@ -218,24 +218,15 @@ Step2: Implement custom ```SonicSessionDelegate```
 /*
  * Callback before Sonic send request
  */
-- (void)sessionWillPerformRequest:(SonicSession *)session
+- (void)sessionWillRequest:(SonicSession *)session
 {
     //This callback can be used to set some information, such as cookie and UA.
 }
 /*
- * Sonic will request website to reload to be intercepted on NSURLProtocol layer in Template-Update mode. 
+ * Sonic will request website to reload to be intercepted on NSURLProtocol layer. 
  */
-- (void)sessionRefreshReload:(SonicSession *)session
+- (void)session:(SonicSession *)session requireWebViewReload:(NSURLRequest *)request
 {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.url]];
-    [self.webView loadRequest:sonicWebRequest(request)];
-}
-/*
- * Sonic will use original network connection to send request again while failed.
- */
-- (void)sessionRequireNormalReload:(SonicSession *)session
-{
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:self.url]];
     [self.webView loadRequest:request];
 }
 ```

@@ -1,4 +1,4 @@
-# Sonic接入指引
+# 终端接入指引-Android版本
 ----
 ## 1.Sdk引入配置
 在模块的build.gradle文件里面加入

@@ -1,6 +1,6 @@
 ### 1、Introduction
 
-This is the server part of Sonic Project.
+This is the server part of VasSonic Project.
 
 ### 2、Step
 

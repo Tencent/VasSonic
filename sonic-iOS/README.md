@@ -1,4 +1,4 @@
-## VasSonic For IOS
+## Getting started with iOS
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
@@ -6,7 +6,7 @@
 
 ## Getting started
 
-## How to use in IOS
+## How to use in iOS
 ### Step 1: import and declare 
 Build Sonic.framework for different platform,such as simulator or device;
 Add Sonic.framework as a dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` in the ```AppDelegate```  :

@@ -25,7 +25,7 @@
 
 [Getting started with Android](https://github.com/Tencent/VasSonic/blob/master/sonic-android/README.md)
 
-[Getting started with iOs](https://github.com/Tencent/VasSonic/blob/master/sonic-iOS/README.md)
+[Getting started with iOS](https://github.com/Tencent/VasSonic/blob/master/sonic-iOS/README.md)
 
 [Getting started with Node.js](https://github.com/Tencent/VasSonic/blob/master/sonic-nodejs/README.md)
 

@@ -38,6 +38,8 @@ Any problem?
 2. Read the [Android source code](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sdk) and [iOS source code](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/Sonic).
 3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
 4. Contact [us](https://jq.qq.com/?_wv=1027&k=4EaxB4K) or scan QR code for help.
+
+</br>
 ![QR code][3]
 
 ## License

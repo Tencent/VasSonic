@@ -34,10 +34,10 @@
 ## Support
 Any problem?
 
-1. Learn more from sample.
-2. Read the source code.
+1. Learn more from [Android sample](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sample) and [iOS sample](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/SonicSample).
+2. Read the [Android source code](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sdk) and [iOS source code](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/Sonic).
 3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
-4. Contact us for help.
+4. Contact [us](https://jq.qq.com/?_wv=1027&k=4EaxB4K) for help.
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

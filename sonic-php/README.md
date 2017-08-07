@@ -6,7 +6,21 @@
 
 ## Getting started
 
-## How to use for PHP
+## How to use for Server(PHP)
+Download and import ```sonic.php```. Then add following code.
+```PHP
+require_once(PATH."/sonic.php");
+
+
+if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
+// Check if Sonic is needed or not 
+    util_sonic::start();
+    $this->_index_v5($uin);
+    util_sonic::end();
+}
+```
+
+## How to use for font-end
 Here is a simple demo shows how to use Sonic for front-end.
 ```Html
 <html>
@@ -123,28 +137,11 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-## How to use for Server
-## PHP Version
-Download and import ```sonic.php```. Then add following code.
-```PHP
-require_once(PATH."/sonic.php");
-
-
-if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
-// Check if Sonic is needed or not 
-    util_sonic::start();
-    $this->_index_v5($uin);
-    util_sonic::end();
-}
-```
-
 ## Support
 Any problem?
 
-1. Learn more from sample.
-2. Read the source code.
-3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
-4. Contact us for help.
+1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-php/sample).
+2. Contact us for help.
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

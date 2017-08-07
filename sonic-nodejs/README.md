@@ -7,6 +7,7 @@
 ## Getting started
 
 ## How to use for Server(Node.js)
+### Dependencies
 
 1）Node Version > 7.0
 
@@ -23,9 +24,9 @@ npm install sonic_differ --save
 const sonic_differ = require('sonic_differ');
 ```
 
-4）Intercept and process data from server in Sonic mode.
+### Intercept and process data from server in Sonic mode.
 
-i）First, create a Sonic cache struct like following code.
+1）First, create a Sonic cache struct like following code.
 
 ```Node.js
 let sonic = {
@@ -41,7 +42,7 @@ let sonic = {
 };
 ```
 
-ii）Second, Intercept the data from server and use `sonic_differ` module to process
+2）Second, Intercept the data from server and use `sonic_differ` module to process
 
 ```Node.js
 response.on('data', (chunk, encoding) => {

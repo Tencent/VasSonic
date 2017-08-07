@@ -12,7 +12,7 @@ VasSonic is a lightweight and high-performance Hybrid framework developed by ten
  Not only does VasSonic supports the static or dynamic websites which are rendered by server, but it is also compatible with web offline resource perfectly. 
 
  VasSonic uses custom url connection instead of original network connection to request the index html, so it can request resource in advance or parallel to avoid waiting for the view initialization.
- In this parallel case, VasSonic can read and render partial data by WebKit kernel without spending too much time waiting for the end of data stream.
+ In this parallel case, VasSonic can read and render partial data by WebKit or Blink kernel without spending too much time waiting for the end of data stream.
 
  VasSonic can cache html cleverly according to VasSonic Specification obeyed by client and server.
  VasSonic Specification specify template and data by inserting different comment anchor, templates are bigger parts of html which stay the same or changed rarely , in contradiction data, which is the smaller and constantly change part of html.
@@ -55,7 +55,7 @@ Any problem?
 3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
 
 4. Contact [us](https://jq.qq.com/?_wv=1027&k=4EaxB4K) or scan QR code for help.</br>
-![QR code][3]
+<img src="https://github.com/Tencent/VasSonic/blob/master/assets/QR.JPG" alt="QR code" style="width: 125px;"/>
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

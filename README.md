@@ -54,7 +54,8 @@ Any problem?
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 
-[1]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120005424.gif
-[2]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120029897.gif
-[3]: https://github.com/Tencent/VasSonic/blob/master/article/QR.JPG
+[1]: https://github.com/Tencent/VasSonic/blob/master/assets/20170705120005424.gif
+[2]: https://github.com/Tencent/VasSonic/blob/master/assets/20170705120029897.gif
+[3]: https://github.com/Tencent/VasSonic/blob/master/assets/QR.JPG
+
 

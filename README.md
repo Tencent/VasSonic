@@ -3,7 +3,10 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
-![logo][4]
+
+<p align="center">
+  <img alt="logo" src="https://github.com/Tencent/VasSonic/blob/master/assets/logo.png"/>
+</p>
 
 VasSonic is a lightweight and high-performance Hybrid framework developed by tencent VAS team,  which is intended to speed up the first screen of websites working on Android and iOS platform.
  Not only does VasSonic supports the static or dynamic websites which are rendered by server, but it is also compatible with web offline resource perfectly. 

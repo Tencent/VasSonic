@@ -17,14 +17,14 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 ```Objective-C
 #pragma mark - Sonic Session Delegate
 /*
- * Callback when Sonic will send request.
+ * Call back when Sonic will send request.
  */
 - (void)sessionWillRequest:(SonicSession *)session
 {
     //This callback can be used to set some information, such as cookie and UA.
 }
 /*
- * Sonic will request website to reload to be intercepted on NSURLProtocol layer. 
+ * Call back when Sonic require WebView to reload, e.g template changed or error occurred. 
  */
 - (void)session:(SonicSession *)session requireWebViewReload:(NSURLRequest *)request
 {
@@ -60,7 +60,6 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
     
     /*
      * If SonicSession is not null, Sonic uses custom SonicWebRequest instead of original network request. 
-     * Then SonicWebRequest will be intercepted on NSURLProtocol layer when host allow the application to return the local data.
      */
     if ([[SonicClient sharedClient] sessionWithWebDelegate:self]) {
         [self.webView loadRequest:sonicWebRequest(request)];
@@ -76,12 +75,12 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 - (void)getDiffData:(NSDictionary *)option withCallBack:(JSValue *)jscallback
 {
     /*
-     * ViewController which sends the Sonic request queries and send back result 
+     * ViewController which sends the Sonic request and return result through callback. 
      */
     [[SonicClient sharedClient] sonicUpdateDiffDataByWebDelegate:self.owner completion:^(NSDictionary *result) {
        
         /*
-         * Send back the result
+         * Return the result.
          */
         NSData *json = [NSJSONSerialization dataWithJSONObject:result options:NSJSONWritingPrettyPrinted error:nil];
         NSString *jsonStr = [[NSString alloc]initWithData:json encoding:NSUTF8StringEncoding];

@@ -82,116 +82,120 @@ public class SonicSessionClientImpl extends SonicSessionClient {
 ## Android Demo
 Here is a simple demo shows how to create an Android activity which uses the VasSonic Framework
 ```Java
-public class SonicSampleActivity extends Activity {
-    WebView webView;
-    SonicSessionClientImpl sessionClient;
-    WebViewClient webViewClient;
-    SonicSession session;
-    String url;
+
+public class BrowserActivity extends Activity {
+
+    public final static String PARAM_URL = "param_url";
+
+    public final static String PARAM_MODE = "param_mode";
+
+    private SonicSession sonicSession;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
-        url = intent.getStringExtra("url");
-        int sonicMode = intent.getIntExtra("sonicMode", SonicSessionConfig.SESSION_MODE_DEFAULT);
-        
-        //step 1: Initialize SonicEngine before webview loadUrl
-        SonicRuntime runtime = new HostSonicRuntime(this.getApplication());
-        SonicEngine.createInstance(runtime, new SonicConfig());
-        
-        //step 2: Create SonicSession
-        SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-        sessionConfigBuilder.setSessionMode(sonicMode);
-        SonicSessionConfig config = sessionConfigBuilder.build();
-        session = SonicEngine.getInstance().createSession(url, config);
-        setContentView(R.layout.test);
-        LinearLayout root = (LinearLayout) findViewById(R.id.root);
-        webView = new WebView(this);
-        LinearLayout.LayoutParams lp = new  LinearLayout.LayoutParams
-                (RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        root.addView(webView, lp);
-        webView.setVisibility(View.VISIBLE);
-        
-        //step 3: BindWebView for sessionClient and bindClient for SonicSession
-        if (SonicEngine.getInstance().getRuntime().isSonicUrl(url)) {
-            if (session != null) {
-                sessionClient = new SonicSessionClientImpl();
-                sessionClient.bindWebView(webView);
-                session.bindClient(sessionClient);
-            }
+        String url = intent.getStringExtra(PARAM_URL);
+        int mode = intent.getIntExtra(PARAM_MODE, -1);
+        if (TextUtils.isEmpty(url) || -1 == mode) {
+            finish();
+            return;
         }
-        webViewClient = new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
-            }
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+
+        // step 1: Initialize sonic engine if necessary, or maybe u can do this when application created
+        if (!SonicEngine.isGetInstanceAllowed()) {
+            SonicEngine.createInstance(new SonicRuntimeImpl(getApplication()), new SonicConfig.Builder().build());
+        }
+
+        SonicSessionClientImpl sonicSessionClient = null;
+
+        // step 2: Create SonicSession
+        sonicSession = SonicEngine.getInstance().createSession(url,  new SonicSessionConfig.Builder().build());
+        if (null != sonicSession) {
+            sonicSession.bindClient(sonicSessionClient = new SonicSessionClientImpl());
+        } else {
+            // this only happen when a same sonic session is already running,
+            // u can comment following codes to feedback as a default mode.
+            throw new UnknownError("create session fail!");
+        }
+
+        // step 3: BindWebView for sessionClient and bindClient for SonicSession
+        // in the real world, the init flow may cost a long time as startup
+        // runtime、init configs....
+        setContentView(R.layout.activity_browser);
+        WebView webView = (WebView) findViewById(R.id.webview);
+        webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                if(sessionClient != null){
-                    sessionClient.pageFinish(url);
+                if (sonicSession != null) {
+                    sonicSession.getSessionClient().pageFinish(url);
                 }
             }
+
             @TargetApi(21)
             @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, 
-                                             WebResourceRequest request) {
-                                             
-                return doIntercept(view, request.getUrl().toString());
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return shouldInterceptRequest(view, request.getUrl().toString());
             }
+
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                return doIntercept(view, url);
+                if (sonicSession != null) {
+                //step 6: Call sessionClient.requestResource when host allow the application 
+                // to return the local data .
+                    return (WebResourceResponse) sonicSession.getSessionClient().requestResource(url);
+                }
+                return null;
             }
-        };
-        webView.setWebViewClient(webViewClient);
-        WebChromeClient chromeClient = new WebChromeClient() {
-            @Override
-            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-                return super.onJsAlert(view, url, message, result);
-            }
-        };
-        webView.setWebChromeClient(chromeClient);
-        String cookie = "testCookie=1";
-        ArrayList<String> cookies = new ArrayList<>(1);
-        cookies.add(cookie);
-        runtime.setCookie(url, cookies);
+        });
+
         WebSettings webSettings = webView.getSettings();
-        
-        //step 4: bind javascript
+
+        // step 4: bind javascript
+        // note:if api level lower than 17(android 4.2), addJavascriptInterface has security
+        // issue, please use x5 or see https://developer.android.com/reference/android/webkit/
+        // WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String)
         webSettings.setJavaScriptEnabled(true);
-        intent.putExtra("loadUrlTime", System.currentTimeMillis());
-        webView.addJavascriptInterface(new SonicJavaScript(sessionClient, intent), "sonic");
+        webView.removeJavascriptInterface("searchBoxJavaBridge_");
+        intent.putExtra(SonicJavaScriptInterface.PARAM_LOAD_URL_TIME, System.currentTimeMillis());
+        webView.addJavascriptInterface(new SonicJavaScriptInterface(sonicSessionClient, intent), "sonic");
+
+        // init webview settings
         webSettings.setAllowContentAccess(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setAppCacheEnabled(true);
-        
-        //step 5: notify webview start to load url.
-        if (sessionClient != null) {
-            sessionClient.clientReady();
-        } else {
+        webSettings.setSavePassword(false);
+        webSettings.setSaveFormData(false);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+
+
+        // step 5: webview is ready now, just tell session client to bind
+        if (sonicSessionClient != null) {
+            sonicSessionClient.bindWebView(webView);
+            sonicSessionClient.clientReady();
+        } else { // default mode
             webView.loadUrl(url);
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
+
     @Override
     protected void onDestroy() {
-        if (session != null) {
-            session.destroy();
+        if (null != sonicSession) {
+            sonicSession.destroy();
+            sonicSession = null;
         }
         super.onDestroy();
     }
-    
-    private WebResourceResponse doIntercept(WebView view, String url) {
-        //step 6: Call sessionClient.requestResource when host allow the application 
-        // to return the local data .
-        if (sessionClient != null) {
-            return (WebResourceResponse) sessionClient.requestResource(url);
-        }
-        return null;
-    }
-}
 ```
 
 ## Support

@@ -13,7 +13,8 @@ Add VasSonic gradle plugin as a dependency in your module's build.gradle
 compile 'com.tencent.sonic:sdk:1.0.0'
 ```
 
-Create a class that subclasses ```SonicRuntime```
+## Implement sonic interface:
+Implement a class which extends from ```SonicRuntime```
 
 > SonicRuntime is a class which interacts with the overall running information in the system, including Context, UA, ID (which is the unique identification for the saved data) and other information.
 
@@ -53,7 +54,7 @@ public class HostSonicRuntime extends SonicRuntime {
     }
 }
 ```
-Create a subclass of ```SonicSessionClinet```
+Implement a subclass which extends from ```SonicSessionClient```
 
 ```Java
 /**

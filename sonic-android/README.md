@@ -4,8 +4,6 @@
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
-## Getting started
-
 ## Dependencies:
 
 Add VasSonic gradle plugin as a dependency in your module's build.gradle

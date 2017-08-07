@@ -74,6 +74,7 @@ Here is a simple demo shows how to use Sonic for front-end.
             function getDiffData(){
                 window.sonic.getDiffData();
             }
+            
             // step 3: Handle the response from mobile client which include Sonic response code and diff data.   
            function getDiffDataCallback(result){
                 var sonicStatus = 0; 
@@ -99,6 +100,7 @@ Here is a simple demo shows how to use Sonic for front-end.
                 }
                 handleSonicDiffData(sonicStatus, sonicUpdateData);
             }
+            
             // step 3: Handle the response from mobile client which include Sonic response code and diff data.  
             function handleSonicDiffData(sonicStatus, sonicUpdateData){
                 if(sonicStatus == 3){
@@ -116,6 +118,7 @@ Here is a simple demo shows how to use Sonic for front-end.
             }
     </script>
 </head>
+
 <body>
     // step 1: specify template and data by inserting different comment anchor.
     <div id="data1Content">

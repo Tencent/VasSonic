@@ -7,11 +7,13 @@
 ## Getting started
 
 ## How to use for Server(PHP)
-Download and import ```sonic.php```. Then add following code.
+Download and import ```sonic.php```. 
 ```PHP
 require_once(PATH."/sonic.php");
+```
+Then add following code.
 
-
+```
 if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
 // Check if Sonic is needed or not 
     util_sonic::start();
@@ -29,11 +31,11 @@ Here is a simple demo shows how to use Sonic for front-end.
     <title>demo</title>
     <script type="text/javascript">
             
-            //Interacts with mobile client by JavaScript interface to get Sonic diff data.
+            // Interacts with mobile client by JavaScript interface to get Sonic diff data.
             function getDiffData(){
                 window.sonic.getDiffData();
             }
-            //step 3 Handle the response from mobile client which include Sonic response code and diff data.   
+            // step 3: Handle the response from mobile client which include Sonic response code and diff data.   
            function getDiffDataCallback(result){
                 var sonicStatus = 0; 
                 /**
@@ -58,7 +60,7 @@ Here is a simple demo shows how to use Sonic for front-end.
                 }
                 handleSonicDiffData(sonicStatus, sonicUpdateData);
             }
-            //step 3 Handle the response from mobile client which include Sonic response code and diff data.  
+            // step 3: Handle the response from mobile client which include Sonic response code and diff data.  
             function handleSonicDiffData(sonicStatus, sonicUpdateData){
                 if(sonicStatus == 3){
                     //Websites will be updated dynamically and run some JavaScript while in local refresh mode. 
@@ -76,7 +78,7 @@ Here is a simple demo shows how to use Sonic for front-end.
     </script>
 </head>
 <body>
-    //step 1 specify template and data by inserting different comment anchor.
+    // step 1: specify template and data by inserting different comment anchor.
     <div id="data1Content">
         <!--sonicdiff-data1-->
         <p id="partialRefresh"></p>
@@ -90,7 +92,7 @@ Here is a simple demo shows how to use Sonic for front-end.
     </div>
     <div id = "data3">data3</div>
     
-    //step 2 Receives diff data from mobile client through Javascript interface.
+    // step 2: Receives diff data from mobile client through Javascript interface.
     <script type="text/javascript">
          window.function(){
                 getDiffData();

@@ -4,8 +4,6 @@
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
-## Getting started
-
 ### Step 1: import and declare 
 Build Sonic.framework for different platform,such as simulator or device;
 Add Sonic.framework as a dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` in the ```AppDelegate```  :

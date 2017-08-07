@@ -8,19 +8,19 @@
 
 ## How to use in IOS
 ### Step 1: import and declare 
-Build Sonic.framework for different platform,such as simulator or device;
-Add Sonic.framework as a dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` in the ```AppDelegate```  :
+Build Sonic.framework;
+Add Sonic.framework to dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` :
 ```Objective-C
 [NSURLProtocol registerClass:[SonicURLProtocol class]];
 
 @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
 ```
 
-### Step2: Implement custom ```SonicSessionDelegate```
+### Step2: Implement ```SonicSessionDelegate```
 ```Objective-C
 #pragma mark - Sonic Session Delegate
 /*
- * Callback before Sonic send request
+ * Callback when Sonic will send request.
  */
 - (void)sessionWillRequest:(SonicSession *)session
 {
@@ -35,11 +35,8 @@ Add Sonic.framework as a dependency in your main project. Then ```@import Sonic`
 }
 ```
 
-### Step3: Use Sonic in your own WebView ViewController
+### Step3: Use Sonic in WebView ViewController
 ```Objective-C
-/*
- * Send request when initialize ViewController 
- */
 - (instancetype)initWithUrl:(NSString *)aUrl
 {
     if (self = [super init]) {
@@ -98,7 +95,7 @@ Add Sonic.framework as a dependency in your main project. Then ```@import Sonic`
     }];
 }
 ```
-### Step5: Remove sonic session for the webDelegate.
+### Step5: Remove sonic session.
 ```Objective-C
 
 - (void)dealloc

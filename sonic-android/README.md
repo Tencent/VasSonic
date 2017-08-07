@@ -6,7 +6,7 @@
 
 ## Getting started
 
-## build.gradle:
+## Dependencies:
 
 Add VasSonic gradle plugin as a dependency in your module's build.gradle
 ```gradle

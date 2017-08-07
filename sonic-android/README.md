@@ -80,9 +80,9 @@ public class SonicSessionClientImpl extends SonicSessionClient {
 }
 ```
 ## Android Demo
-Here is a demo shows how to create an Android activity which uses the VasSonic Framework
+Here is a simple demo shows how to create an Android activity which uses the VasSonic Framework
 ```Java
-public class SonicTestActivity extends Activity {
+public class SonicSampleActivity extends Activity {
     WebView webView;
     SonicSessionClientImpl sessionClient;
     WebViewClient webViewClient;
@@ -94,10 +94,12 @@ public class SonicTestActivity extends Activity {
         Intent intent = getIntent();
         url = intent.getStringExtra("url");
         int sonicMode = intent.getIntExtra("sonicMode", SonicSessionConfig.SESSION_MODE_DEFAULT);
-        //step 1 Initialize SonicEngine before webview loadUrl
+        
+        //step 1: Initialize SonicEngine before webview loadUrl
         SonicRuntime runtime = new HostSonicRuntime(this.getApplication());
         SonicEngine.createInstance(runtime, new SonicConfig());
-        //step 2 Create SonicSession
+        
+        //step 2: Create SonicSession
         SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
         sessionConfigBuilder.setSessionMode(sonicMode);
         SonicSessionConfig config = sessionConfigBuilder.build();
@@ -109,7 +111,8 @@ public class SonicTestActivity extends Activity {
                 (RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         root.addView(webView, lp);
         webView.setVisibility(View.VISIBLE);
-        //step 3 BindWebView for sessionClient and bindClient for SonicSession
+        
+        //step 3: BindWebView for sessionClient and bindClient for SonicSession
         if (SonicEngine.getInstance().getRuntime().isSonicUrl(url)) {
             if (session != null) {
                 sessionClient = new SonicSessionClientImpl();
@@ -155,7 +158,8 @@ public class SonicTestActivity extends Activity {
         cookies.add(cookie);
         runtime.setCookie(url, cookies);
         WebSettings webSettings = webView.getSettings();
-        //step 4 set javascript
+        
+        //step 4: bind javascript
         webSettings.setJavaScriptEnabled(true);
         intent.putExtra("loadUrlTime", System.currentTimeMillis());
         webView.addJavascriptInterface(new SonicJavaScript(sessionClient, intent), "sonic");
@@ -163,7 +167,8 @@ public class SonicTestActivity extends Activity {
         webSettings.setDatabaseEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setAppCacheEnabled(true);
-        //step 5 Notify sonicSession： webView ready，then it starts to load url.
+        
+        //step 5: notify webview start to load url.
         if (sessionClient != null) {
             sessionClient.clientReady();
         } else {
@@ -177,8 +182,9 @@ public class SonicTestActivity extends Activity {
         }
         super.onDestroy();
     }
+    
     private WebResourceResponse doIntercept(WebView view, String url) {
-        //step 6 Call sessionClient.requestResource when host allow the application 
+        //step 6: Call sessionClient.requestResource when host allow the application 
         // to return the local data .
         if (sessionClient != null) {
             return (WebResourceResponse) sessionClient.requestResource(url);
@@ -191,9 +197,7 @@ public class SonicTestActivity extends Activity {
 ## Support
 Any problem?
 
-1. Learn more from sample.
-2. Read the source code.
-3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
+1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sample).
 4. Contact us for help.
 
 ## License

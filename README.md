@@ -16,6 +16,8 @@ VasSonic is a lightweight and high-performance Hybrid framework developed by ten
  According to this, VasSonic request less data by incremental updating templates and data, the websites are faster and feel more like native application.
  In conclusion, VasSonic effectively enhance the user experience and increase click rate, retention rate and other indicators.
 
+ Sonic is called for short in project.
+
 ## Before VS After Using VasSonic
 
 #### Pic 1: before using VasSonic</br>

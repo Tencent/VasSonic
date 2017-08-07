@@ -1,12 +1,9 @@
-## VasSonic For IOS
+## Getting started with iOS
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
-## Getting started
-
-## How to use in IOS
 ### Step 1: import and declare 
 Build Sonic.framework;
 Add Sonic.framework to dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` :
@@ -107,10 +104,8 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 ## Support
 Any problem?
 
-1. Learn more from sample.
-2. Read the source code.
-3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
-4. Contact us for help.
+1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/SonicSample).
+2. Contact us for help.
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

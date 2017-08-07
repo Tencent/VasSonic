@@ -1,10 +1,63 @@
-## VasSonic for Nodejs
+## Getting started with Node.js
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
-## Getting started
+## How to use for Server
+### Dependencies
+
+1）Node Version > 7.0
+
+2）install **sonic_differ** module
+
+
+```Node.js
+npm install sonic_differ --save
+```
+
+3）import **sonic_differ** module
+
+```Node.js
+const sonic_differ = require('sonic_differ');
+```
+
+### Intercept and process data from server in Sonic mode.
+
+1）First, create a Sonic cache struct like following code.
+
+```Node.js
+let sonic = {
+    buffer: [],
+    write: function (chunk, encoding) {
+        let buffer = chunk;
+        let ecode = encoding || 'utf8';
+        if (!Buffer.isBuffer(chunk)) {
+            buffer = new Buffer(chunk, ecode);
+        }
+        sonic.buffer.push(buffer);
+    }
+};
+```
+
+2）Second, Intercept the data from server and use `sonic_differ` module to process
+
+```Node.js
+response.on('data', (chunk, encoding) => {
+    sonic.write(chunk, encoding)
+});
+response.on('end', () => {
+    let result = differ(ctx, Buffer.concat(sonic.buffer));
+    sonic.buffer = [];
+    if (result.cache) {
+        //304 Not Modified, return nothing.
+        return ''
+    } else {
+        //other Sonic status.
+        return result.data
+    }
+});
+```
 
 ## How to use for front-end
 
@@ -16,11 +69,12 @@ Here is a simple demo shows how to use Sonic for front-end.
     <title>demo</title>
     <script type="text/javascript">
             
-            //Interacts with mobile client by JavaScript interface to get Sonic diff data.
+            // Interacts with mobile client by JavaScript interface to get Sonic diff data.
             function getDiffData(){
                 window.sonic.getDiffData();
             }
-            //step 3 Handle the response from mobile client which include Sonic response code and diff data.   
+            
+            // step 3: Handle the response from mobile client which include Sonic response code and diff data.   
            function getDiffDataCallback(result){
                 var sonicStatus = 0; 
                 /**
@@ -45,7 +99,8 @@ Here is a simple demo shows how to use Sonic for front-end.
                 }
                 handleSonicDiffData(sonicStatus, sonicUpdateData);
             }
-            //step 3 Handle the response from mobile client which include Sonic response code and diff data.  
+            
+            // step 3: Handle the response from mobile client which include Sonic response code and diff data.  
             function handleSonicDiffData(sonicStatus, sonicUpdateData){
                 if(sonicStatus == 3){
                     //Websites will be updated dynamically and run some JavaScript while in local refresh mode. 
@@ -62,8 +117,9 @@ Here is a simple demo shows how to use Sonic for front-end.
             }
     </script>
 </head>
+
 <body>
-    //step 1 specify template and data by inserting different comment anchor.
+    // step 1: specify template and data by inserting different comment anchor.
     <div id="data1Content">
         <!--sonicdiff-data1-->
         <p id="partialRefresh"></p>
@@ -77,7 +133,7 @@ Here is a simple demo shows how to use Sonic for front-end.
     </div>
     <div id = "data3">data3</div>
     
-    //step 2 Receives diff data from mobile client through Javascript interface.
+    // step 2: Receives diff data from mobile client through Javascript interface.
     <script type="text/javascript">
          window.function(){
                 getDiffData();
@@ -125,75 +181,11 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-## How to use for Server
-
-## Node.js Version
-
-### 1、Introduction
-
-This is the server part of VasSonic Project.
-
-### 2、Step
-
-1）Node Version > 7.0
-
-2）install **sonic_differ** module
-
-
-```Node.js
-npm install sonic_differ --save
-```
-
-3）import **sonic_differ** module
-
-```Node.js
-const sonic_differ = require('sonic_differ');
-```
-
-4）Intercept and process data from server in Sonic mode.
-
-i）First, create a Sonic cache struct like following code.
-
-```Node.js
-let sonic = {
-    buffer: [],
-    write: function (chunk, encoding) {
-        let buffer = chunk;
-        let ecode = encoding || 'utf8';
-        if (!Buffer.isBuffer(chunk)) {
-            buffer = new Buffer(chunk, ecode);
-        }
-        sonic.buffer.push(buffer);
-    }
-};
-```
-
-ii）Second, Intercept the data from server and use `sonic_differ` module to process
-
-```Node.js
-response.on('data', (chunk, encoding) => {
-    sonic.write(chunk, encoding)
-});
-response.on('end', () => {
-    let result = differ(ctx, Buffer.concat(sonic.buffer));
-    sonic.buffer = [];
-    if (result.cache) {
-        //304 Not Modified, return nothing.
-        return ''
-    } else {
-        //other Sonic status.
-        return result.data
-    }
-});
-```
-
 ## Support
 Any problem?
 
-1. Learn more from sample.
-2. Read the source code.
-3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
-4. Contact us for help.
+1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs).
+2. Contact us for help.
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

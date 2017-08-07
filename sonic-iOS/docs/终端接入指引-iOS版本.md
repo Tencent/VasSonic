@@ -3,19 +3,21 @@
 
 ### 1. 引入头文件，声明协议
 
-### (1.1)将Sonic.framework或者Sonic源码拖入工程
+### (1.1)编译对应平台所需的Sonic.framework ,在Build目录找到.framework文件
 
-      在AppDelegate中注册SonicURLProtocol:
-
+### (1.2)将Sonic.framework引入主工程
+在```AppDelegate```中注册```SonicURLProtocol```
+```Objective-C
       [NSURLProtocol registerClass:[SonicURLProtocol class]];
+```
 
-### (1.2)引入 @import Sonic;
-
+### (1.3)引入 @import Sonic;
+```Objective-C
       @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
-
+```
 
 ## 2. 实现SonicSessionDelegate
-
+```Objective-C
 #pragma mark - Sonic Session Delegate
 
 /*
@@ -33,9 +35,10 @@
 {
     [self.webView loadRequest:request];
 }
+```
 
 ## 3. 在WebView的ViewController中接入Sonic使用 (Sample:SonicWebViewController)
-
+```Objective-C
 /*
  * 在初始化ViewController的时候发起sonic的请求
  */
@@ -76,9 +79,10 @@
         [self.webView loadRequest:request];
     }
 }
+```
 
 ## 4. 调用获取差异的接口，传递sonic会话的结果信息
-
+```Objective-C
 /*
  * 此接口由页面驱动，由前端sonic组件向终端发起请求获取会话结果
  */
@@ -100,3 +104,13 @@
         
     }];
 }
+```
+
+## 5. 在WebDelegate销毁的时候移除WebDelegate对应的Session
+```Objective-C
+
+- (void)dealloc
+{
+[[SonicClient sharedClient] removeSessionWithWebDelegate:self];
+}
+```

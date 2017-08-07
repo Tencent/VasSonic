@@ -14,7 +14,7 @@ compile 'com.tencent.sonic:sdk:1.0.0'
 ```
 
 ## Implement sonic interface:
-Implement a class which extends from ```SonicRuntime```
+1. Implement a class which extends from ```SonicRuntime```
 
 > SonicRuntime is a class which interacts with the overall running information in the system, including Context, UA, ID (which is the unique identification for the saved data) and other information.
 
@@ -54,7 +54,7 @@ public class HostSonicRuntime extends SonicRuntime {
     }
 }
 ```
-Implement a subclass which extends from ```SonicSessionClient```
+2. Implement a subclass which extends from ```SonicSessionClient```
 
 ```Java
 /**

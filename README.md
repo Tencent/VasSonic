@@ -55,9 +55,7 @@ Any problem?
 3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
 
 4. Contact [us](https://jq.qq.com/?_wv=1027&k=4EaxB4K) or scan QR code for help.</br>
-<p align="center">
-  <img alt="logo" src="https://github.com/Tencent/VasSonic/blob/master/assets/QR.JPG"/>
-</p>
+![QR code][3]
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

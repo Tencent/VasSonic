@@ -13,7 +13,7 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
 ```
 
-### Step2: Implement ```SonicSessionDelegate```
+### Step 2: Implement ```SonicSessionDelegate```
 ```Objective-C
 #pragma mark - Sonic Session Delegate
 /*
@@ -32,7 +32,7 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 }
 ```
 
-### Step3: Use Sonic in WebView ViewController
+### Step 3: Use Sonic in WebView ViewController
 ```Objective-C
 - (instancetype)initWithUrl:(NSString *)aUrl
 {
@@ -69,7 +69,7 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
 }
 ```
 
-### Step4: Interacts with websites by JavaScript callback.
+### Step 4: Interacts with websites by JavaScript callback.
 ```Objective-C
 
 - (void)getDiffData:(NSDictionary *)option withCallBack:(JSValue *)jscallback
@@ -91,7 +91,7 @@ Add Sonic.framework to dependency in your main project. Then ```@import Sonic```
     }];
 }
 ```
-### Step5: Remove sonic session.
+### Step 5: Remove sonic session.
 ```Objective-C
 
 - (void)dealloc

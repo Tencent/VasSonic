@@ -38,8 +38,8 @@ Pic 1: Before Using VasSonic |  Pic 2: After Using VasSonic
 [Getting started with PHP](https://github.com/Tencent/VasSonic/blob/master/sonic-php/README.md)
 
 ## Demo Downloads
-1. [Here](https://github.com/Tencent/VasSonic/blob/master/assets/sonic-sample.apk) is the Android sample demo.
-2. [Here](https://github.com/Tencent/VasSonic/blob/master/assets/sonic-sample.ipa) is the iOS sample demo.
+1. [Here](https://github.com/Tencent/VasSonic/releases/tag/1.0) are the sample demo for Android and iOS.
+
 
 ## Support
 Any problem?

@@ -67,9 +67,9 @@ VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/
 ## The End
 If you are interested in VasSonic, don't forget to STAR [it](https://github.com/Tencent/VasSonic). 
 
-VasSonic's mission is making Web much better!
+VasSonic's mission is MAKING WEB MUCH BETTER!
 
-Thank you for reading!
+Thank you for reading ~
 
 [1]: https://github.com/Tencent/VasSonic/blob/master/assets/20170705120005424.gif
 [2]: https://github.com/Tencent/VasSonic/blob/master/assets/20170705120029897.gif

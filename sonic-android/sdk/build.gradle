@@ -67,7 +67,6 @@ install {
                     developer {
                         id 'Tencent VAS'
                         name 'Tencent VAS'
-                        email 'lovekidchen@gmail.com'
                     }
                 }
 

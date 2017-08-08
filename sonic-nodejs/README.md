@@ -5,7 +5,7 @@
 ---
 
 ## How to use for Server
-### Step 1: Dependencies
+### Dependencies
 
 1）Node Version > 7.0
 
@@ -22,7 +22,7 @@ npm install sonic_differ --save
 const sonic_differ = require('sonic_differ');
 ```
 
-### Step 2: Intercept and process data from server in Sonic mode.
+### Intercept and process data from server in Sonic mode.
 
 1）First, create a Sonic cache struct like following code.
 

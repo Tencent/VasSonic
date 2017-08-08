@@ -65,8 +65,8 @@ install {
                 // developers
                 developers {
                     developer {
-                        id 'lovekidchen'
-                        name 'lovekidchen'
+                        id 'Tencent VAS'
+                        name 'Tencent VAS'
                         email 'lovekidchen@gmail.com'
                     }
                 }

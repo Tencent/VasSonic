@@ -23,7 +23,7 @@ VasSonic is a lightweight and high-performance Hybrid framework developed by ten
 
 ### Before VS After Using VasSonic
 
-Pic 1: Before using VasSonic |  Pic 2: After Using VasSonic
+Pic 1: Before Using VasSonic |  Pic 2: After Using VasSonic
 :-------------------------:|:-------------------------:
 ![default mode][1]  |  ![VasSonic mode][2]
 

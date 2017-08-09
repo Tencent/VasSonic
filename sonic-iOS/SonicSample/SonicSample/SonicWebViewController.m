@@ -52,9 +52,7 @@
 
 - (void)loadView
 {
-    [super loadView];
-    
-    self.webView = [[UIWebView alloc]initWithFrame:self.view.bounds];
+    self.webView = [[UIWebView alloc]initWithFrame:CGRectZero];
     self.webView.delegate = self;
     self.webView.scrollView.decelerationRate = UIScrollViewDecelerationRateNormal;
     self.view = self.webView;

@@ -61,6 +61,9 @@ Any problem?
 4. Contact [us](https://jq.qq.com/?_wv=1027&k=4EaxB4K) or scan QR code for help.</br>
 ![QR code][3]
 
+## Contributing
+For more information about contributing issues or pull requests, see our [VasSonic Contributing Guide](https://github.com/Tencent/VasSonic/blob/master/CONTRIBUTING.md).
+
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 

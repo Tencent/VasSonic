@@ -330,14 +330,13 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)session:(SonicSession *)session didRecieveResponse:(NSHTTPURLResponse *)response
 {
-    __weak typeof(self)weakSelf = self;
     dispatch_block_t opBlock = ^{
         
-        weakSelf.response = response;
-        weakSelf.cacheResponseHeaders = response.allHeaderFields;
+        self.response = response;
+        self.cacheResponseHeaders = response.allHeaderFields;
         
-        if (weakSelf.isFirstLoad) {
-            [weakSelf firstLoadRecieveResponse:response];
+        if (self.isFirstLoad) {
+            [self firstLoadRecieveResponse:response];
         }
     };
     dispatchToSonicSessionQueue(opBlock);
@@ -345,21 +344,20 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)session:(SonicSession *)session didLoadData:(NSData *)data
 {
-    __weak typeof(self)weakSelf = self;
     dispatch_block_t opBlock = ^{
         
-        if (!weakSelf.responseData) {
-            weakSelf.responseData = [NSMutableData data];
+        if (!self.responseData) {
+            self.responseData = [NSMutableData data];
         }
         
         if (data) {
             
             NSData *copyData = [data copy];
-            [weakSelf.responseData appendData:data];
+            [self.responseData appendData:data];
             [copyData release];
             
-            if (weakSelf.isFirstLoad) {
-                [weakSelf firstLoadDidLoadData:data];
+            if (self.isFirstLoad) {
+                [self firstLoadDidLoadData:data];
             }
         }
         
@@ -369,23 +367,22 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)session:(SonicSession *)session didFaild:(NSError *)error
 {
-    __weak typeof(self)weakSelf = self;
     dispatch_block_t opBlock = ^{
         
-        weakSelf.error = error;
-        weakSelf.isCompletion = YES;
+        self.error = error;
+        self.isCompletion = YES;
         
-        if (weakSelf.response.statusCode == 304) {
-            if (weakSelf.isFirstLoad) {
-                [weakSelf firstLoadDidFinish];
+        if (self.response.statusCode == 304) {
+            if (self.isFirstLoad) {
+                [self firstLoadDidFinish];
             }else{
-                [weakSelf updateDidSuccess];
+                [self updateDidSuccess];
             }
         }else{
-            if (weakSelf.isFirstLoad) {
-                [weakSelf firstLoadDidFaild:error];
+            if (self.isFirstLoad) {
+                [self firstLoadDidFaild:error];
             }else{
-                [weakSelf updateDidFaild];
+                [self updateDidFaild];
             }
         }
     };
@@ -394,15 +391,14 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)sessionDidFinish:(SonicSession *)session
 {
-    __weak typeof(self)weakSelf = self;
     dispatch_block_t opBlock = ^{
         
-        weakSelf.isCompletion = YES;
+        self.isCompletion = YES;
         
-        if (weakSelf.isFirstLoad) {
-            [weakSelf firstLoadDidFinish];
+        if (self.isFirstLoad) {
+            [self firstLoadDidFinish];
         }else{
-            [weakSelf updateDidSuccess];
+            [self updateDidSuccess];
         }
         
     };
@@ -525,26 +521,24 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)preloadRequestActionsWithProtocolCallBack:(SonicURLProtocolCallBack)protocolCallBack
 {
-    __weak typeof(self)weakSelf = self;
-    
     dispatch_block_t opBlock = ^{
         
-        weakSelf.protocolCallBack = protocolCallBack;
+        self.protocolCallBack = protocolCallBack;
 
-        if (weakSelf.isDataUpdated || !weakSelf.isFirstLoad) {
+        if (self.isDataUpdated || !self.isFirstLoad) {
             
             if (protocolCallBack) {
-                [weakSelf dispatchProtocolActions:[weakSelf cacheFileActions]];
+                [self dispatchProtocolActions:[self cacheFileActions]];
             }
             
-            if (weakSelf.isDataUpdated) {
-                weakSelf.sonicStatusFinalCode = SonicStatusCodeAllCached;
+            if (self.isDataUpdated) {
+                self.sonicStatusFinalCode = SonicStatusCodeAllCached;
             }
             
         }else{
             
-            if (weakSelf.isFirstLoad) {
-                [weakSelf dispatchProtocolActions:[weakSelf preloadRequestActions]];
+            if (self.isFirstLoad) {
+                [self dispatchProtocolActions:[self preloadRequestActions]];
             }
         }
         
@@ -613,12 +607,11 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)getResultWithCallBack:(SonicWebviewCallBack)resultBlock
 {
-    __weak typeof(self)weakSelf = self;
     dispatch_block_t opBlock = ^{
         
-        weakSelf.webviewCallBack = resultBlock;
+        self.webviewCallBack = resultBlock;
         
-        NSDictionary *resultDict = [weakSelf sonicDiffResult];
+        NSDictionary *resultDict = [self sonicDiffResult];
         if (resultDict && resultBlock) {
             resultBlock(resultDict);
         }

@@ -20,7 +20,7 @@ if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
 }
 ```
 
-## How to use for font-end
+## How to use for front-end
 Here is a simple demo shows how to use Sonic for front-end.
 ```Html
 <html>

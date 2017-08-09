@@ -61,9 +61,7 @@
  */
 - (void)loadView
 {
-    [super loadView];
-    
-    self.webView = [[UIWebView alloc]initWithFrame:self.view.bounds];
+    self.webView = [[UIWebView alloc]initWithFrame:CGRectZero];
     self.webView.delegate = self;
     self.view = self.webView;
     
@@ -114,3 +112,5 @@
 [[SonicClient sharedClient] removeSessionWithWebDelegate:self];
 }
 ```
+
+

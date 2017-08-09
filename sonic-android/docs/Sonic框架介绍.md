@@ -27,7 +27,7 @@ SonicCacheInterceptor：sonic缓存数据的提供者，第三方可以提供自
 
 SonicSessionConnection：sonic底层连接的提供者，通过SonicSessionConnection去获取服务器的回包数据。
 
-SonicSessionStream：为sonic提供数据流，SonicSessionStream会将已读取的网络数据和为读取的网络数据组合成一个桥接流，将这个桥接的数据提供给webview内核进行渲染。利用webview流式加载功能减少耗时。
+SonicSessionStream：为sonic提供数据流，SonicSessionStream会将已读取的网络数据和未读取的网络数据组合成一个桥接流，将这个桥接的数据提供给webview内核进行渲染。利用webview流式加载功能减少耗时。
 
 SonicUtils：sonic工具类，主要负责sonic数据的模版分割，数据重组，diffdata计算等
 

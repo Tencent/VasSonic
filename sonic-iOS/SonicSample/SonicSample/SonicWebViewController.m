@@ -81,6 +81,12 @@
     return YES;
 }
 
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
+    self.jscontext = [self.webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
+    self.jscontext[@"sonic"] = self.sonicContext;
+}
+
 #pragma mark - Sonic Session Delegate
 
 - (void)sessionWillRequest:(SonicSession *)session

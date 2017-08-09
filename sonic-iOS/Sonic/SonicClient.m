@@ -167,15 +167,15 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
 {
-    [self.lock lock];
-    
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
     }
     
+    [self.lock lock];
     SonicSession *existSession = self.tasks[sonicSessionID(url)];
     if (existSession && existSession.delegate != nil) {
         //session can only owned by one delegate
+        [self.lock unlock];
         return;
     }
     

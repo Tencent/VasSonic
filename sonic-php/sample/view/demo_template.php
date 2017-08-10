@@ -139,7 +139,14 @@
             $('.sonic_des').css('display', 'none');
             $('#des'+sonicStatus).css('display', 'block');
             //耗时分析(上报)
-            var performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime
+            var performanceJson;
+            if (window.sonic && window.sonic.getPerformance) {
+                performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime
+            } else if (window.performance && window.performance.timing) {
+                performanceJson = {clickTime: window.performance.timing.navigationStart, loadUrlTime: window.performance.timing.fetchStart};
+            } else {
+                performanceJson = {clickTime: 0, loadUrlTime: 0};
+            }
             var pageTime = _pageTime.jsendtTime - performanceJson.clickTime;
             $("#pageTime"+sonicStatus).text(pageTime+'ms');
         }

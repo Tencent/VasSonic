@@ -19,7 +19,7 @@ npm install sonic_differ --save
 3）import **sonic_differ** module
 
 ```Node.js
-const sonic_differ = require('sonic_differ');
+const differ = require('sonic_differ');
 ```
 
 ### Intercept and process data from server in Sonic mode.
@@ -217,7 +217,7 @@ npm install sonic_differ --save
 3）后端代码中引用`sonic_differ`模块
 
 ```Node.js
-const sonic_differ = require('sonic_differ');
+const differ = require('sonic_differ');
 ```
 
 ### Sonic模式中，需要对数据进行拦截与加工处理
@@ -238,7 +238,7 @@ let sonic = {
 };
 ```
 
-2）第二步, 拦截服务端的数据，用`sonic_differ`模块对数据进行处理，这里大家理解之后可以根据自己的后端改造，本质就是直出的内容用`sonic_differ`模块进行一次二次加工，再输出给前端		
+2）第二步，拦截服务端的数据，用`sonic_differ`模块对数据进行处理，这里大家理解之后可以根据自己的后端改造，本质就是直出的内容用`sonic_differ`模块进行一次二次加工，再输出给前端		
  	
  ```Node.js		
  response.on('data', (chunk, encoding) => {		

@@ -237,3 +237,22 @@ let sonic = {
     }
 };
 ```
+
+2）第二步, 拦截服务端的数据，用`sonic_differ`模块对数据进行处理，这里大家理解之后可以根据自己的后端改造，本质就是直出的内容用`sonic_differ`模块进行一次二次加工，再输出给前端		
+ 	
+ ```Node.js		
+ response.on('data', (chunk, encoding) => {		
+     sonic.write(chunk, encoding)		
+ });		
+ response.on('end', () => {		
+     let result = differ(ctx, Buffer.concat(sonic.buffer));		
+     sonic.buffer = [];		
+     if (result.cache) {		
+         //304 Not Modified, return nothing.		
+         return ''		
+     } else {		
+         //other Sonic status.		
+         return result.data		
+     }		
+ });		
+ ```

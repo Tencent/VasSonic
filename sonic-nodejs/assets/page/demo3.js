@@ -136,7 +136,14 @@ if(data.templateFlag){;_p('    <h2>页面打开速度效果对比</h2>\r\n\
             $(\'.sonic_des\').css(\'display\', \'none\');\r\n\
             $(\'#des\'+sonicStatus).css(\'display\', \'block\');\r\n\
             //耗时分析(上报)\r\n\
-            var performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime\r\n\
+            var performanceJson;\r\n\
+            if (window.sonic && window.sonic.getPerformance) {\r\n\
+                performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime\r\n\
+            } else if (window.performance && window.performance.timing) {\r\n\
+                performanceJson = {clickTime: window.performance.timing.navigationStart, loadUrlTime: window.performance.timing.fetchStart};\r\n\
+            } else {\r\n\
+                performanceJson = {clickTime: 0, loadUrlTime: 0};\r\n\
+            }\r\n\
             var pageTime = _pageTime.jsendtTime - performanceJson.clickTime;\r\n\
             $("#pageTime"+sonicStatus).text(pageTime+\'ms\');\r\n\
         }');

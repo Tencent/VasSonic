@@ -92,9 +92,9 @@ Here is a simple demo shows how to use Sonic for front-end.
     
     // step 2: Receives diff data from mobile client through Javascript interface.
     <script type="text/javascript">
-         window.function(){
-                getDiffData();
-    }
+        window.onload = function(){
+            getDiffData();
+        }
     </script>
 </body>
 </html>
@@ -120,9 +120,9 @@ Specify template and data by inserting different comment anchor. The data will b
 Receives diff data from mobile client through JavaScript interface. The JavaScript interface of demo was involved when websites are finish. But the time when inferface was involved is not immutable, websites can decide whenever they want.
 ```Html
 <script type="text/javascript">
-     window.function(){
-            getDiffData();
-}
+    window.onload = function(){
+        getDiffData();
+    }
 </script>
 ```
 

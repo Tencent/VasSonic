@@ -181,11 +181,11 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-## 技术支持
-遇到其他问题，可以：
+ ## Support
+Any problem?
 
-1. 通过demo来理解 [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs)。
-2. 联系我们。
+1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs).
+2. Contact us for help.
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.

@@ -443,7 +443,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
                 if ([policy isEqualToString:SonicHeaderValueCacheOfflineDisable]) {
                     
-                    [[SonicCache shareCache] saveServerDisabeSonicTimeNow:self.sessionID];
+                    [[SonicCache shareCache] saveServerDisableSonicTimeNow:self.sessionID];
                     
                     self.isDataUpdated = YES;
                     
@@ -701,7 +701,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
                 }
                 
                 if ([policy isEqualToString:SonicHeaderValueCacheOfflineDisable]) {
-                    [[SonicCache shareCache] saveServerDisabeSonicTimeNow:self.sessionID];
+                    [[SonicCache shareCache] saveServerDisableSonicTimeNow:self.sessionID];
                 }
             }
             

@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -37,7 +38,7 @@ import com.tencent.sonic.sdk.SonicSessionConfig;
 
 
 /**
- *  main activity of this sample
+ * main activity of this sample
  */
 public class MainActivity extends Activity {
 
@@ -115,26 +116,27 @@ public class MainActivity extends Activity {
         } else {
             requestPermission();
         }
-
+        final ListAdapter listAdapter = new ListAdapter(MainActivity.this);
         FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.btn_fab);
         btnFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                clickedFab();
+                clickedFab(listAdapter);
             }
         });
+        DEMO_URL = listAdapter.getCheckedUrl();
     }
 
-    private void clickedFab() {
-        View convertView = getLayoutInflater().inflate(R.layout.dialog, null);
+    private void clickedFab(final ListAdapter listAdapter) {
+        final View convertView = getLayoutInflater().inflate(R.layout.dialog, null);
         ListView listView = (ListView) convertView.findViewById(R.id.listView);
-        final ListAdapter listAdapter = new ListAdapter(MainActivity.this);
         listView.setAdapter(listAdapter);
         Button btnAddItem = (Button) convertView.findViewById(R.id.btn_add_item);
         btnAddItem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                listAdapter.addNewItem();
+                EditText textNewUrl = (EditText) convertView.findViewById(R.id.text_new_url);
+                listAdapter.addNewItem(textNewUrl.getText().toString());
             }
         });
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -144,8 +146,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 listAdapter.persist();
-                String url = listAdapter.getCheckedUrl();
-                DEMO_URL = url == null ? DEFAULT_URL : url;
+                DEMO_URL = listAdapter.getCheckedUrl();
                 Toast.makeText(MainActivity.this, DEMO_URL, Toast.LENGTH_LONG).show();
             }
         });
@@ -178,7 +179,7 @@ public class MainActivity extends Activity {
 
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE_STORAGE);
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE_STORAGE);
         }
     }
 

@@ -11,11 +11,22 @@
         android:layout_weight="1"
         android:choiceMode="singleChoice"></ListView>
 
-    <Button
-        android:id="@+id/btn_add_item"
-        style="@style/SonicButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/add_item" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/text_new_url"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btn_add_item"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="添加" />
+    </LinearLayout>
 
 </LinearLayout>

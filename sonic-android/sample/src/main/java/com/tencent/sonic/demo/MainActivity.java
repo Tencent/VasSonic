@@ -15,28 +15,25 @@ package com.tencent.sonic.demo;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
+import android.support.design.widget.FloatingActionButton;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.tencent.sonic.R;
 import com.tencent.sonic.sdk.SonicConfig;
 import com.tencent.sonic.sdk.SonicEngine;
 import com.tencent.sonic.sdk.SonicSessionConfig;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 
 /**
@@ -52,7 +49,8 @@ public class MainActivity extends Activity {
 
     private static final int PERMISSION_REQUEST_CODE_STORAGE = 1;
 
-    private static final String DEMO_URL = "http://mc.vip.qq.com/demo/indexv3";
+    private static final String DEFAULT_URL = "http://mc.vip.qq.com/demo/indexv3";
+    private String DEMO_URL = DEFAULT_URL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +115,50 @@ public class MainActivity extends Activity {
         } else {
             requestPermission();
         }
+
+        FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.btn_fab);
+        btnFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clickedFab();
+            }
+        });
+    }
+
+    private void clickedFab() {
+        View convertView = getLayoutInflater().inflate(R.layout.dialog, null);
+        ListView listView = (ListView) convertView.findViewById(R.id.listView);
+        final ListAdapter listAdapter = new ListAdapter(MainActivity.this);
+        listView.setAdapter(listAdapter);
+        Button btnAddItem = (Button) convertView.findViewById(R.id.btn_add_item);
+        btnAddItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                listAdapter.addNewItem();
+            }
+        });
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle(R.string.set_custom_url);
+        builder.setView(convertView);
+        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                listAdapter.persist();
+                String url = listAdapter.getCheckedUrl();
+                DEMO_URL = url == null ? DEFAULT_URL : url;
+                Toast.makeText(MainActivity.this, DEMO_URL, Toast.LENGTH_LONG).show();
+            }
+        });
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+        alertDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+        alertDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     }
 
     private void init() {

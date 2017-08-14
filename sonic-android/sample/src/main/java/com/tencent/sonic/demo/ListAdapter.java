@@ -2,16 +2,14 @@ package com.tencent.sonic.demo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.TextView;
 
 import com.tencent.sonic.R;
 
@@ -36,20 +34,23 @@ public class ListAdapter extends BaseAdapter {
         sharedPreferences = context.getSharedPreferences("list_adapter", 0);
         try {
             urls = (ArrayList<String>) ObjectSerializer.deserialize(sharedPreferences.getString(PREFERENCE_URLS, ObjectSerializer.serialize(new ArrayList<String>())));
+            if(urls.isEmpty()){
+                urls.add("http://mc.vip.qq.com/demo/indexv3");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, -1);
+        checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, 0);
     }
 
-    public String getCheckedUrl() {
+    String getCheckedUrl() {
         return (checkedIndex >= 0 && checkedIndex < urls.size()) ? urls.get(checkedIndex) : null;
     }
 
-    public void addNewItem() {
-        urls.add("");
+    void addNewItem(String url) {
+        urls.add(url);
         notifyDataSetChanged();
     }
 
@@ -70,34 +71,24 @@ public class ListAdapter extends BaseAdapter {
 
     @Override
     public View getView(final int i, View view, ViewGroup viewGroup) {
-        // here we won't use ViewHolder.
-        // because the conflicts between RadioButtons and TextWatcher.
-        view = mInflater.inflate(R.layout.list_item, null);
-        EditText textUrl = (EditText) view.findViewById(R.id.text_url);
-        RadioButton radioButton = (RadioButton) view.findViewById(R.id.radio);
-        Button btnDelete = (Button) view.findViewById(R.id.btn_delete);
-        textUrl.setText(urls.get(i));
-        textUrl.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                urls.set(i, editable.toString());
-            }
-        });
-        btnDelete.setOnClickListener(new View.OnClickListener() {
+        ViewHolder holder;
+        if(view==null){
+            holder=new ViewHolder();
+            view=mInflater.inflate(R.layout.list_item, null);
+            holder.radioButton=(RadioButton)view.findViewById(R.id.radio);
+            holder.textUrl=(TextView)view.findViewById(R.id.text_url);
+            holder.btnDelete=(Button)view.findViewById(R.id.btn_delete);
+            view.setTag(holder);
+        }else{
+            holder=(ViewHolder) view.getTag();
+        }
+        holder.btnDelete.setVisibility(i==0?View.GONE:View.VISIBLE);
+        holder.textUrl.setText(urls.get(i));
+        holder.btnDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (i == checkedIndex) {
-                    checkedIndex = -1;
+                    checkedIndex = 0;
                 }
                 urls.remove(i);
                 notifyDataSetChanged();
@@ -110,15 +101,16 @@ public class ListAdapter extends BaseAdapter {
                     checkedIndex = i;
                     notifyDataSetChanged();
                 }
+                System.out.println("checked changed");
             }
         };
-        radioButton.setOnCheckedChangeListener(null);
-        radioButton.setChecked(checkedIndex == i);
-        radioButton.setOnCheckedChangeListener(listener);
+        holder.radioButton.setOnCheckedChangeListener(null);
+        holder.radioButton.setChecked(checkedIndex == i);
+        holder.radioButton.setOnCheckedChangeListener(listener);
         return view;
     }
 
-    public void persist() {
+    void persist() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         try {
             editor.putString(PREFERENCE_URLS, ObjectSerializer.serialize(urls));
@@ -127,5 +119,10 @@ public class ListAdapter extends BaseAdapter {
         }
         editor.putInt(PREFERENCE_CHECKED_INDEX, checkedIndex);
         editor.apply();
+    }
+    private class ViewHolder{
+        RadioButton radioButton;
+        TextView textUrl;
+        Button btnDelete;
     }
 }

@@ -18,11 +18,18 @@ module.exports = function (ctx, buffer) {
 
 	console.info(`请求头etag = ${etag}`);
 	console.info(`页面md5 = ${md5}`);
+
+	//sonicMode含义
+	// 0-非sonic（没有sonicdiff标签）
+	// 1-首次加载（本地无模板和数据）
+	// 2-页面刷新（模板有变）
+	// 3-局部数据刷新（模板不变，数据有变）
+	// 4-完成缓存304（模板不变，数据不变）
 	if (etag && md5 == etag) {
 		ctx.set('Cache-Offline', 'store');
 		ctx.set('Content-Length', 0);
 		ctx.status = 304;
-		ctx.sonicMode = 0;
+		ctx.sonicMode = 4;
 		return {
 			cache: true
 		}
@@ -87,7 +94,7 @@ module.exports = function (ctx, buffer) {
 
 				console.info(`数据更新耗时${Date.now() - now}`);
 
-				ctx.sonicMode = 2;
+				ctx.sonicMode = 3;
 
 				return {
 					data: new Buffer(JSON.stringify(result))
@@ -96,7 +103,7 @@ module.exports = function (ctx, buffer) {
 			} else {
 				ctx.set('template-change', 'true');
 
-				ctx.sonicMode = templateTag ? 3 : 1;
+				ctx.sonicMode = templateTag ? 2 : 1;
 
 				console.info(`模版更新耗时${Date.now() - now}`);
 
@@ -113,11 +120,11 @@ module.exports = function (ctx, buffer) {
 				"template-tag": templateMd5
 			};
 
-			ctx.sonicMode = 4;
+			ctx.sonicMode = 0;
 
 			return {
 				data: new Buffer(JSON.stringify(result))
 			}
 		}
 	}
-};  
+};

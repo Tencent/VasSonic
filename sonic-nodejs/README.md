@@ -19,7 +19,7 @@ npm install sonic_differ --save
 3）import **sonic_differ** module
 
 ```Node.js
-const sonic_differ = require('sonic_differ');
+const differ = require('sonic_differ');
 ```
 
 ### Intercept and process data from server in Sonic mode.
@@ -135,9 +135,9 @@ Here is a simple demo shows how to use Sonic for front-end.
     
     // step 2: Receives diff data from mobile client through Javascript interface.
     <script type="text/javascript">
-         window.function(){
-                getDiffData();
-    }
+        window.onload = function(){
+            getDiffData();
+        }
     </script>
 </body>
 </html>
@@ -164,9 +164,9 @@ Specify template and data by inserting different comment anchor. The data will b
 Receives diff data from mobile client through JavaScript interface. The JavaScript interface of demo was involved when websites are finish. But the time when inferface was involved is not immutable, websites can decide whenever they want.
 ```Html
 <script type="text/javascript">
-     window.function(){
-            getDiffData();
-}
+     window.onload = function(){
+         getDiffData();
+     }
 </script>
 ```
 
@@ -181,7 +181,7 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-## Support
+ ## Support
 Any problem?
 
 1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs).
@@ -192,5 +192,3 @@ VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/
 
 [1]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120005424.gif
 [2]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120029897.gif
-
-

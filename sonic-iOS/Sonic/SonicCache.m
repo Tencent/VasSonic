@@ -198,7 +198,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
 }
 
-- (void)saveServerDisabeSonicTimeNow:(NSString *)sessionID
+- (void)saveServerDisableSonicTimeNow:(NSString *)sessionID
 {
     [self removeCacheBySessionID:sessionID];
     
@@ -519,11 +519,18 @@ void dealInFileQueue(dispatch_block_t block)
 
 - (BOOL)isAllCacheExist:(NSString *)sessionID
 {
-    BOOL isExist = [self checkCacheTypeExist:SonicCacheTypeConfig sessionID:sessionID];
-    isExist = [self checkCacheTypeExist:SonicCacheTypeHtml sessionID:sessionID];
-    isExist = [self checkCacheTypeExist:SonicCacheTypeTemplate sessionID:sessionID];
-    isExist = [self checkCacheTypeExist:SonicCacheTypeData sessionID:sessionID];
-    return isExist;
+    NSUInteger checkList[4] = {
+        SonicCacheTypeConfig,
+        SonicCacheTypeHtml,
+        SonicCacheTypeTemplate,
+        SonicCacheTypeData
+    };
+    
+    for (int i=0; i<4; i++) {
+        if (![self checkCacheTypeExist:checkList[i] sessionID:sessionID]) { return NO; }
+    }
+    
+    return YES;
 }
 
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID

@@ -2,7 +2,18 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     android:orientation="vertical">
+
+    <Button
+        android:id="@+id/btn_edit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:background="@null"
+        android:tag="normal"
+        android:text="编辑"
+        android:textColor="@color/colorAccent" />
 
     <ListView
         android:id="@+id/listView"
@@ -12,21 +23,28 @@
         android:choiceMode="singleChoice"></ListView>
 
     <LinearLayout
+        android:id="@+id/add_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:visibility="gone">
 
         <EditText
             android:id="@+id/text_new_url"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="http://" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btn_add_item"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="添加" />
+            android:background="@null"
+            android:src="@drawable/ic_add_circle_black_24dp"
+            android:tint="@color/image_button_selector" />
     </LinearLayout>
 
 </LinearLayout>

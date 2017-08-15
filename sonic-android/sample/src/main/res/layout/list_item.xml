@@ -2,12 +2,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:animateLayoutChanges="true"
+    android:animationCache="false"
+    android:orientation="horizontal"
+    android:padding="10dp">
 
     <RadioButton
         android:id="@+id/radio"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
         android:gravity="center_vertical" />
 
     <TextView
@@ -15,13 +20,16 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
         android:gravity="center_vertical" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btn_delete"
-        style="@style/SonicButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="2dp"
-        android:text="@string/delete" />
+        android:background="@null"
+        android:src="@drawable/ic_remove_circle_black_24dp"
+        android:tint="@color/button_selector"
+        android:visibility="gone" />
 </LinearLayout>

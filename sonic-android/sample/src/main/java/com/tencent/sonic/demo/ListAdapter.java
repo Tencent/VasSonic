@@ -6,8 +6,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
@@ -23,18 +23,26 @@ import java.util.ArrayList;
 public class ListAdapter extends BaseAdapter {
     public static final String PREFERENCE_URLS = "urls";
     public static final String PREFERENCE_CHECKED_INDEX = "checked_index";
+
+    public static final int MODE_NORMAL = 1;
+    public static final int MODE_EDIT = 2;
     private ArrayList<String> urls;
     private LayoutInflater mInflater;
     private int checkedIndex;
+    private int mode = MODE_NORMAL;
 
     SharedPreferences sharedPreferences;
 
     public ListAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
         sharedPreferences = context.getSharedPreferences("list_adapter", 0);
+        init();
+    }
+
+    void init() {
         try {
             urls = (ArrayList<String>) ObjectSerializer.deserialize(sharedPreferences.getString(PREFERENCE_URLS, ObjectSerializer.serialize(new ArrayList<String>())));
-            if(urls.isEmpty()){
+            if (urls.isEmpty()) {
                 urls.add("http://mc.vip.qq.com/demo/indexv3");
             }
         } catch (IOException e) {
@@ -43,6 +51,8 @@ public class ListAdapter extends BaseAdapter {
             e.printStackTrace();
         }
         checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, 0);
+
+        toggleNormalMode();
     }
 
     String getCheckedUrl() {
@@ -52,6 +62,22 @@ public class ListAdapter extends BaseAdapter {
     void addNewItem(String url) {
         urls.add(url);
         notifyDataSetChanged();
+    }
+
+    void toggleNormalMode() {
+        mode = MODE_NORMAL;
+        notifyDataSetChanged();
+    }
+
+    void toggleEditMode() {
+        mode = MODE_EDIT;
+        notifyDataSetChanged();
+    }
+
+    void setChecked(int index) {
+        checkedIndex = index;
+        notifyDataSetChanged();
+        System.out.println("checked changed");
     }
 
     @Override
@@ -72,17 +98,25 @@ public class ListAdapter extends BaseAdapter {
     @Override
     public View getView(final int i, View view, ViewGroup viewGroup) {
         ViewHolder holder;
-        if(view==null){
-            holder=new ViewHolder();
-            view=mInflater.inflate(R.layout.list_item, null);
-            holder.radioButton=(RadioButton)view.findViewById(R.id.radio);
-            holder.textUrl=(TextView)view.findViewById(R.id.text_url);
-            holder.btnDelete=(Button)view.findViewById(R.id.btn_delete);
+        if (view == null) {
+            holder = new ViewHolder();
+            view = mInflater.inflate(R.layout.list_item, null);
+            holder.radioButton = (RadioButton) view.findViewById(R.id.radio);
+            holder.textUrl = (TextView) view.findViewById(R.id.text_url);
+            holder.btnDelete = (ImageButton) view.findViewById(R.id.btn_delete);
             view.setTag(holder);
-        }else{
-            holder=(ViewHolder) view.getTag();
+        } else {
+            holder = (ViewHolder) view.getTag();
         }
-        holder.btnDelete.setVisibility(i==0?View.GONE:View.VISIBLE);
+
+//        holder.btnDelete.setVisibility(mode == MODE_EDIT ? View.VISIBLE : View.GONE);
+        if (mode == MODE_EDIT && i == 0) {
+            holder.btnDelete.setVisibility(View.INVISIBLE);
+        } else {
+            holder.btnDelete.setVisibility(mode == MODE_EDIT ? View.VISIBLE : View.INVISIBLE);
+        }
+
+        holder.radioButton.setVisibility(mode == MODE_EDIT ? View.GONE : View.VISIBLE);
         holder.textUrl.setText(urls.get(i));
         holder.btnDelete.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -120,9 +154,10 @@ public class ListAdapter extends BaseAdapter {
         editor.putInt(PREFERENCE_CHECKED_INDEX, checkedIndex);
         editor.apply();
     }
-    private class ViewHolder{
+
+    private class ViewHolder {
         RadioButton radioButton;
         TextView textUrl;
-        Button btnDelete;
+        ImageButton btnDelete;
     }
 }

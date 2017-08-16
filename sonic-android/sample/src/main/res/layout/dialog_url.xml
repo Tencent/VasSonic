@@ -11,8 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:background="@null"
-        android:tag="normal"
-        android:text="编辑"
+        android:text="@string/edit"
         android:textColor="@color/colorAccent" />
 
     <ListView
@@ -20,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:choiceMode="singleChoice"></ListView>
+        android:choiceMode="singleChoice" />
 
     <LinearLayout
         android:id="@+id/add_item"
@@ -36,7 +35,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="http://" />
+            android:text="@string/http_prefix" />
 
         <ImageButton
             android:id="@+id/btn_add_item"

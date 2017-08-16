@@ -15,25 +15,16 @@ package com.tencent.sonic.demo;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Patterns;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.tencent.sonic.R;
@@ -55,8 +46,7 @@ public class MainActivity extends Activity {
 
     private static final int PERMISSION_REQUEST_CODE_STORAGE = 1;
 
-    private static final String DEFAULT_URL = "http://mc.vip.qq.com/demo/indexv3";
-    private String DEMO_URL = DEFAULT_URL;
+    private String DEMO_URL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,107 +112,23 @@ public class MainActivity extends Activity {
         } else {
             requestPermission();
         }
-        final ListAdapter listAdapter = new ListAdapter(MainActivity.this);
+
+        final UrlListAdapter urlListAdapter = new UrlListAdapter(MainActivity.this);
+
         FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.btn_fab);
         btnFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                clickedFab(listAdapter);
-            }
-        });
-        DEMO_URL = listAdapter.getCheckedUrl();
-    }
-
-    private void clickedFab(final ListAdapter listAdapter) {
-        listAdapter.init();
-        final View convertView = getLayoutInflater().inflate(R.layout.dialog, null);
-        final Button btnEdit = (Button) convertView.findViewById(R.id.btn_edit);
-        final View viewAddItem = convertView.findViewById(R.id.add_item);
-
-        ListView listView = (ListView) convertView.findViewById(R.id.listView);
-        listView.setAdapter(listAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                System.out.println("clicked");
-                listAdapter.setChecked(i);
-            }
-        });
-        final ImageButton btnAddItem = (ImageButton) convertView.findViewById(R.id.btn_add_item);
-        btnAddItem.setActivated(false);
-        final EditText textNewUrl = (EditText) convertView.findViewById(R.id.text_new_url);
-        textNewUrl.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                btnAddItem.setActivated(Patterns.WEB_URL.matcher(s.toString()).matches());
-
-            }
-        });
-        btnAddItem.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (btnAddItem.isActivated()) {
-                    listAdapter.addNewItem(textNewUrl.getText().toString());
-                    textNewUrl.setText("http://");
-                    textNewUrl.setSelection(textNewUrl.getText().length());
-                } else {
-                    Toast.makeText(MainActivity.this, "不合法的URL", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle(R.string.set_custom_url);
-        builder.setCancelable(false);
-        builder.setView(convertView);
-
-        builder.setPositiveButton("关闭", null);
-        final AlertDialog alertDialog = builder.create();
-
-        btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Button okButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                btnEdit.setVisibility(View.INVISIBLE);
-                listAdapter.toggleEditMode();
-                viewAddItem.setVisibility(View.VISIBLE);
-                okButton.setText("完成");
-            }
-        });
-        alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(final DialogInterface dialog) {
-                final Button okButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
-                okButton.setOnClickListener(new View.OnClickListener() {
+                UrlSelector.launch(MainActivity.this, urlListAdapter, new UrlSelector.OnUrlChangedListener() {
                     @Override
-                    public void onClick(View v) {
-                        if (okButton.getText().equals("完成")) {
-                            listAdapter.toggleNormalMode();
-                            viewAddItem.setVisibility(View.GONE);
-                            btnEdit.setVisibility(View.VISIBLE);
-                            okButton.setText("关闭");
-                        } else if (okButton.getText().equals("关闭")) {
-                            listAdapter.persist();
-                            DEMO_URL = listAdapter.getCheckedUrl();
-                            dialog.dismiss();
-                        }
+                    public void urlChanged(String url) {
+                        DEMO_URL = url;
                     }
                 });
             }
         });
 
-        alertDialog.show();
-        alertDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
-        alertDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        DEMO_URL = urlListAdapter.getCheckedUrl();
     }
 
     private void init() {

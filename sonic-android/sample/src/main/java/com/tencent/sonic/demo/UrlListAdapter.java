@@ -1,3 +1,16 @@
+/*
+ * Tencent is pleased to support the open source community by making VasSonic available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ *
+ *
+ */
+
 package com.tencent.sonic.demo;
 
 import android.content.Context;
@@ -6,7 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -16,43 +28,47 @@ import com.tencent.sonic.R;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * Created by tongzhan on 2017/8/14.
- */
 
-public class ListAdapter extends BaseAdapter {
+public class UrlListAdapter extends BaseAdapter {
     public static final String PREFERENCE_URLS = "urls";
     public static final String PREFERENCE_CHECKED_INDEX = "checked_index";
 
     public static final int MODE_NORMAL = 1;
     public static final int MODE_EDIT = 2;
+
+    private static final String DEFAULT_URL = "http://mc.vip.qq.com/demo/indexv3";
+
     private ArrayList<String> urls;
     private LayoutInflater mInflater;
     private int checkedIndex;
     private int mode = MODE_NORMAL;
 
-    SharedPreferences sharedPreferences;
+    private SharedPreferences sharedPreferences;
 
-    public ListAdapter(Context context) {
+    public UrlListAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
         sharedPreferences = context.getSharedPreferences("list_adapter", 0);
         init();
     }
 
     void init() {
+        restore();
+        toggleNormalMode();
+    }
+
+    private void restore() {
         try {
             urls = (ArrayList<String>) ObjectSerializer.deserialize(sharedPreferences.getString(PREFERENCE_URLS, ObjectSerializer.serialize(new ArrayList<String>())));
             if (urls.isEmpty()) {
-                urls.add("http://mc.vip.qq.com/demo/indexv3");
+                urls.add(DEFAULT_URL);
             }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, 0);
 
-        toggleNormalMode();
+        checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, 0);
     }
 
     String getCheckedUrl() {
@@ -75,9 +91,10 @@ public class ListAdapter extends BaseAdapter {
     }
 
     void setChecked(int index) {
-        checkedIndex = index;
-        notifyDataSetChanged();
-        System.out.println("checked changed");
+        if (mode == MODE_NORMAL) {
+            checkedIndex = index;
+            notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -86,62 +103,56 @@ public class ListAdapter extends BaseAdapter {
     }
 
     @Override
-    public Object getItem(int i) {
+    public Object getItem(int position) {
         return null;
     }
 
     @Override
-    public long getItemId(int i) {
+    public long getItemId(int position) {
         return 0;
     }
 
     @Override
-    public View getView(final int i, View view, ViewGroup viewGroup) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
-        if (view == null) {
+        if (convertView == null) {
             holder = new ViewHolder();
-            view = mInflater.inflate(R.layout.list_item, null);
-            holder.radioButton = (RadioButton) view.findViewById(R.id.radio);
-            holder.textUrl = (TextView) view.findViewById(R.id.text_url);
-            holder.btnDelete = (ImageButton) view.findViewById(R.id.btn_delete);
-            view.setTag(holder);
+            convertView = mInflater.inflate(R.layout.list_item_url, null);
+            holder.radioButton = (RadioButton) convertView.findViewById(R.id.radio);
+            holder.textUrl = (TextView) convertView.findViewById(R.id.text_url);
+            holder.btnDelete = (ImageButton) convertView.findViewById(R.id.btn_delete);
+            convertView.setTag(holder);
         } else {
-            holder = (ViewHolder) view.getTag();
+            holder = (ViewHolder) convertView.getTag();
         }
 
-//        holder.btnDelete.setVisibility(mode == MODE_EDIT ? View.VISIBLE : View.GONE);
-        if (mode == MODE_EDIT && i == 0) {
+        if (mode == MODE_EDIT && position == 0) {
             holder.btnDelete.setVisibility(View.INVISIBLE);
         } else {
             holder.btnDelete.setVisibility(mode == MODE_EDIT ? View.VISIBLE : View.INVISIBLE);
         }
 
-        holder.radioButton.setVisibility(mode == MODE_EDIT ? View.GONE : View.VISIBLE);
-        holder.textUrl.setText(urls.get(i));
+        if (mode == MODE_EDIT) {
+            holder.radioButton.setVisibility(View.GONE);
+        } else {
+            holder.radioButton.setChecked(checkedIndex == position);
+            holder.radioButton.setVisibility(View.VISIBLE);
+        }
+
+        holder.textUrl.setText(urls.get(position));
+
         holder.btnDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (i == checkedIndex) {
+                if (position == checkedIndex) {
                     checkedIndex = 0;
                 }
-                urls.remove(i);
+                urls.remove(position);
                 notifyDataSetChanged();
             }
         });
-        CompoundButton.OnCheckedChangeListener listener = new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b) {
-                    checkedIndex = i;
-                    notifyDataSetChanged();
-                }
-                System.out.println("checked changed");
-            }
-        };
-        holder.radioButton.setOnCheckedChangeListener(null);
-        holder.radioButton.setChecked(checkedIndex == i);
-        holder.radioButton.setOnCheckedChangeListener(listener);
-        return view;
+
+        return convertView;
     }
 
     void persist() {

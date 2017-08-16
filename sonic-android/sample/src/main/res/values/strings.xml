@@ -7,8 +7,9 @@
     <string name="reset_clear">Clean Up Cache</string>
     <string name="tencent_vas_team">腾讯增值技术团队出品</string>
     <string name="set_custom_url">设置自定义URL</string>
-    <string name="ok">确定</string>
-    <string name="cancel">取消</string>
-    <string name="add_item">添加条目</string>
-    <string name="delete">删除</string>
+    <string name="close">关闭</string>
+    <string name="http_prefix">http://</string>
+    <string name="finish">完成</string>
+    <string name="illegal_url">不合法的URL</string>
+    <string name="edit">编辑</string>
 </resources>

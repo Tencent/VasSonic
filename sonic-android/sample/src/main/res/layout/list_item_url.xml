@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:animateLayoutChanges="true"
-    android:animationCache="false"
+    android:descendantFocusability="blocksDescendants"
     android:orientation="horizontal"
     android:padding="10dp">
 
@@ -11,6 +11,7 @@
         android:id="@+id/radio"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:clickable="false"
         android:focusable="false"
         android:focusableInTouchMode="false"
         android:gravity="center_vertical" />
@@ -29,6 +30,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@null"
-        android:src="@drawable/ic_remove_circle_selector"
-        android:visibility="gone" />
+        android:src="@drawable/ic_remove_circle_accent_24dp"
+        android:visibility="invisible" />
 </LinearLayout>

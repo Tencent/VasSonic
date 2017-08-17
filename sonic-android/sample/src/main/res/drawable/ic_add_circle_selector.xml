@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_add_circle_black_24dp" android:state_activated="false" />
+    <item android:drawable="@drawable/ic_add_circle_accent_24dp" />
+</selector>

@@ -15,6 +15,7 @@ package com.tencent.sonic.demo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,8 +26,8 @@ import android.widget.TextView;
 
 import com.tencent.sonic.R;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class UrlListAdapter extends BaseAdapter {
@@ -57,22 +58,27 @@ public class UrlListAdapter extends BaseAdapter {
     }
 
     private void restore() {
-        try {
-            urls = (ArrayList<String>) ObjectSerializer.deserialize(sharedPreferences.getString(PREFERENCE_URLS, ObjectSerializer.serialize(new ArrayList<String>())));
-            if (urls.isEmpty()) {
-                urls.add(DEFAULT_URL);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        urls = deserialize(sharedPreferences.getString(PREFERENCE_URLS, ""));
+        if (urls.isEmpty()) {
+            urls.add(DEFAULT_URL);
         }
 
         checkedIndex = sharedPreferences.getInt(PREFERENCE_CHECKED_INDEX, 0);
     }
 
+    private String serialize(ArrayList<String> stringArrayList) {
+        return TextUtils.join(";", stringArrayList);
+    }
+
+    private ArrayList<String> deserialize(String serializedString) {
+        if (serializedString.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(Arrays.asList(serializedString.split(";")));
+    }
+
     String getCheckedUrl() {
-        return (checkedIndex >= 0 && checkedIndex < urls.size()) ? urls.get(checkedIndex) : null;
+        return (checkedIndex >= 0 && checkedIndex < urls.size()) ? urls.get(checkedIndex) : DEFAULT_URL;
     }
 
     void addNewItem(String url) {
@@ -157,11 +163,7 @@ public class UrlListAdapter extends BaseAdapter {
 
     void persist() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        try {
-            editor.putString(PREFERENCE_URLS, ObjectSerializer.serialize(urls));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        editor.putString(PREFERENCE_URLS, serialize(urls));
         editor.putInt(PREFERENCE_CHECKED_INDEX, checkedIndex);
         editor.apply();
     }

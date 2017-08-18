@@ -7,8 +7,6 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 
 module.exports = function (ctx, buffer) {
@@ -114,16 +112,12 @@ module.exports = function (ctx, buffer) {
 
 		} else {
 
-			let result = {
-				'template': templateHtml,
-				'html-sha1': md5,
-				"template-tag": templateMd5
-			};
+			ctx.set('template-change', 'true');
 
 			ctx.sonicMode = 0;
 
 			return {
-				data: new Buffer(JSON.stringify(result))
+				data: new Buffer(htmlStr)
 			}
 		}
 	}

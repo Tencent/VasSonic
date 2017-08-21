@@ -141,7 +141,11 @@ static NSLock *sonicRequestClassLock;
     
     [self setupConfigRequestHeaders];
 }
-
+- (void)setServerIP:(NSString *)serverIP {
+    _serverIP = serverIP;
+    //issues:#54 解决serverIP未使用问题
+    [self updateRequestHeaders];
+}
 - (void)dealloc
 {
     if (self.mCustomConnection) {
@@ -282,7 +286,8 @@ static NSLock *sonicRequestClassLock;
     [mCfgDict setObject:userAgent forKey:@"User-Agent"];
 
     NSURL *cUrl = [NSURL URLWithString:self.url];
-
+    //issues:#54 解决serverIP未使用问题
+    //这里不会为true，因为serverIP此时没有赋值
     if (self.serverIP.length > 0) {
         NSString *host = [cUrl.scheme isEqualToString:@"https"]? [NSString stringWithFormat:@"%@:443",self.serverIP]:[NSString stringWithFormat:@"%@:80",self.serverIP];
         NSString *newUrl = [self.url stringByReplacingOccurrencesOfString:cUrl.host withString:host];
@@ -291,6 +296,21 @@ static NSLock *sonicRequestClassLock;
     }
     
     [self.request setAllHTTPHeaderFields:mCfgDict];
+}
+//issues:#54 解决serverIP未使用问题
+- (void)updateRequestHeaders {
+    
+    if (self.serverIP.length > 0) {
+        NSMutableDictionary *mCfgDict = [[self.request allHTTPHeaderFields] mutableCopy];
+        NSURL *cUrl = [NSURL URLWithString:self.url];
+        
+        NSString *host = [cUrl.scheme isEqualToString:@"https"]? [NSString stringWithFormat:@"%@:443",self.serverIP]:[NSString stringWithFormat:@"%@:80",self.serverIP];
+        NSString *newUrl = [self.url stringByReplacingOccurrencesOfString:cUrl.host withString:host];
+        cUrl = [NSURL URLWithString:newUrl];
+        [mCfgDict setObject:cUrl.host forKey:@"Host"];
+        
+        [self.request setAllHTTPHeaderFields:mCfgDict];
+    }
 }
 
 - (NSDictionary *)getRequestParamsFromConfigHeaders

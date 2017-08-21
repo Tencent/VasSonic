@@ -128,10 +128,7 @@ class util_sonic {
         $result['html-sha1'] = $htmlMd5;
 
         $resultStr = '';
-        if(!TemplateReplace::$shotWnsDiffBodyReplace){
-            $result['template'] = $templateHtml;
-            $resultStr = json_encode($result);
-        } else if($templateMd5 === $clientTemplateTag){
+        if($templateMd5 === $clientTemplateTag){
             header('template-change: false');
             //离线模板没有差异，不用更新
             $result['diff'] = '';

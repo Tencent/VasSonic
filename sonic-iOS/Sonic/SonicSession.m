@@ -113,12 +113,13 @@ static NSLock *sonicRequestClassLock;
     return nil;
 }
 
-- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
+- (instancetype)initWithUrl:(NSString *)aUrl withServerIP:(NSString*)serverIP withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
 {
     if (self = [super init]) {
         
         self.delegate = aWebDelegate;
         self.url = aUrl;
+        self.serverIP = serverIP;
         self.request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.url]];
         _sessionID = [sonicSessionID(aUrl) copy];
 

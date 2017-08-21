@@ -28,14 +28,14 @@ if (!function_exists('getallheaders'))  {
     }
 }
 class TemplateReplace{
-    public static $shotWnsDiffBodyReplace = false; //判断是否成功替换sonicdiffbody
+    public static $shotSonicDiffBodyReplace = false; //判断是否成功替换sonicdiffbody
     public static $diffIndex = 0; 
     public static $tagPrefix = 'auto';
     public static $diffTagNames = array(); //数据块
 
     public function callback($matches) {
         if(isset($matches) && isset($matches[0])) {
-            self::$shotWnsDiffBodyReplace = true;
+            self::$shotSonicDiffBodyReplace = true;
             if(isset($matches[1])) {
                 $tagName = $matches[1];
             } else {
@@ -81,14 +81,14 @@ class util_sonic {
                 }
                 header('Etag: '.$md5);
             }
-            $outContent = self::wnsHtmlDiffDivision($outContent);
+            $outContent = self::sonicHtmlDiffDivision($outContent);
             header('Content-Length:'.strlen($outContent));
 
         }
         echo $outContent;
     }
 
-    public static function wnsHtmlDiffDivision($htmlStr){
+    public static function sonicHtmlDiffDivision($htmlStr){
         $htmlMd5 = sha1($htmlStr);
 
         $headers = getallheaders();
@@ -128,10 +128,7 @@ class util_sonic {
         $result['html-sha1'] = $htmlMd5;
 
         $resultStr = '';
-        if(!TemplateReplace::$shotWnsDiffBodyReplace){
-            $result['template'] = $templateHtml;
-            $resultStr = json_encode($result);
-        } else if($templateMd5 === $clientTemplateTag){
+        if($templateMd5 === $clientTemplateTag){
             header('template-change: false');
             //离线模板没有差异，不用更新
             $result['diff'] = '';

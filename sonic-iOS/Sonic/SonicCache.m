@@ -198,7 +198,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
 }
 
-- (void)saveServerDisabeSonicTimeNow:(NSString *)sessionID
+- (void)saveServerDisableSonicTimeNow:(NSString *)sessionID
 {
     [self removeCacheBySessionID:sessionID];
     

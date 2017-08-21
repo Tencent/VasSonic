@@ -181,14 +181,10 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     
     if (!existSession) {
 
+        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
+        
         NSURL *cUrl = [NSURL URLWithString:url];
-        NSString *serverIP = [self.ipDomains objectForKey:cUrl.host]?:@"";
-        existSession = [[SonicSession alloc] initWithUrl:url withServerIP:serverIP withWebDelegate:aWebDelegate];
-//error:existSession.serverIP没使用到
-//        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
-//        
-//        NSURL *cUrl = [NSURL URLWithString:url];
-//        existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];
+        existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];
         
         __weak typeof(self) weakSelf = self;
         __weak typeof(existSession)weakSession = existSession;

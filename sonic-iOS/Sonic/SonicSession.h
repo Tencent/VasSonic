@@ -110,7 +110,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
  * Use an url and webDelegate to create an session
  * The webDelegate can be nil value
  */
-- (instancetype)initWithUrl:(NSString *)aUrl withServerIP:(NSString*)serverIP withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
+- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
 
 /**
  * Add custom headers to request.

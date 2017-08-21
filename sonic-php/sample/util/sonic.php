@@ -28,14 +28,14 @@ if (!function_exists('getallheaders'))  {
     }
 }
 class TemplateReplace{
-    public static $shotSonicDiffBodyReplace = false; //判断是否成功替换sonicdiffbody
+    public static $shotWnsDiffBodyReplace = false; //判断是否成功替换sonicdiffbody
     public static $diffIndex = 0; 
     public static $tagPrefix = 'auto';
     public static $diffTagNames = array(); //数据块
 
     public function callback($matches) {
         if(isset($matches) && isset($matches[0])) {
-            self::$shotSonicDiffBodyReplace = true;
+            self::$shotWnsDiffBodyReplace = true;
             if(isset($matches[1])) {
                 $tagName = $matches[1];
             } else {
@@ -81,14 +81,14 @@ class util_sonic {
                 }
                 header('Etag: '.$md5);
             }
-            $outContent = self::sonicHtmlDiffDivision($outContent);
+            $outContent = self::wnsHtmlDiffDivision($outContent);
             header('Content-Length:'.strlen($outContent));
 
         }
         echo $outContent;
     }
 
-    public static function sonicHtmlDiffDivision($htmlStr){
+    public static function wnsHtmlDiffDivision($htmlStr){
         $htmlMd5 = sha1($htmlStr);
 
         $headers = getallheaders();

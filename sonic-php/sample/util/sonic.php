@@ -21,7 +21,7 @@ if (!function_exists('getallheaders'))  {
         $headers = array();
         foreach ($_SERVER as $name => $value) {
             if (substr($name, 0, 5) == 'HTTP_') {
-                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+                $headers[str_replace(' ', '-', strtolower(str_replace('_', ' ', substr($name, 5))))] = $value;
             }
         }
         return $headers;
@@ -64,8 +64,8 @@ class util_sonic {
             header("Cache-Offline: $offline");
 
             $Etag = NULL;
-            if(isset($headers['If-None-Match'])){
-                $Etag = $headers['If-None-Match'];
+            if(isset($headers['if-none-match']) || isset($headers['If-None-Match'])){
+                $Etag = isset($headers['if-none-match']) ? $headers['if-none-match'] : $headers['If-None-Match'];
             }
 
             //offline值需要进入离线

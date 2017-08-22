@@ -141,8 +141,12 @@ static NSLock *sonicRequestClassLock;
     
     [self setupConfigRequestHeaders];
 }
-- (void)setServerIP:(NSString *)serverIP {
-    _serverIP = serverIP;
+- (void)setServerIP:(NSString *)serverIP
+{
+    [_serverIP release];
+    _serverIP = nil;
+    
+    _serverIP = [serverIP copy];
     //issues:#54 解决serverIP未使用问题
     [self updateRequestHeaders];
 }
@@ -298,10 +302,11 @@ static NSLock *sonicRequestClassLock;
     [self.request setAllHTTPHeaderFields:mCfgDict];
 }
 //issues:#54 解决serverIP未使用问题
-- (void)updateRequestHeaders {
+- (void)updateRequestHeaders
+{
     
     if (self.serverIP.length > 0) {
-        NSMutableDictionary *mCfgDict = [[self.request allHTTPHeaderFields] mutableCopy];
+        NSMutableDictionary *mCfgDict = [[[self.request allHTTPHeaderFields] mutableCopy] autorelease];
         NSURL *cUrl = [NSURL URLWithString:self.url];
         
         NSString *host = [cUrl.scheme isEqualToString:@"https"]? [NSString stringWithFormat:@"%@:443",self.serverIP]:[NSString stringWithFormat:@"%@:80",self.serverIP];

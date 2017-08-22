@@ -17,7 +17,7 @@
             sonicHadExecute = 0, //sonic执行标志位
             sonicUpdateData = {}; //sonic diff数据
 
-        window.sonic.getDiffData(); //执行sonicdiff
+        window.sonic && window.sonic.getDiffData(); //执行sonicdiff
         window['getDiffDataCallback'] = function (diffData) {
             try{
                 var result = JSON.parse(diffData);

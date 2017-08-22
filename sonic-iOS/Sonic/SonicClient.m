@@ -180,7 +180,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     
     if (!existSession) {
-        
+
         existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
         
         NSURL *cUrl = [NSURL URLWithString:url];

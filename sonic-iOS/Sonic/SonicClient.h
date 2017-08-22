@@ -96,6 +96,11 @@
 - (void)removeSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
 
 /**
+ * Find session by sessionId
+ */
+- (SonicSession *)sessionById:(NSString *)sessionId;
+
+/**
  * Find the session with webDelegate.
  */
 - (SonicSession *)sessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;

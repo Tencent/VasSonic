@@ -47,7 +47,7 @@ public class HostSonicRuntime extends SonicRuntime {
 }
 ```
 
-### (2).创建一个类继承SonicSessionClinet
+### (2).创建一个类继承SonicSessionClient
 
 SonicSessionClient主要负责跟webView的通信，比如调用webView的loadUrl、loadDataWithBaseUrl等方法。
 

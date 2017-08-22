@@ -293,6 +293,28 @@ static NSLock *sonicRequestClassLock;
     [self.request setAllHTTPHeaderFields:mCfgDict];
 }
 
+- (void)setServerIP:(NSString *)serverIP
+{
+    [_serverIP release];
+    _serverIP = nil;
+    _serverIP = [serverIP copy];
+    
+    if (_serverIP.length > 0) {
+        
+        NSURL *cUrl = [NSURL URLWithString:self.url];
+
+        NSMutableDictionary *mCfgDict = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
+        
+        NSString *host = [cUrl.scheme isEqualToString:@"https"]? [NSString stringWithFormat:@"%@:443",_serverIP]:[NSString stringWithFormat:@"%@:80",_serverIP];
+        NSString *newUrl = [self.url stringByReplacingOccurrencesOfString:cUrl.host withString:host];
+        cUrl = [NSURL URLWithString:newUrl];
+        [mCfgDict setObject:cUrl.host forKey:@"Host"];
+        
+        self.request.URL = cUrl;
+        [self.request setAllHTTPHeaderFields:mCfgDict];
+    }
+}
+
 - (NSDictionary *)getRequestParamsFromConfigHeaders
 {
     NSDictionary *cfgDict = self.cacheConfigHeaders;

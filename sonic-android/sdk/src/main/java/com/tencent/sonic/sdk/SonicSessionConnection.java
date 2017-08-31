@@ -291,6 +291,8 @@ public abstract class SonicSessionConnection {
                          */
                         connection.setRequestProperty("Host", originHost);
 
+                        setProviderHeader(connection,currentUrl);
+
                         connection.setRequestProperty(SonicSessionConnection.CUSTOM_HEAD_FILED_DNS_PREFETCH, url.getHost());
                         if (connection instanceof HttpsURLConnection) { // 如果属于https，需要特殊处理，比如支持sni
                             /**
@@ -322,6 +324,21 @@ public abstract class SonicSessionConnection {
                 SonicUtils.log(TAG, Log.ERROR, "create UrlConnection fail, error:" + e.getMessage() + ".");
             }
             return connection;
+        }
+
+        /**
+         *  set user custom header
+         * */
+        private void setProviderHeader(URLConnection connection,String url){
+            SonicHeadersProvider sonicHeadersProvider =  SonicEngine.getInstance().getRuntime().getSonicHeadersProvider();
+            if (sonicHeadersProvider!=null){
+                Map<String,String> providerHeader = sonicHeadersProvider.getHeaders(url);
+                if (providerHeader!=null){
+                    for (Map.Entry<String,String> entry:providerHeader.entrySet()) {
+                        connection.setRequestProperty(entry.getKey(),entry.getValue());
+                    }
+                }
+            }
         }
 
         private URLConnection getConnection() {
@@ -366,6 +383,8 @@ public abstract class SonicSessionConnection {
                         userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
                     }
                     connectionImpl.setRequestProperty("User-Agent", userAgent);
+
+                    setProviderHeader(connectionImpl,currentUrl);
                 }
             }
             return connectionImpl;

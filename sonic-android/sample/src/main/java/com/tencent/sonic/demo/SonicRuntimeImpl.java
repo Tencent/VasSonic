@@ -19,15 +19,16 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.WebResourceResponse;
 
 import com.tencent.sonic.BuildConfig;
+import com.tencent.sonic.sdk.SonicHeadersProvider;
 import com.tencent.sonic.sdk.SonicRuntime;
 import com.tencent.sonic.sdk.SonicSessionClient;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -142,5 +143,23 @@ public class SonicRuntimeImpl extends SonicRuntime {
     @Override
     public String getHostDirectAddress(String url) {
         return null;
+    }
+
+    public SonicHeadersProvider getSonicHeadersProvider() {
+        return new CustomHeader();
+    }
+
+    class CustomHeader extends SonicHeadersProvider {
+
+        @Override
+        public void saveHeaders(String url, Map<String, List<String>> headers) {
+        }
+
+        @Override
+        public Map<String, String> getHeaders(String url) {
+            Map<String, String> headerMap = new HashMap<>();
+            headerMap.put("custom-key","custom-value");
+            return headerMap;
+        }
     }
 }

@@ -4,9 +4,23 @@
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
+### support cocoapods 
+To integrate VasSonic into your Xcode project using CocoaPods, specify it in your Podfile:
+
+```lua
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+target 'TargetName' do
+    pod 'VasSonic', '1.0'
+end
+```
+
 ### Step 1: import and declare 
-Build Sonic.framework;
-Add Sonic.framework to dependency in your main project. Then ```@import Sonic``` and register ```SonicURLProtocol``` :
+Build Sonic.framework for each platform or using the cocoapods;
+
+Add Sonic.framework to dependency in your main project.
+Then ```@import Sonic``` and register ```SonicURLProtocol``` :
 ```Objective-C
 [NSURLProtocol registerClass:[SonicURLProtocol class]];
 

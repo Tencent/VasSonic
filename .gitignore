@@ -1,0 +1,2 @@
+# MacOS
+.DS_Store

@@ -123,7 +123,7 @@
             'zepto': 'lib/zepto/zepto'
         },
         paths:{
-            'lib' : location.protocol+'http://imgcache.gtimg.cn/club/platform/lib'
+            'lib' : location.protocol+'//imgcache.gtimg.cn/club/platform/lib'
         },
         manifest:{
             "lib/zepto/zepto": "1.1.3",

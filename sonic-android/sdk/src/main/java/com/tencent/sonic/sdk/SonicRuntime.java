@@ -304,13 +304,4 @@ public abstract class SonicRuntime {
      * @param errorCode Error code
      */
     public abstract void notifyError(SonicSessionClient client, String url, int errorCode);
-
-    /**
-     * Get headers provider to get headers for sonic session to do something.
-     *
-     * @return Return a provider
-     */
-    public SonicHeadersProvider getSonicHeadersProvider() {
-        return null;
-    }
 }

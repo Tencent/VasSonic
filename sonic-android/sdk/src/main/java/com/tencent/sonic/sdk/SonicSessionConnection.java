@@ -26,6 +26,8 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -250,13 +252,15 @@ public abstract class SonicSessionConnection {
         /**
          *  A default http connection  referred to by the {@code com.tencent.sonic.sdk.SonicSession#currUrl}.
          */
-        private URLConnection connectionImpl;
+        protected URLConnection connectionImpl;
+
+        protected Map<String, List<String>> cachedResponseHeaders;
 
         public SessionConnectionDefaultImpl(SonicSession session, Intent intent) {
             super(session, intent);
         }
 
-        private URLConnection createConnection() {
+        protected URLConnection createConnection() {
 
             String currentUrl = session.currUrl;
 
@@ -324,7 +328,7 @@ public abstract class SonicSessionConnection {
             return connection;
         }
 
-        private URLConnection getConnection() {
+        protected URLConnection getConnection() {
             if (null == connectionImpl) {
                 connectionImpl = createConnection();
                 if (null != connectionImpl) {
@@ -340,7 +344,7 @@ public abstract class SonicSessionConnection {
 
                     String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
                     if (null == eTag) eTag = "";
-                    connectionImpl.setRequestProperty("If-None-Match", eTag);
+                    connectionImpl.setRequestProperty("if-none-match", eTag);
 
                     String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                     if (null == templateTag) templateTag = "";
@@ -351,6 +355,13 @@ public abstract class SonicSessionConnection {
                     connectionImpl.setRequestProperty("accept-Encoding", "gzip");
                     connectionImpl.setRequestProperty("accept-Language", "zh-CN,zh;");
                     connectionImpl.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
+
+                    // set custom request headers
+                    if (null != config.customRequestHeaders && 0 != config.customRequestHeaders.size()) {
+                        for (Map.Entry<String, String> entry : config.customRequestHeaders.entrySet()) {
+                            connectionImpl.setRequestProperty(entry.getKey(), entry.getValue());
+                        }
+                    }
 
                     SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
                     String cookie = runtime.getCookie(currentUrl);
@@ -476,16 +487,45 @@ public abstract class SonicSessionConnection {
 
         @Override
         public Map<String, List<String>> getResponseHeaderFields() {
-            if (null != connectionImpl) {
-                return connectionImpl.getHeaderFields();
+            if (null == connectionImpl) {
+                return null;
             }
-            return null;
+
+            if (null == cachedResponseHeaders) {
+                // fill real response headers
+                cachedResponseHeaders = connectionImpl.getHeaderFields();
+                if (null == cachedResponseHeaders) {
+                    cachedResponseHeaders = new HashMap<String, List<String>>();
+                }
+                // fill custom headers
+                if (null != session.config.customResponseHeaders && 0 != session.config.customResponseHeaders.size()) {
+                    List<String> tmpHeaderList;
+                    for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
+                        tmpHeaderList = cachedResponseHeaders.get(entry.getKey());
+                        if (null == tmpHeaderList) {
+                            tmpHeaderList = new ArrayList<String>(1);
+                            cachedResponseHeaders.put(entry.getKey(), tmpHeaderList);
+                        }
+                        tmpHeaderList.add(entry.getValue());
+                    }
+                }
+            }
+            return cachedResponseHeaders;
         }
 
         @Override
         public String getResponseHeaderField(String key) {
-            if (null != connectionImpl) {
-                return connectionImpl.getHeaderField(key);
+            Map<String, List<String>> responseHeaderFields = getResponseHeaderFields();
+            if (null != responseHeaderFields && 0 != responseHeaderFields.size()) {
+                List<String> responseHeaderValues = responseHeaderFields.get(key);
+                if (null != responseHeaderValues && 0 != responseHeaderValues.size()) {
+                    StringBuilder stringBuilder = new StringBuilder(responseHeaderValues.get(0));
+                    for (int index = 1, size = responseHeaderValues.size(); index < size; ++index) {
+                        stringBuilder.append(',');
+                        stringBuilder.append(responseHeaderValues.get(index));
+                    }
+                    return stringBuilder.toString();
+                }
             }
             return null;
         }

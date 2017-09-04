@@ -260,14 +260,6 @@ public class SonicEngine {
         }
         return false;
     }
-    
-    /**
-     *
-     * @return Return SonicHeadersProvider Object.
-     */
-    public synchronized SonicHeadersProvider getSonicHeadersProvider() {
-        return getInstance().getRuntime().getSonicHeadersProvider();
-    }
 
     /**
      * Removes all of the cache from {@link #preloadSessionPool} and deletes file caches from SDCard.

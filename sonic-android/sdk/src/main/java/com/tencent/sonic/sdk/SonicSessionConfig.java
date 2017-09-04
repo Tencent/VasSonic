@@ -13,7 +13,7 @@
 
 package com.tencent.sonic.sdk;
 
-import android.os.Build;
+import java.util.Map;
 
 /**
  *
@@ -85,6 +85,16 @@ public class SonicSessionConfig {
      *{@link SonicSessionConnectionInterceptor} object, provider SonicSessionConnection
      */
     SonicSessionConnectionInterceptor connectionInterceptor = null;
+
+    /**
+     * The custom request headers which will be sent to web server
+     */
+    Map<String, String> customRequestHeaders = null;
+
+    /**
+     * The custom response headers which will be sent to webView for intercept WebResourceResponse
+     */
+    Map<String, String> customResponseHeaders = null;
 
 
     @Override
@@ -164,6 +174,16 @@ public class SonicSessionConfig {
 
         public Builder setConnectionIntercepter(SonicSessionConnectionInterceptor intercepter) {
             target.connectionInterceptor = intercepter;
+            return this;
+        }
+
+        public Builder setCustomRequestHeaders(Map<String, String> customRequestHeaders) {
+            target.customRequestHeaders = customRequestHeaders;
+            return this;
+        }
+
+        public Builder setCustomResponseHeaders(Map<String, String> customResponseHeaders) {
+            target.customResponseHeaders = customResponseHeaders;
             return this;
         }
 

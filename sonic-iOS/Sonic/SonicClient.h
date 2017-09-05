@@ -50,7 +50,7 @@
 
 /**
  * Clear session memory and file caches with URL.
- * @param url
+ * @param url session URL
  */
 - (void)removeCacheByUrl:(NSString *)url;
 
@@ -112,3 +112,4 @@
 - (void)registerURLProtocolCallBackWithSessionID:(NSString *)sessionID completion:(SonicURLProtocolCallBack)protocolCallBack;
 
 @end
+

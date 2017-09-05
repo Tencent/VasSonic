@@ -556,7 +556,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             }
         }
 
-        saveHeaders(sessionConnection);
     }
 
     protected void handleLocalHtml(String localHtml) {
@@ -944,41 +943,29 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      */
     protected HashMap<String, String> getHeaders() {
         HashMap<String, String> headers = new HashMap<String, String>();
+
+        // set CSP headers if need
         String cspContent = SonicDataHelper.getCSPContent(id);
         String cspReportOnlyContent = SonicDataHelper.getCSPReportOnlyContent(id);
-        if (SonicUtils.shouldLog(Log.INFO)) {
-            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") cspContent = " + cspContent + ", cspReportOnlyContent = " + cspReportOnlyContent + ".");
+        if (SonicUtils.shouldLog(Log.DEBUG)) {
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") cspContent = " + cspContent + ", cspReportOnlyContent = " + cspReportOnlyContent + ".");
         }
 
-        headers.put(SonicSessionConnection.HTTP_HEAD_CSP, cspContent);
-        headers.put(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY, cspReportOnlyContent);
+        if (!TextUtils.isEmpty(cspContent)) {
+            headers.put(SonicSessionConnection.HTTP_HEAD_CSP, cspContent);
+        }
+        if (!TextUtils.isEmpty(cspReportOnlyContent)) {
+            headers.put(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY, cspReportOnlyContent);
+        }
 
-        //Get header info from the headersProvider.
-        SonicHeadersProvider headersProvider = SonicEngine.getInstance().getSonicHeadersProvider();
-        if (headersProvider != null) {
-            Map<String, String> headerData = headersProvider.getHeaders(srcUrl);
-            if (headerData != null && headerData.size() > 0) {
-                for (Map.Entry<String, String> entry : headerData.entrySet()) {
-                    headers.put(entry.getKey(), entry.getValue());
-                }
+        // set custom headers if need
+        if (null != config.customResponseHeaders  && 0 != config.customResponseHeaders.size()) {
+            for (Map.Entry<String, String> entry : config.customResponseHeaders.entrySet()) {
+                headers.put(entry.getKey(), entry.getValue());
             }
         }
+
         return headers;
-    }
-
-    /**
-     * Save the header information to the headersProvider.
-     *
-     * @param sessionConnection a sonicSessionConnection object.
-     */
-    protected void saveHeaders(SonicSessionConnection sessionConnection) {
-        if (sessionConnection != null) {
-            Map<String, List<String>> headerFieldsMap = sessionConnection.getResponseHeaderFields();
-            SonicHeadersProvider headersProvider = SonicEngine.getInstance().getSonicHeadersProvider();
-            if (headersProvider != null) {
-                headersProvider.saveHeaders(srcUrl, headerFieldsMap);
-            }
-        }
     }
 
     public SonicSessionClient getSessionClient() {

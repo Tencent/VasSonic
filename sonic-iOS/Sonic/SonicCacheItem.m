@@ -28,6 +28,7 @@
 
 
 @implementation SonicCacheItem
+@dynamic lastRefreshTime;
 
 - (instancetype)init NS_UNAVAILABLE
 {
@@ -104,3 +105,4 @@
 }
 
 @end
+

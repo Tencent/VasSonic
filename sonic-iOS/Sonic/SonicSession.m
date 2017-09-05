@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -28,6 +28,7 @@
 #import "SonicUitil.h"
 #import "SonicClient.h"
 
+NS_ASSUME_NONNULL_BEGIN
 static NSMutableArray *sonicRequestClassArray = nil;
 static NSLock *sonicRequestClassLock;
 
@@ -37,13 +38,13 @@ static NSLock *sonicRequestClassLock;
 @property (nonatomic,retain)NSDictionary  *cacheConfigHeaders;
 @property (nonatomic,retain)NSDictionary  *cacheResponseHeaders;
 
-@property (nonatomic,retain)NSHTTPURLResponse *response;
-@property (nonatomic,retain)NSMutableData *responseData;
-@property (nonatomic,retain)NSError *error;
+@property (nonatomic,retain,nullable)NSHTTPURLResponse *response;
+@property (nonatomic,retain,nullable)NSMutableData *responseData;
+@property (nonatomic,retain,nullable)NSError *error;
 @property (nonatomic,assign)BOOL isCompletion;
 @property (nonatomic,assign)SonicStatusCode sonicStatusFinalCode;
 @property (nonatomic,copy)  NSString *localRefreshTime;
-@property (nonatomic,retain)SonicConnection *mCustomConnection;
+@property (nonatomic,retain,nullable)SonicConnection *mCustomConnection;
 @property (nonatomic,retain)NSMutableURLRequest *request;
 @property (nonatomic,assign)BOOL didFinishCacheRead;
 
@@ -113,7 +114,7 @@ static NSLock *sonicRequestClassLock;
     return nil;
 }
 
-- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
+- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(nullable id<SonicSessionDelegate>)aWebDelegate
 {
     if (self = [super init]) {
         
@@ -164,8 +165,10 @@ static NSLock *sonicRequestClassLock;
     
     [self cancel];
     
-    self.request = nil;
-    self.url = nil;
+    [_request release];
+    _request = nil;
+    [_url release];
+    _url = nil;
     [_sessionID release];
     _sessionID = nil;
 
@@ -492,7 +495,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
     [self checkAutoCompletionAction];
 }
 
-- (NSDictionary *)protocolActionItem:(SonicURLProtocolAction)action param:(NSObject *)param
+- (NSDictionary *)protocolActionItem:(SonicURLProtocolAction)action param:(nullable NSObject *)param
 {
     if (param == nil) {
         param = @"";
@@ -500,7 +503,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
     return @{kSonicProtocolAction:@(action),kSonicProtocolData:param};
 }
 
-- (void)dispatchProtocolAction:(SonicURLProtocolAction)action param:(NSObject *)param
+- (void)dispatchProtocolAction:(SonicURLProtocolAction)action param:(nullable NSObject *)param
 {
     NSDictionary *actionParam = [self protocolActionItem:action param:param];
     if (self.protocolCallBack) {
@@ -874,3 +877,4 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 
 @end
+NS_ASSUME_NONNULL_END

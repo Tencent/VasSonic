@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -26,6 +26,7 @@
 #import "SonicClient.h"
 #import "SonicUitil.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicURLProtocol ()
 
 @property (nonatomic,assign)BOOL didFinishRecvResponse;
@@ -126,3 +127,4 @@
 }
 
 @end
+NS_ASSUME_NONNULL_END

@@ -3,7 +3,7 @@
 //  SonicSampleUITests
 //
 //  Created by zyvincenthu on 2017/6/26.
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #import <XCTest/XCTest.h>

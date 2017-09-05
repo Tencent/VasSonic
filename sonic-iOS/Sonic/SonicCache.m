@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -26,6 +26,8 @@
 #import "SonicUitil.h"
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSUInteger, SonicCacheType) {
     /*
@@ -574,7 +576,7 @@ void dealInFileQueue(dispatch_block_t block)
     });
 }
 
-- (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
+- (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(nullable NSString *)templateString dynamicData:(NSDictionary *)dynamicData withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
 {
     if (!htmlData || config.count == 0 || dynamicData.count == 0) {
         return;
@@ -633,3 +635,4 @@ void dealInFileQueue(dispatch_block_t block)
 
 
 @end
+NS_ASSUME_NONNULL_END

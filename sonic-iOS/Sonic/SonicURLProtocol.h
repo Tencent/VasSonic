@@ -14,12 +14,14 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 /** SubClass NSURLProtocol to intercept the webView request */
 @interface SonicURLProtocol : NSURLProtocol
 
 @end
+NS_ASSUME_NONNULL_END

@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -26,9 +26,11 @@
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @implementation SonicUitil
 
-NSString *sonicSessionID(NSString *url)
+NSString *__nullable sonicSessionID(NSString *url)
 {
     if ([[SonicClient sharedClient].currentUserUniq length] > 0) {
         return stringFromMD5([NSString stringWithFormat:@"%@_%@",[SonicClient sharedClient].currentUserUniq,sonicUrl(url)]);
@@ -37,7 +39,7 @@ NSString *sonicSessionID(NSString *url)
     }
 }
 
-NSString *stringFromMD5(NSString *url)
+NSString *__nullable stringFromMD5(NSString *url)
 {
     
     if(url == nil || [url length] == 0)
@@ -138,7 +140,7 @@ void dispatchToMain (dispatch_block_t block)
     }
 }
 
-NSString * getDataSha1(NSData *data)
+NSString *__nullable getDataSha1(NSData *data)
 {
     if (!data) {
         return nil;
@@ -163,3 +165,4 @@ NSURLRequest *sonicWebRequest(NSURLRequest *originRequest)
 }
 
 @end
+NS_ASSUME_NONNULL_END

@@ -14,13 +14,14 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 #import "SonicCacheItem.h"
 #import "SonicConstants.h"
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * Manage the memory caches and file cache for all sonic sessions.
  */
@@ -159,3 +160,4 @@
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
 
 @end
+NS_ASSUME_NONNULL_END

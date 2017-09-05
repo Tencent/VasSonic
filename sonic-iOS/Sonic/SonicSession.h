@@ -14,13 +14,14 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 #import "SonicProtocol.h"
 #import "SonicConstants.h"
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * SonicSession use this callback to transfer network data to SonicURLProtocol.
  * The parameters of the dictionary is:
@@ -66,13 +67,13 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 @property (nonatomic,readonly)NSDictionary *diffData;
 
 /** SonicSession use this callback to transfer network data to SonicURLProtocol. */
-@property (nonatomic,copy)SonicURLProtocolCallBack protocolCallBack;
+@property (nonatomic,copy,nullable)SonicURLProtocolCallBack protocolCallBack;
 
 /** Notify the webView holder what happened during the connection.*/
-@property (nonatomic,assign)id<SonicSessionDelegate> delegate;
+@property (nonatomic,assign,nullable)id<SonicSessionDelegate> delegate;
 
 /** SonicSession use this callback to notify SonicClient when it finished. */
-@property (nonatomic,copy)SonicSessionCompleteCallback completionCallback;
+@property (nonatomic,copy,nullable)SonicSessionCompleteCallback completionCallback;
 
 /** Check if all data did finish updated */
 @property (nonatomic,assign)BOOL isDataUpdated;
@@ -110,7 +111,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
  * Use an url and webDelegate to create an session
  * The webDelegate can be nil value
  */
-- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
+- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(nullable id<SonicSessionDelegate>)aWebDelegate;
 
 /**
  * Add custom headers to request.
@@ -140,3 +141,4 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
 - (void)getResultWithCallBack:(SonicWebviewCallBack)webviewCallback;
 
 @end
+NS_ASSUME_NONNULL_END

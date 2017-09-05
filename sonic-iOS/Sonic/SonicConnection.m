@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -23,10 +23,11 @@
 
 #import "SonicConnection.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicConnection ()<NSURLSessionDelegate,NSURLSessionDataDelegate>
 
-@property (nonatomic,retain)NSURLSession *dataSession;
-@property (nonatomic,retain)NSURLSessionDataTask *dataTask;
+@property (nonatomic,retain,nullable)NSURLSession *dataSession;
+@property (nonatomic,retain,nullable)NSURLSessionDataTask *dataTask;
 
 @end
 
@@ -86,7 +87,7 @@
 
 #pragma mark - NSURLSessionDelegate
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(nullable NSError *)error
 {
     if (error) {
         [self.session session:self.session didFaild:error];
@@ -96,8 +97,8 @@
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
- completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler
+                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler
 {
     SecTrustRef trust = challenge.protectionSpace.serverTrust;
     SecTrustResultType result;
@@ -123,20 +124,23 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
-didReceiveResponse:(NSURLResponse *)response
- completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
+                                 didReceiveResponse:(NSURLResponse *)response
+                                  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
 {
     completionHandler(NSURLSessionResponseAllow);
     [self.session session:self.session didRecieveResponse:(NSHTTPURLResponse *)response];
 }
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                     willPerformHTTPRedirection:(NSHTTPURLResponse *)response
+                                     newRequest:(NSURLRequest *)request
+                             completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
 {
     completionHandler(request);
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
-    didReceiveData:(NSData *)data
+                                     didReceiveData:(NSData *)data
 {
     [self.session session:self.session didLoadData:data];
 }
@@ -149,3 +153,4 @@ didReceiveResponse:(NSURLResponse *)response
 }
 
 @end
+NS_ASSUME_NONNULL_END

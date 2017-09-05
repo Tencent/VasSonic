@@ -14,7 +14,7 @@
 //  either express or implied. See the License for the specific language governing permissions
 //  and limitations under the License.
 //
-//  Copyright © 2017年 Tencent. All rights reserved.
+//  Copyright © 2017 Tencent. All rights reserved.
 //
 
 #if  __has_feature(objc_arc)
@@ -25,6 +25,7 @@
 #import "SonicCache.h"
 #import "SonicUitil.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicClient ()
 
 @property (nonatomic,retain)NSRecursiveLock *lock;
@@ -165,7 +166,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     return aWebDelegate && [aWebDelegate conformsToProtocol:@protocol(SonicSessionDelegate)];
 }
 
-- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(nullable id<SonicSessionDelegate>)aWebDelegate
 {
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
@@ -261,3 +262,4 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 }
 
 @end
+NS_ASSUME_NONNULL_END

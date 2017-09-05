@@ -115,22 +115,22 @@
 			isa = PBXGroup;
 			children = (
 				546B78101F0105AA003F08AE /* Sonic.h */,
-				546B78181F0105F6003F08AE /* SonicCache.m */,
 				546B78211F0105F6003F08AE /* SonicCache.h */,
-				546B78191F0105F6003F08AE /* SonicCacheItem.m */,
+				546B78181F0105F6003F08AE /* SonicCache.m */,
 				546B78221F0105F6003F08AE /* SonicCacheItem.h */,
-				546B781A1F0105F6003F08AE /* SonicClient.m */,
+				546B78191F0105F6003F08AE /* SonicCacheItem.m */,
 				546B78231F0105F6003F08AE /* SonicClient.h */,
-				546B781B1F0105F6003F08AE /* SonicConstants.h */,
-				546B781C1F0105F6003F08AE /* SonicProtocol.h */,
-				546B78201F0105F6003F08AE /* SonicURLProtocol.m */,
-				546B78271F0105F6003F08AE /* SonicURLProtocol.h */,
-				546B781D1F0105F6003F08AE /* SonicSession.m */,
-				546B78261F0105F6003F08AE /* SonicSession.h */,
-				546B781E1F0105F6003F08AE /* SonicUitil.h */,
-				546B781F1F0105F6003F08AE /* SonicUitil.m */,
+				546B781A1F0105F6003F08AE /* SonicClient.m */,
 				546B78241F0105F6003F08AE /* SonicConnection.h */,
 				546B78251F0105F6003F08AE /* SonicConnection.m */,
+				546B781B1F0105F6003F08AE /* SonicConstants.h */,
+				546B781C1F0105F6003F08AE /* SonicProtocol.h */,
+				546B78261F0105F6003F08AE /* SonicSession.h */,
+				546B781D1F0105F6003F08AE /* SonicSession.m */,
+				546B781E1F0105F6003F08AE /* SonicUitil.h */,
+				546B781F1F0105F6003F08AE /* SonicUitil.m */,
+				546B78271F0105F6003F08AE /* SonicURLProtocol.h */,
+				546B78201F0105F6003F08AE /* SonicURLProtocol.m */,
 			);
 			path = Sonic;
 			sourceTree = "<group>";

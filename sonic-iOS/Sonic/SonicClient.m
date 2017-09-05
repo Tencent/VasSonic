@@ -25,6 +25,7 @@
 #import "SonicCache.h"
 #import "SonicUitil.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicClient ()
 
 @property (nonatomic,retain)NSRecursiveLock *lock;
@@ -165,7 +166,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     return aWebDelegate && [aWebDelegate conformsToProtocol:@protocol(SonicSessionDelegate)];
 }
 
-- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(nullable id<SonicSessionDelegate>)aWebDelegate
 {
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
@@ -261,3 +262,4 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 }
 
 @end
+NS_ASSUME_NONNULL_END

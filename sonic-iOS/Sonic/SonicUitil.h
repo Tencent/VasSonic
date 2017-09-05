@@ -21,6 +21,8 @@
 #import "SonicConnection.h"
 #import "SonicConstants.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface SonicUitil : NSObject
 
 /**
@@ -31,7 +33,7 @@ NSURLRequest *sonicWebRequest(NSURLRequest *originRequest);
 /**
  * Using MD5 to encode the URL to session ID;
  */
-NSString *sonicSessionID(NSString *url);
+NSString *__nullable sonicSessionID(NSString *url);
 
 /**
  * Create sonic path with URL
@@ -46,6 +48,7 @@ void dispatchToMain (dispatch_block_t block);
 /**
  * Get SHA1 value from data.
  */
-NSString * getDataSha1(NSData *data);
+NSString *__nullable getDataSha1(NSData *data);
 
 @end
+NS_ASSUME_NONNULL_END

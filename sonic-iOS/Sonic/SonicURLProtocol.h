@@ -19,7 +19,9 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 /** SubClass NSURLProtocol to intercept the webView request */
 @interface SonicURLProtocol : NSURLProtocol
 
 @end
+NS_ASSUME_NONNULL_END

@@ -23,10 +23,11 @@
 
 #import "SonicConnection.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicConnection ()<NSURLSessionDelegate,NSURLSessionDataDelegate>
 
-@property (nonatomic,retain)NSURLSession *dataSession;
-@property (nonatomic,retain)NSURLSessionDataTask *dataTask;
+@property (nonatomic,retain,nullable)NSURLSession *dataSession;
+@property (nonatomic,retain,nullable)NSURLSessionDataTask *dataTask;
 
 @end
 
@@ -152,4 +153,4 @@
 }
 
 @end
-
+NS_ASSUME_NONNULL_END

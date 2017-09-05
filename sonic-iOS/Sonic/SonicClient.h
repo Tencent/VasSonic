@@ -21,16 +21,17 @@
 #import "SonicSession.h"
 #import "SonicConstants.h"
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * Manage all sonic sessions.
  */
 @interface SonicClient : NSObject
 
 /* Return the unique identifier for current user */
-@property (nonatomic,readonly)NSString *currentUserUniq;
+@property (nonatomic,readonly,nullable)NSString *currentUserUniq;
 
 /* Return the global custom User-Agent */
-@property (nonatomic,readonly)NSString *userAgent;
+@property (nonatomic,readonly,nullable)NSString *userAgent;
 
 /* Share the instance */
 + (SonicClient *)sharedClient;
@@ -88,7 +89,7 @@
  * Create a sonic session with URL.
  * All the same URLs share one single session. Duplicate calls will not create duplicate sessions.
  */
-- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(nullable id<SonicSessionDelegate>)aWebDelegate;
 
 /**
  * Remove session by delegate, it will be little safer than removing by URL, cause URL is too easy to get.
@@ -112,4 +113,4 @@
 - (void)registerURLProtocolCallBackWithSessionID:(NSString *)sessionID completion:(SonicURLProtocolCallBack)protocolCallBack;
 
 @end
-
+NS_ASSUME_NONNULL_END

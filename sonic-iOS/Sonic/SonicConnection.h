@@ -21,6 +21,7 @@
 #import "SonicSession.h"
 #import "SonicConnection.h"
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * Subclass this class to request the network data from custom connection.
  */
@@ -28,7 +29,7 @@
 @interface SonicConnection : NSObject
 
 /** Use this protocal to transfer data to sonic session. */
-@property (nonatomic,assign)id<SonicSessionProtocol> session;
+@property (nonatomic,assign,nullable)id<SonicSessionProtocol> session;
 
 /** Current request. */
 @property (nonatomic,readonly)NSURLRequest *request;
@@ -58,3 +59,4 @@
 - (void)stopLoading;
 
 @end
+NS_ASSUME_NONNULL_END

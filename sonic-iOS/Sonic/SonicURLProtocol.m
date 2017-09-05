@@ -26,6 +26,7 @@
 #import "SonicClient.h"
 #import "SonicUitil.h"
 
+NS_ASSUME_NONNULL_BEGIN
 @interface SonicURLProtocol ()
 
 @property (nonatomic,assign)BOOL didFinishRecvResponse;
@@ -126,3 +127,4 @@
 }
 
 @end
+NS_ASSUME_NONNULL_END

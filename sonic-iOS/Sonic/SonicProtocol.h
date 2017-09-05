@@ -19,6 +19,7 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * @brief Use this protocal to trasfer data to sonic session, when you provide custom SonicConnection.
  */
@@ -69,3 +70,4 @@
 - (void)sessionWillRequest:(SonicSession *)session;
 
 @end
+NS_ASSUME_NONNULL_END

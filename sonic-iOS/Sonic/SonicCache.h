@@ -21,6 +21,7 @@
 #import "SonicCacheItem.h"
 #import "SonicConstants.h"
 
+NS_ASSUME_NONNULL_BEGIN
 /**
  * Manage the memory caches and file cache for all sonic sessions.
  */
@@ -159,3 +160,4 @@
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
 
 @end
+NS_ASSUME_NONNULL_END

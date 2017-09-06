@@ -84,14 +84,7 @@ public class BrowserActivity extends Activity {
 
         // if it's sonic mode , startup sonic session at first time
         if (MainActivity.MODE_DEFAULT != mode) { // sonic mode
-
-            //TODO test
-            Map<String, String> customResponseHeaders = new HashMap<String, String>();
-            customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE, "false");
-            customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_STORE);
-            SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig
-                    .Builder()
-                    .setCustomResponseHeaders(customResponseHeaders);
+            SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
 
             // if it's offline pkg mode, we need to intercept the session connection
             if (MainActivity.MODE_SONIC_WITH_OFFLINE_CACHE == mode) {
@@ -111,9 +104,7 @@ public class BrowserActivity extends Activity {
             }
 
             // create sonic session and run sonic flow
-            sonicSession = SonicEngine.getInstance().createSession(url, sessionConfigBuilder
-
-                    .build());
+            sonicSession = SonicEngine.getInstance().createSession(url, sessionConfigBuilder.build());
             if (null != sonicSession) {
                 sonicSession.bindClient(sonicSessionClient = new SonicSessionClientImpl());
             } else {

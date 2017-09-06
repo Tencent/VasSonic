@@ -1,27 +1,69 @@
-## Getting started with PHP
+## 开始使用
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/Tencent/VasSonic/blob/master/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/VasSonic/pulls)
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
-## How to use for Server
-Download and import ```sonic.php```. 
-```PHP
-require_once(PATH."/sonic.php");
-```
-Then add following code.
+## Node端的使用
 
-```
-if (isset($_GET['sonic']) && $_GET['sonic'] == '1') {
-// Check if Sonic is needed or not 
-    util_sonic::start();
-    $this->_index_v5($uin);
-    util_sonic::end();
-}
+### 依赖关系
+
+1）Node版本必须大于7，因为代码中使用了async/await语法
+
+2）安装`sonic_differ`模块
+
+```Node.js
+npm install sonic_differ --save
 ```
 
-## How to use for front-end
-Here is a simple demo shows how to use Sonic for front-end.
+简单情况下直接npm install 即可
+
+3）后端代码中引用`sonic_differ`模块
+
+```Node.js
+const differ = require('sonic_differ');
+```
+
+### Sonic模式中，需要对数据进行拦截与加工处理
+
+1）第一步，新建一个sonic结构体，主要是方便操作，大家理解之后可以自行修改
+
+```Node.js
+let sonic = {
+    buffer: [],
+    write: function (chunk, encoding) {
+        let buffer = chunk;
+        let ecode = encoding || 'utf8';
+        if (!Buffer.isBuffer(chunk)) {
+            buffer = new Buffer(chunk, ecode);
+        }
+        sonic.buffer.push(buffer);
+    }
+};
+```
+
+2）第二步，拦截服务端的数据，用`sonic_differ`模块对数据进行处理，这里大家理解之后可以根据自己的后端改造，本质就是直出的内容用`sonic_differ`模块进行一次二次加工，再输出给前端		
+ 	
+ ```Node.js		
+ response.on('data', (chunk, encoding) => {		
+     sonic.write(chunk, encoding)		
+ });		
+ response.on('end', () => {		
+     let result = differ(ctx, Buffer.concat(sonic.buffer));		
+     sonic.buffer = [];		
+     if (result.cache) {		
+         //304 Not Modified, return nothing.		
+         return ''		
+     } else {		
+         //other Sonic status.		
+         return result.data		
+     }		
+ });		
+ ```
+ 
+ ## 前端的使用
+
+通过一个简单的demo来说明一下前端使用方法。
 ```Html
 <html>
 <head>
@@ -29,12 +71,13 @@ Here is a simple demo shows how to use Sonic for front-end.
     <title>demo</title>
     <script type="text/javascript">
             
-            // Interacts with mobile client by JavaScript interface to get Sonic diff data.
-            function getDiffData(){
+            // 调用终端接口触发终端去获取diff data
+            function getDiffData(){
                 window.sonic.getDiffData();
             }
-            // step 3: Handle the response from mobile client which include Sonic response code and diff data.   
-           function getDiffDataCallback(result){
+            
+            // step 3: 添加响应方法，用于获取终端返回的diff data
+           function getDiffDataCallback(result){
                 var sonicStatus = 0; 
                 /**
                 * The Sonic status:
@@ -58,8 +101,9 @@ Here is a simple demo shows how to use Sonic for front-end.
                 }
                 handleSonicDiffData(sonicStatus, sonicUpdateData);
             }
-            // step 3: Handle the response from mobile client which include Sonic response code and diff data.  
-            function handleSonicDiffData(sonicStatus, sonicUpdateData){
+            
+            // step 3: 业务上根据diff data来做渲染处理
+            function handleSonicDiffData(sonicStatus, sonicUpdateData){
                 if(sonicStatus == 3){
                     //Websites will be updated dynamically and run some JavaScript while in local refresh mode. 
                     var html = '';
@@ -75,9 +119,10 @@ Here is a simple demo shows how to use Sonic for front-end.
             }
     </script>
 </head>
+
 <body>
-    // step 1: specify template and data by inserting different comment anchor.
-    <div id="data1Content">
+    // step 1: 通过html注释标记模版和数据
+    <div id="data1Content">
         <!--sonicdiff-data1-->
         <p id="partialRefresh"></p>
         <!--sonicdiff-data1-end-->
@@ -90,8 +135,8 @@ Here is a simple demo shows how to use Sonic for front-end.
     </div>
     <div id = "data3">data3</div>
     
-    // step 2: Receives diff data from mobile client through Javascript interface.
-    <script type="text/javascript">
+    // step 2: 调用终端接口获取diff data
+    <script type="text/javascript">
         window.onload = function(){
             getDiffData();
         }
@@ -99,8 +144,9 @@ Here is a simple demo shows how to use Sonic for front-end.
 </body>
 </html>
 ```
+
 ### Step 1:
-Specify template and data by inserting different comment anchor. The data will be wrapped with anchor ```<!-- sonicdiff-moduleName -->```  ```<!-- sonicdiff-moduleName-end -->```. The other part of html is template.
+通过注释来标记模版和数据部分。 数据快需要通过 ```<!-- sonicdiff-moduleName -->```  ```<!-- sonicdiff-moduleName-end -->```来标记。其他部分则为模版。
 ```Html
     <div id="data1Content">
         <!--sonicdiff-data1-->
@@ -117,17 +163,17 @@ Specify template and data by inserting different comment anchor. The data will b
 ```
 
 ### Step 2:
-Receives diff data from mobile client through JavaScript interface. The JavaScript interface of demo was involved when websites are finish. But the time when inferface was involved is not immutable, websites can decide whenever they want.
+js调用终端接口来获取diff data。 本demo中是在页面加载完成后调用js接口，实际调用js接口的时机可以由各个业务自定。
 ```Html
 <script type="text/javascript">
-    window.onload = function(){
-        getDiffData();
-    }
+     window.onload = function(){
+         getDiffData();
+     }
 </script>
 ```
 
 ### Step 3:
-Handle different status received from mobile client. The demo shows how to find and replace the data of specified anchor according to the diff data come from mobile client, then the website is updated.
+通过终端返回的状态来决定是否重新渲染。 在本demo中，根据终端返回的状态，来获取对应的数据块，继而重新渲染页面。
 ```Html
 //step 3 Handle the response from mobile client which include Sonic response code and diff data.  
 function getDiffDataCallback(result){
@@ -137,16 +183,14 @@ function handleSonicDiffData(sonicStatus, sonicUpdateData){
 ｝
 ```
 
-## Support
-Any problem?
+## 技术支持
+遇到其他问题，可以：
 
-1. Learn more from [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-php/sample).
-2. Contact us for help.
+1. 通过demo来理解 [sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs)。
+2. 联系我们。
 
 ## License
 VasSonic is under the BSD license. See the [LICENSE](https://github.com/Tencent/VasSonic/blob/master/LICENSE) file for details.
 
 [1]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120005424.gif
 [2]: https://github.com/Tencent/VasSonic/blob/master/article/20170705120029897.gif
-
-

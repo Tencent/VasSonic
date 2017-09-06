@@ -71,9 +71,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
     public static final String WEB_RESPONSE_DATA = "result";
 
 
-    public static final String SONIC_URL_PARAM_SESSION_ID = "_sonic_id";
-
-
     public static final String DATA_UPDATE_BUNDLE_PARAMS_DIFF = "_diff_data_";
 
 
@@ -302,11 +299,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
     protected volatile SonicSessionClient sessionClient;
 
-    /**
-     * The current url.
-     */
-    protected String currUrl;
-
     protected final Handler mainHandler = new Handler(Looper.getMainLooper(), this);
 
     protected final CopyOnWriteArrayList<WeakReference<Callback>> callbackWeakRefList = new CopyOnWriteArrayList<WeakReference<Callback>>();
@@ -358,9 +350,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         this.id = id;
         this.config = config;
         this.sId = (sNextSessionLogId++);
-        statistics.srcUrl = url.trim();
-        this.srcUrl = SonicUtils.addSonicUrlParam(statistics.srcUrl, SONIC_URL_PARAM_SESSION_ID, String.valueOf(sId));
-        this.currUrl = srcUrl;
+        this.srcUrl = statistics.srcUrl = url.trim();
         this.createdTime = System.currentTimeMillis();
         if (SonicUtils.shouldLog(Log.INFO)) {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") create:id=" + id + ", url = " + url + ".");
@@ -556,7 +546,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             }
         }
 
-        saveHeaders(sessionConnection);
     }
 
     protected void handleLocalHtml(String localHtml) {
@@ -597,10 +586,8 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
     }
 
     void setIsPreload(String url) {
-        isPreload = true;
-        statistics.srcUrl = url.trim();
-        this.srcUrl = SonicUtils.addSonicUrlParam(statistics.srcUrl, SONIC_URL_PARAM_SESSION_ID, String.valueOf(sId));
-        this.currUrl = srcUrl;
+        this.isPreload = true;
+        this.srcUrl = this.srcUrl = statistics.srcUrl = url.trim();
         if (SonicUtils.shouldLog(Log.INFO)) {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") is preload, new url=" + url + ".");
         }
@@ -623,7 +610,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
     }
 
     public String getCurrentUrl() {
-        return currUrl;
+        return srcUrl;
     }
 
     public int getFinalResultCode() {
@@ -920,7 +907,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      */
     public boolean isMatchCurrentUrl(String url) {
         try {
-            Uri currentUri = Uri.parse(currUrl);
+            Uri currentUri = Uri.parse(srcUrl);
             Uri uri = Uri.parse(url);
 
             String currentPath = (currentUri.getHost() + currentUri.getPath());
@@ -944,41 +931,29 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      */
     protected HashMap<String, String> getHeaders() {
         HashMap<String, String> headers = new HashMap<String, String>();
+
+        // set CSP headers if need
         String cspContent = SonicDataHelper.getCSPContent(id);
         String cspReportOnlyContent = SonicDataHelper.getCSPReportOnlyContent(id);
-        if (SonicUtils.shouldLog(Log.INFO)) {
-            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") cspContent = " + cspContent + ", cspReportOnlyContent = " + cspReportOnlyContent + ".");
+        if (SonicUtils.shouldLog(Log.DEBUG)) {
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") cspContent = " + cspContent + ", cspReportOnlyContent = " + cspReportOnlyContent + ".");
         }
 
-        headers.put(SonicSessionConnection.HTTP_HEAD_CSP, cspContent);
-        headers.put(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY, cspReportOnlyContent);
+        if (!TextUtils.isEmpty(cspContent)) {
+            headers.put(SonicSessionConnection.HTTP_HEAD_CSP, cspContent);
+        }
+        if (!TextUtils.isEmpty(cspReportOnlyContent)) {
+            headers.put(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY, cspReportOnlyContent);
+        }
 
-        //Get header info from the headersProvider.
-        SonicHeadersProvider headersProvider = SonicEngine.getInstance().getSonicHeadersProvider();
-        if (headersProvider != null) {
-            Map<String, String> headerData = headersProvider.getHeaders(srcUrl);
-            if (headerData != null && headerData.size() > 0) {
-                for (Map.Entry<String, String> entry : headerData.entrySet()) {
-                    headers.put(entry.getKey(), entry.getValue());
-                }
+        // set custom headers if need
+        if (null != config.customResponseHeaders  && 0 != config.customResponseHeaders.size()) {
+            for (Map.Entry<String, String> entry : config.customResponseHeaders.entrySet()) {
+                headers.put(entry.getKey(), entry.getValue());
             }
         }
+
         return headers;
-    }
-
-    /**
-     * Save the header information to the headersProvider.
-     *
-     * @param sessionConnection a sonicSessionConnection object.
-     */
-    protected void saveHeaders(SonicSessionConnection sessionConnection) {
-        if (sessionConnection != null) {
-            Map<String, List<String>> headerFieldsMap = sessionConnection.getResponseHeaderFields();
-            SonicHeadersProvider headersProvider = SonicEngine.getInstance().getSonicHeadersProvider();
-            if (headersProvider != null) {
-                headersProvider.saveHeaders(srcUrl, headerFieldsMap);
-            }
-        }
     }
 
     public SonicSessionClient getSessionClient() {

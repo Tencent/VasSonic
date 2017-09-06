@@ -29,7 +29,7 @@ let paths = projectConfig.build;
 
 
 /**----------ejs2js--------------**/
-let ejs2js = require('@tencent/gulp-ejs2js');
+let ejs2js = require('gulp-ejs2js');
 gulp.task("ejs2js", function (callback) {
 	console.info('执行ejs2js');
 	buildEjs2js(paths.ejs2js + '/**/*.ejs', paths.ejs2js, callback);

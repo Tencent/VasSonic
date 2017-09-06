@@ -79,6 +79,14 @@ public abstract class SonicSessionConnection {
     public final static String CUSTOM_HEAD_FILED_CACHE_OFFLINE = "cache-offline";
 
     /**
+     * HTTP header:strict_mode. <br>
+     * This header indicates whether the website is user sonic strict mode which means
+     * html page supports VasSonic Specification obeyed by client and server and it can
+     * separate html into template And data cache.
+     */
+    public final static String CUSTOM_HEAD_FILED_STRICT_MODE = "strict_mode";
+
+    /**
      * HTTP header:dns-prefetch-address <br>
      * This header represents the ip address of the server. <br>
      * Sonic Connection will use this ip to connect to server to avoid the cost time of DNS resolution.
@@ -144,10 +152,12 @@ public abstract class SonicSessionConnection {
         return internalConnect();
     }
 
+
     /**
      * Disconnect the communications link to the resource referenced by Sonic session
      */
     public abstract void disconnect();
+
 
     public abstract int getResponseCode();
 
@@ -250,19 +260,25 @@ public abstract class SonicSessionConnection {
     public static class SessionConnectionDefaultImpl extends SonicSessionConnection {
 
         /**
-         *  A default http connection  referred to by the {@code com.tencent.sonic.sdk.SonicSession#currUrl}.
+         *  A default http connection referred to by the {@code com.tencent.sonic.sdk.SonicSession#currUrl}.
          */
-        protected URLConnection connectionImpl;
+        protected final URLConnection connectionImpl;
 
+        /**
+         *  Cached response headers which contains response headers from server and custom response headers from
+         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
+         */
         protected Map<String, List<String>> cachedResponseHeaders;
 
         public SessionConnectionDefaultImpl(SonicSession session, Intent intent) {
             super(session, intent);
+            connectionImpl = createConnection();
+            initConnection(connectionImpl);
         }
 
         protected URLConnection createConnection() {
 
-            String currentUrl = session.currUrl;
+            String currentUrl = session.srcUrl;
 
             if (TextUtils.isEmpty(currentUrl)) {
                 return null;
@@ -328,65 +344,62 @@ public abstract class SonicSessionConnection {
             return connection;
         }
 
-        protected URLConnection getConnection() {
-            if (null == connectionImpl) {
-                connectionImpl = createConnection();
-                if (null != connectionImpl) {
-                    String currentUrl = session.srcUrl;
-                    SonicSessionConfig config = session.config;
-                    connectionImpl.setConnectTimeout(config.CONNECT_TIMEOUT_MILLIS);
-                    connectionImpl.setReadTimeout(config.READ_TIMEOUT_MILLIS);
-                    /**
-                     *  {@link SonicSessionConnection#CUSTOM_HEAD_FILED_ACCEPT_DIFF} is need to be set If client accepts incrementally updates. <br>
-                     *  <p><b>Note: It doesn't support incrementally updated for template file.</b><p/>
-                     */
-                    connectionImpl.setRequestProperty(CUSTOM_HEAD_FILED_ACCEPT_DIFF, config.ACCEPT_DIFF_DATA ? "true" : "false");
+        protected boolean initConnection(URLConnection connection) {
+            if (null != connection) {
+                SonicSessionConfig config = session.config;
+                connection.setConnectTimeout(config.CONNECT_TIMEOUT_MILLIS);
+                connection.setReadTimeout(config.READ_TIMEOUT_MILLIS);
+                /**
+                 *  {@link SonicSessionConnection#CUSTOM_HEAD_FILED_ACCEPT_DIFF} is need to be set If client accepts incrementally updates. <br>
+                 *  <p><b>Note: It doesn't support incrementally updated for template file.</b><p/>
+                 */
+                connection.setRequestProperty(CUSTOM_HEAD_FILED_ACCEPT_DIFF, config.ACCEPT_DIFF_DATA ? "true" : "false");
 
-                    String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
-                    if (null == eTag) eTag = "";
-                    connectionImpl.setRequestProperty("if-none-match", eTag);
+                String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
+                if (null == eTag) eTag = "";
+                connection.setRequestProperty("if-none-match", eTag);
 
-                    String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-                    if (null == templateTag) templateTag = "";
-                    connectionImpl.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
+                String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+                if (null == templateTag) templateTag = "";
+                connection.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
-                    connectionImpl.setRequestProperty("method", "GET");
-                    connectionImpl.setRequestProperty("accept-Charset", "utf-8");
-                    connectionImpl.setRequestProperty("accept-Encoding", "gzip");
-                    connectionImpl.setRequestProperty("accept-Language", "zh-CN,zh;");
-                    connectionImpl.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
+                connection.setRequestProperty("method", "GET");
+                connection.setRequestProperty("accept-Charset", "utf-8");
+                connection.setRequestProperty("accept-Encoding", "gzip");
+                connection.setRequestProperty("accept-Language", "zh-CN,zh;");
+                connection.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
 
-                    // set custom request headers
-                    if (null != config.customRequestHeaders && 0 != config.customRequestHeaders.size()) {
-                        for (Map.Entry<String, String> entry : config.customRequestHeaders.entrySet()) {
-                            connectionImpl.setRequestProperty(entry.getKey(), entry.getValue());
-                        }
+                // set custom request headers
+                if (null != config.customRequestHeaders && 0 != config.customRequestHeaders.size()) {
+                    for (Map.Entry<String, String> entry : config.customRequestHeaders.entrySet()) {
+                        connection.setRequestProperty(entry.getKey(), entry.getValue());
                     }
-
-                    SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
-                    String cookie = runtime.getCookie(currentUrl);
-                    if (!TextUtils.isEmpty(cookie)) {
-                        connectionImpl.setRequestProperty("cookie", cookie);
-                    } else {
-                        SonicUtils.log(TAG, Log.ERROR, "create UrlConnection cookie is empty");
-                    }
-                    String userAgent = runtime.getUserAgent();
-                    if (!TextUtils.isEmpty(userAgent)) {
-                        userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                    } else {
-                        userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                    }
-                    connectionImpl.setRequestProperty("User-Agent", userAgent);
                 }
+
+                SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
+                String cookie = runtime.getCookie(session.srcUrl);
+                if (!TextUtils.isEmpty(cookie)) {
+                    connection.setRequestProperty("cookie", cookie);
+                } else {
+                    SonicUtils.log(TAG, Log.ERROR, "create UrlConnection cookie is empty");
+                }
+                String userAgent = runtime.getUserAgent();
+                if (!TextUtils.isEmpty(userAgent)) {
+                    userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
+                } else {
+                    userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
+                }
+                connection.setRequestProperty("User-Agent", userAgent);
+
+                return true;
             }
-            return connectionImpl;
+            return false;
         }
 
         @Override
         protected synchronized int internalConnect() {
-            URLConnection urlConnection = getConnection();
-            if (urlConnection instanceof HttpURLConnection) {
-                HttpURLConnection httpURLConnection = (HttpURLConnection) urlConnection;
+            if (connectionImpl instanceof HttpURLConnection) {
+                HttpURLConnection httpURLConnection = (HttpURLConnection) connectionImpl;
                 try {
                     httpURLConnection.connect();
                     return SonicConstants.ERROR_CODE_SUCCESS;
@@ -485,6 +498,11 @@ public abstract class SonicSessionConnection {
             return SonicConstants.ERROR_CODE_UNKNOWN;
         }
 
+        /**
+         *  return response headers which contains response headers from server and custom response headers from
+         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
+         *  note: server response headers have high priority than custom headers!
+         */
         @Override
         public Map<String, List<String>> getResponseHeaderFields() {
             if (null == connectionImpl) {
@@ -492,13 +510,13 @@ public abstract class SonicSessionConnection {
             }
 
             if (null == cachedResponseHeaders) {
-                // fill real response headers
-                cachedResponseHeaders = connectionImpl.getHeaderFields();
-                if (null == cachedResponseHeaders) {
+                // condition branch:more like to [null == session.config.customResponseHeaders]
+                if (null == session.config.customResponseHeaders || 0 == session.config.customResponseHeaders.size()) {
+                    cachedResponseHeaders = connectionImpl.getHeaderFields();
+                } else {
+                    // new cachedResponseHeaders
                     cachedResponseHeaders = new HashMap<String, List<String>>();
-                }
-                // fill custom headers
-                if (null != session.config.customResponseHeaders && 0 != session.config.customResponseHeaders.size()) {
+                    // fill custom headers
                     List<String> tmpHeaderList;
                     for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
                         tmpHeaderList = cachedResponseHeaders.get(entry.getKey());
@@ -508,6 +526,8 @@ public abstract class SonicSessionConnection {
                         }
                         tmpHeaderList.add(entry.getValue());
                     }
+                    // fill real response headers
+                    cachedResponseHeaders.putAll(connectionImpl.getHeaderFields());
                 }
             }
             return cachedResponseHeaders;

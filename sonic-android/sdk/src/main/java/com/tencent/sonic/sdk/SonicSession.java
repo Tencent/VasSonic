@@ -441,7 +441,17 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
         Intent intent = new Intent();
         intent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, sessionData.etag);
-        intent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, sessionData.templateTag);
+
+        String strictMode = "true";
+        if (config.customResponseHeaders != null && config.customResponseHeaders.containsKey(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE)) {
+            strictMode = config.customResponseHeaders.get(strictMode);
+        }
+        strictMode = TextUtils.isEmpty(strictMode) ? "true" : strictMode;
+
+        if ("true".equalsIgnoreCase(strictMode)) {
+            intent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, sessionData.templateTag);
+        }
+
         String hostDirectAddress = SonicEngine.getInstance().getRuntime().getHostDirectAddress(srcUrl);
         if (!TextUtils.isEmpty(hostDirectAddress)) {
             statistics.isDirectAddress = true;
@@ -524,10 +534,28 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             handleFlow_FirstLoad(); // first mode
         } else {
             String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
+            strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
+            strictMode = TextUtils.isEmpty(strictMode) ? "true" : strictMode;
+
+
             if (SonicUtils.shouldLog(Log.INFO)) {
-                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange);
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
             }
-            if (!TextUtils.isEmpty(templateChange)) {
+
+            if ("false".equalsIgnoreCase(strictMode)) {
+                String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+                if (!TextUtils.isEmpty(eTag)) {
+                    if (!eTag.equalsIgnoreCase(sessionData.etag)) {
+                        handleFlow_TemplateChange(); // html change
+                    } else {
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                    }
+                } else {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no etag field and eTag is " + eTag + ".");
+                    SonicUtils.removeSessionCache(id);
+                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
+                }
+            } else if (!TextUtils.isEmpty(templateChange)) {
                 if ("false".equals(templateChange) || "0".equals(templateChange)) {
                     handleFlow_DataUpdate(); // data update
                 } else {
@@ -743,13 +771,33 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
         String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
         String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
+        String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
+        strictMode = TextUtils.isEmpty(strictMode) ? "true" : strictMode;
 
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: start separate, eTag = " + eTag + ", templateTag = " + templateTag);
+
+        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: start separate," +
+                " eTag = " + eTag + ", templateTag = " + templateTag
+                + ", strict mode: " + strictMode);
         long startTime = System.currentTimeMillis();
 
         StringBuilder templateStringBuilder = new StringBuilder();
         StringBuilder dataStringBuilder = new StringBuilder();
-        if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
+        if ("false".equalsIgnoreCase(strictMode)) {
+            SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
+            if (!TextUtils.isEmpty(eTag) ) {
+                if (!eTag.equalsIgnoreCase(sessionData.etag)
+                        && SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
+                    long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                    SonicUtils.saveSonicData(id, eTag, "", SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                } else {
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: eTag is the same as last eTag!");
+                }
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache without strict mode: save session files fail, " +
+                        "last eTag: (" + sessionData.etag + ")");
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
+            }
+        } else if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
             if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString())) {
                 long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
                 SonicUtils.saveSonicData(id, eTag, templateTag, SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);

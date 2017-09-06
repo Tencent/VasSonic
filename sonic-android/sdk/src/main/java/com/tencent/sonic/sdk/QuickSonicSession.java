@@ -245,7 +245,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 if (wasLoadDataInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_PreLoad:PRE_LOAD_WITH_CACHE load data.");
                     String html = (String) msg.obj;
-                    sessionClient.loadDataWithBaseUrlAndHeader(currUrl, html, "text/html", "utf-8", currUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleClientCoreMessage_PreLoad:wasLoadDataInvoked = true.");
                 }
@@ -280,7 +280,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             case FIRST_LOAD_WITH_CACHE: {
                 if (wasLoadUrlInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_FirstLoad:oh yeah, first load hit 304.");
-                    sessionClient.loadDataWithBaseUrlAndHeader(currUrl, (String) msg.obj, "text/html", "utf-8", currUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, (String) msg.obj, "text/html", "utf-8", srcUrl, getHeaders());
                     setResult(SONIC_RESULT_CODE_FIRST_LOAD, SONIC_RESULT_CODE_HIT_CACHE, false);
                 } else {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") FIRST_LOAD_WITH_CACHE load url was invoked.");
@@ -318,7 +318,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             if (!TextUtils.isEmpty(htmlString)) {
                 SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_DataUpdate:oh yeah data update hit 304, now clear pending data ->" + (null != pendingDiffData) + ".");
                 pendingDiffData = null;
-                sessionClient.loadDataWithBaseUrlAndHeader(currUrl, htmlString, "text/html", "utf-8", currUrl, getHeaders());
+                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, htmlString, "text/html", "utf-8", srcUrl, getHeaders());
                 setResult(SONIC_RESULT_CODE_DATA_UPDATE, SONIC_RESULT_CODE_HIT_CACHE, false);
                 return;
             }
@@ -349,7 +349,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     sessionClient.loadUrl(srcUrl, null);
                 } else {
                     SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:load data.");
-                    sessionClient.loadDataWithBaseUrlAndHeader(currUrl, html, "text/html", "utf-8", currUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
                 }
                 setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_TEMPLATE_CHANGE, false);
             } else {
@@ -360,7 +360,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:oh yeah template change hit 304.");
             if (msg.obj instanceof String) {
                 String html = (String) msg.obj;
-                sessionClient.loadDataWithBaseUrlAndHeader(currUrl, html, "text/html", "utf-8", currUrl, getHeaders());
+                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
                 setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_HIT_CACHE, false);
             } else {
                 SonicUtils.log(TAG, Log.ERROR, "handleClientCoreMessage_TemplateChange error:call load url.");
@@ -456,7 +456,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         if (null != pendingWebResourceStream) {
             Object webResourceResponse;
             if (!isDestroyedOrWaitingForDestroy()) {
-                String mime = SonicUtils.getMime(currUrl);
+                String mime = SonicUtils.getMime(srcUrl);
                 webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime, "utf-8", pendingWebResourceStream, getHeaders());
             } else {
                 webResourceResponse = null;

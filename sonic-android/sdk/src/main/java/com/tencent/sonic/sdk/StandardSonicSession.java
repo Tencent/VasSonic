@@ -168,7 +168,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             if (null != pendingWebResourceStream) {
                 Object webResourceResponse;
                 if (!isDestroyedOrWaitingForDestroy()) {
-                    String mime = SonicUtils.getMime(currUrl);
+                    String mime = SonicUtils.getMime(srcUrl);
                     webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime, "utf-8", pendingWebResourceStream, getHeaders());
                 } else {
                     webResourceResponse = null;

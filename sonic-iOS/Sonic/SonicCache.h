@@ -143,6 +143,14 @@
                  withResponseHeaders:(NSDictionary *)headers
                        withUrl:(NSString *)url;
 
+
+/**
+ * Save the HTML without split template and dynamic data
+ */
+- (SonicCacheItem *)saveStaticModeWithHtmlData:(NSData *)htmlData
+                           withResponseHeaders:(NSDictionary *)headers
+                                       withUrl:(NSString *)url;
+
 /**
  * @brief Get the memory cache item by sessionID.
  * If there no memory cache exist,then create an new item
@@ -157,5 +165,11 @@
  * Get the file cache update timestamp.
  */
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
+
+
+/**
+ * Check file cache size, we keep max cache size 30MB
+ */
+- (void)autoCheckCacheSizeAndClear;
 
 @end

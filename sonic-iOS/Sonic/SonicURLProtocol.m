@@ -60,7 +60,7 @@
 }
 
 - (void)startLoading
-{
+{    
     NSThread *currentThread = [NSThread currentThread];
 
     NSString *sessionID = [self.request valueForHTTPHeaderField:SonicHeaderKeySessionID];

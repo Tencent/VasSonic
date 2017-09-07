@@ -118,6 +118,11 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
 - (void)addCustomRequestHeaders:(NSDictionary *)requestHeaders;
 
 /**
+ * Add custom headers to response.
+ */
+- (void)addCustomResponseHeaders:(NSDictionary *)responseHeaders;
+
+/**
  * Start request.
  */
 - (void)start;

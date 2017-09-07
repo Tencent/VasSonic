@@ -137,6 +137,11 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyETag     @"Etag"
 
 /**
+ * Check if sonic using strict mode, default is strict-mode:true
+ */
+#define SonicHeaderKeyStrictMode @"strict-mode"
+
+/**
  * Content-Security-Policy key for header.
  */
 #define SonicHeaderKeyCSPHeader       @"Content-Security-Policy"
@@ -201,7 +206,27 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * Sever default disable sonic time duration: 6 hours.
  */
-#define SonicCacheOfflineDefaultTime   60*60*6
+#define SonicCacheOfflineDefaultTime  21600
+
+/**
+ * Root cache directory max size,default is 30MB
+ */
+#define SonicCacheDirectoryMaxSize  31457280.0
+
+/**
+ * 
+ */
+#define SonicCacheDirectoryWarningPercent 0.8
+
+/**
+ *
+ */
+#define SonicCacheDirectorySafePercent 0.25
+
+/**
+ * Auto check cache directory every 24 hours
+ */
+#define SonicCacheSizeCheckTimeinteval 60*24
 
 /**
  * Quick way to get file manager.

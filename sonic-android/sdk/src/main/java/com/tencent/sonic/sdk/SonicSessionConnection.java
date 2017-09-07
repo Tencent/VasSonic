@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 
@@ -222,8 +223,8 @@ public abstract class SonicSessionConnection {
      *  Reads all of data from {@link #getResponseStream()} into byte array output stream {@code outputStream}.
      *  And then this method returns {@link ResponseDataTuple} object which holds the input and output stream. <br>
      * <p><b>Note: This method blocks until the end of the input stream has been reached or {@code breakCondition} has been reset to true.</b></p>
-     * 
-	 * @param breakCondition This method won't read any data from {@link #getResponseStream()} if {@code breakCondition} is false.
+     *
+     * @param breakCondition This method won't read any data from {@link #getResponseStream()} if {@code breakCondition} is false.
      * @param outputStream   This method will reuse this byte array output stream instead of creating new output stream.
      * @return
      *      Returns {@link ResponseDataTuple} caches information about the all of the stream and the state which indicates there is no more data.
@@ -519,15 +520,28 @@ public abstract class SonicSessionConnection {
                     // fill custom headers
                     List<String> tmpHeaderList;
                     for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
-                        tmpHeaderList = cachedResponseHeaders.get(entry.getKey());
-                        if (null == tmpHeaderList) {
-                            tmpHeaderList = new ArrayList<String>(1);
-                            cachedResponseHeaders.put(entry.getKey(), tmpHeaderList);
+                        String key = entry.getKey();
+                        if (!TextUtils.isEmpty(key)) {
+                            tmpHeaderList = cachedResponseHeaders.get(key.toLowerCase());
+                            if (null == tmpHeaderList) {
+                                tmpHeaderList = new ArrayList<String>(1);
+                                cachedResponseHeaders.put(key.toLowerCase(), tmpHeaderList);
+                            }
+                            tmpHeaderList.add(entry.getValue());
                         }
-                        tmpHeaderList.add(entry.getValue());
                     }
                     // fill real response headers
-                    cachedResponseHeaders.putAll(connectionImpl.getHeaderFields());
+                    Map<String,List<String>> headersFromServer = connectionImpl.getHeaderFields();
+                    Set<Map.Entry<String,List<String>>> entrySet = headersFromServer.entrySet();
+                    for(Map.Entry<String,List<String>> entry : entrySet) {
+                        String key = entry.getKey();
+                        if (!TextUtils.isEmpty(key)) {
+                            cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
+                        } else {
+                            cachedResponseHeaders.put(key, entry.getValue());
+                        }
+                    }
+
                 }
             }
             return cachedResponseHeaders;
@@ -537,7 +551,7 @@ public abstract class SonicSessionConnection {
         public String getResponseHeaderField(String key) {
             Map<String, List<String>> responseHeaderFields = getResponseHeaderFields();
             if (null != responseHeaderFields && 0 != responseHeaderFields.size()) {
-                List<String> responseHeaderValues = responseHeaderFields.get(key);
+                List<String> responseHeaderValues = responseHeaderFields.get(key.toLowerCase());
                 if (null != responseHeaderValues && 0 != responseHeaderValues.size()) {
                     StringBuilder stringBuilder = new StringBuilder(responseHeaderValues.get(0));
                     for (int index = 1, size = responseHeaderValues.size(); index < size; ++index) {

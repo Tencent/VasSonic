@@ -508,7 +508,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
-        if (OFFLINE_MODE_HTTP.equals(cacheOffline)) {
+        if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
             // Remove data
             if (!TextUtils.isEmpty(htmlString)) {
                 SonicUtils.removeSessionCache(id);
@@ -523,27 +523,57 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         if (TextUtils.isEmpty(htmlString)) {
             handleFlow_FirstLoad(); // first mode
         } else {
+            String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
             String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
-            if (SonicUtils.shouldLog(Log.INFO)) {
-                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange);
-            }
-            if (!TextUtils.isEmpty(templateChange)) {
-                if ("false".equals(templateChange) || "0".equals(templateChange)) {
-                    handleFlow_DataUpdate(); // data update
-                } else {
-                    handleFlow_TemplateChange(); // template change
+
+            if ("false".equalsIgnoreCase(strictMode)) {
+                String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+                if (SonicUtils.shouldLog(Log.INFO)) {
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
                 }
-            } else {
-                String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-                if (!TextUtils.isEmpty(templateTag) && !templateTag.equals(sessionData.templateTag)) {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:no templateChange field but template-tag has changed.");
-                    handleFlow_TemplateChange(); //fault tolerance
+
+                boolean error = false;
+                if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
+                    error = true;
                 } else {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no templateChange field and template-tag is " + templateTag + ".");
+                    if (!TextUtils.isEmpty(eTag)) {
+                        if (!eTag.equalsIgnoreCase(sessionData.etag)) {
+                            handleFlow_TemplateChange(); // html change
+                        } else {
+                            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                        }
+                    } else {
+                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
+                        error = true;
+                    }
+                }
+
+                if (error) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: remove all session.");
                     SonicUtils.removeSessionCache(id);
                     SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
                 }
+            } else {
+                if (!TextUtils.isEmpty(templateChange)) {
+                    if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+                        handleFlow_DataUpdate(); // data update
+                    } else {
+                        handleFlow_TemplateChange(); // template change
+                    }
+                } else {
+                    String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+                    if (!TextUtils.isEmpty(templateTag) && !templateTag.equalsIgnoreCase(sessionData.templateTag)) {
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:no templateChange field but template-tag has changed.");
+                        handleFlow_TemplateChange(); //fault tolerance
+                    } else {
+                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no templateChange field and template-tag is " + templateTag + ".");
+                        SonicUtils.removeSessionCache(id);
+                        SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
+                    }
+                }
             }
+
         }
 
     }
@@ -738,29 +768,67 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache error:htmlString is null or sessionConnection is null.");
             return;
         }
-
+        long startTime = System.currentTimeMillis();
+        final String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
         final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-        final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+
         String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
         String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
 
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: start separate, eTag = " + eTag + ", templateTag = " + templateTag);
-        long startTime = System.currentTimeMillis();
+        if ("false".equalsIgnoreCase(strictMode)) {
+            SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
+            String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
-        StringBuilder templateStringBuilder = new StringBuilder();
-        StringBuilder dataStringBuilder = new StringBuilder();
-        if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
-            if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString())) {
-                long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                SonicUtils.saveSonicData(id, eTag, templateTag, SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+            if (SonicUtils.shouldLog(Log.INFO)) {
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
+            }
+
+            boolean error = false;
+            if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
+                error = true;
             } else {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save session files fail.");
+                if (!TextUtils.isEmpty(eTag)) {
+                    if (!eTag.equalsIgnoreCase(sessionData.etag)) {
+                        if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
+                            long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                            SonicUtils.saveSonicData(id, eTag, "", SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                        }
+                    } else {
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                    }
+                } else {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
+                    error = true;
+                }
+            }
+
+            if (error) {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache without strict mode: save session files fail, " +
+                        "last eTag: (" + sessionData.etag + ")");
                 SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
             }
         } else {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save separate template and data files fail.");
-            SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SPLIT_HTML_FAIL);
+            final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+
+            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: start separate, eTag = " + eTag + ", templateTag = " + templateTag);
+
+            StringBuilder templateStringBuilder = new StringBuilder();
+            StringBuilder dataStringBuilder = new StringBuilder();
+            if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
+                if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString())) {
+                    long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                    SonicUtils.saveSonicData(id, eTag, templateTag, SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                } else {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save session files fail.");
+                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
+                }
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save separate template and data files fail.");
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SPLIT_HTML_FAIL);
+            }
         }
+
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: finish separate, cost " + (System.currentTimeMillis() - startTime) + "ms.");
     }
 

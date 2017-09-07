@@ -25,21 +25,21 @@ public class HostSonicRuntime extends SonicRuntime {
         super(context);
     }
     /**
-     * @return @return Returns User's UA
+     * @return User's UA
      */
     @Override
     public String getUserAgent() {
         return "";
     }
     /**
-     * @return Returns the ID of user.
+     * @return the ID of user.
      */
     @Override
     public String getCurrentUserAccount() {
         return "";
     }
     /**
-     * @return Returns the file path which is used to save Sonic caches.
+     * @return the file path which is used to save Sonic caches.
      */
     @Override
     public File getSonicCacheDir() {

@@ -47,8 +47,14 @@
         return NO;
         
     }else if([value isEqualToString:SonicHeaderValueWebviewLoad]) {
-        return YES;
         
+        //check if session exist for request
+        SonicSession *session = [[SonicClient sharedClient] sessionById:sonicSessionID(request.URL.absoluteString)];
+        if (session) {
+            return YES;
+        }
+        
+        return NO;
     }
     
     return NO;

@@ -423,16 +423,23 @@ class SonicUtils {
     }
 
 
+    /**
+     * Get mime type for url simply.
+     * (Maybe {@code android.webkit.MimeTypeMap.getMimeTypeFromExtension} is better.)
+     * @param url target url
+     * @return mime type
+     */
     static String getMime(String url) {
         String mime = "text/html";
         Uri currentUri = Uri.parse(url);
         String path = currentUri.getPath();
-        if (path.contains(".css")) {
+        if (path.endsWith(".css")) {
             mime = "text/css";
-        } else if (path.contains(".js")) {
+        } else if (path.endsWith(".js")) {
             mime = "application/x-javascript";
-        } else if (path.contains(".jpg") || path.contains(".gif") ||
-                path.contains(".png") || path.contains(".jpeg")) {
+        } else if (path.endsWith(".jpg") || path.endsWith(".gif") ||
+                path.endsWith(".png") || path.endsWith(".jpeg") ||
+                path.endsWith(".webp") || path.endsWith(".bmp")) {
             mime = "image/*";
         }
         return mime;

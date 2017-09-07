@@ -61,7 +61,7 @@
  * Set a timestamp to record server disable sonic request start.
  * @param sessionID  an session id to find saved config params.
  */
-- (void)saveServerDisabeSonicTimeNow:(NSString *)sessionID;
+- (void)saveServerDisableSonicTimeNow:(NSString *)sessionID;
 
 /**
  * Remove the recorded timestamp to enable sonic request.

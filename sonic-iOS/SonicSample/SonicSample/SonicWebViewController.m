@@ -45,8 +45,9 @@
 
 - (void)dealloc
 {
-    self.jscontext = nil;
+    self.sonicContext.owner = nil;
     self.sonicContext = nil;
+    self.jscontext = nil;
     [[SonicClient sharedClient] removeSessionWithWebDelegate:self];
 }
 
@@ -79,6 +80,12 @@
     self.jscontext[@"sonic"] = self.sonicContext;
     
     return YES;
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
+    self.jscontext = [self.webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
+    self.jscontext[@"sonic"] = self.sonicContext;
 }
 
 #pragma mark - Sonic Session Delegate

@@ -11,6 +11,21 @@
  * @time 2017.03.24
  *
  */
+if (!function_exists('getallheaders'))  {
+    function getallheaders()
+    {
+        if (!is_array($_SERVER)) {
+            return array();
+        }
+        $headers = array();
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $headers[str_replace(' ', '-', strtolower(str_replace('_', ' ', substr($name, 5))))] = $value;
+            }
+        }
+        return $headers;
+    }
+}
 class TemplateReplace{
     public static $shotWnsDiffBodyReplace = false; //判断是否成功替换sonicdiffbody
     public static $diffIndex = 0; 
@@ -48,8 +63,8 @@ class util_sonic {
             header("Cache-Offline: $offline");
 
             $Etag = NULL;
-            if(isset($headers['If-None-Match'])){
-                $Etag = $headers['If-None-Match'];
+            if(isset($headers['if-none-match']) || isset($headers['If-None-Match'])){
+                $Etag = isset($headers['if-none-match']) ? $headers['if-none-match'] : $headers['If-None-Match'];
             }
 
             //offline值需要进入离线
@@ -112,10 +127,7 @@ class util_sonic {
         $result['html-sha1'] = $htmlMd5;
 
         $resultStr = '';
-        if(!TemplateReplace::$shotWnsDiffBodyReplace){
-            $result['template'] = $templateHtml;
-            $resultStr = json_encode($result);
-        } else if($templateMd5 === $clientTemplateTag){
+        if($templateMd5 === $clientTemplateTag){
             header('template-change: false');
             //离线模板没有差异，不用更新
             $result['diff'] = '';

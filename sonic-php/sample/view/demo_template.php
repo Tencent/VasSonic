@@ -104,11 +104,11 @@
 <script>
     _pageTime.jsendtTime = new Date();
 </script>
-<script src="http://open.mobile.qq.com/sdk/qqapi.js?_bid=152"></script>
-<script src="http://imgcache.gtimg.cn/club/platform/lib/seajs/sea-with-plugin-2.2.1.js?_bid=250&max_age=2592000" id="seajsnode"></script>
+<script src="//open.mobile.qq.com/sdk/qqapi.js?_bid=152"></script>
+<script src="//imgcache.gtimg.cn/club/platform/lib/seajs/sea-with-plugin-2.2.1.js?_bid=250&max_age=2592000" id="seajsnode"></script>
 <script>
     seajs.config({
-        base: 'http://imgcache.gtimg.cn/club/platform/examples/',
+        base: location.protocol+'//imgcache.gtimg.cn/club/platform/examples/',
         localcache:{
             //浏览器缓存时间
             maxAge: 2592000,
@@ -123,7 +123,7 @@
             'zepto': 'lib/zepto/zepto'
         },
         paths:{
-            'lib' : 'http://imgcache.gtimg.cn/club/platform/lib'
+            'lib' : location.protocol+'//imgcache.gtimg.cn/club/platform/lib'
         },
         manifest:{
             "lib/zepto/zepto": "1.1.3",
@@ -139,7 +139,14 @@
             $('.sonic_des').css('display', 'none');
             $('#des'+sonicStatus).css('display', 'block');
             //耗时分析(上报)
-            var performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime
+            var performanceJson;
+            if (window.sonic && window.sonic.getPerformance) {
+                performanceJson = JSON.parse(window.sonic.getPerformance());//clickTime;loadUrlTime
+            } else if (window.performance && window.performance.timing) {
+                performanceJson = {clickTime: window.performance.timing.navigationStart, loadUrlTime: window.performance.timing.fetchStart};
+            } else {
+                performanceJson = {clickTime: 0, loadUrlTime: 0};
+            }
             var pageTime = _pageTime.jsendtTime - performanceJson.clickTime;
             $("#pageTime"+sonicStatus).text(pageTime+'ms');
         }

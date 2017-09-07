@@ -13,7 +13,7 @@
 
 <img src = "sonicQuickModeFirst.png" width=100% height=100%>
 
-这里主要有两条并行线，左边是webview的执行流程，右边是sonic的执行流程。Webview的执行流程比较简单，主要是进行webview的初始话，以及在初始化完之后调用SonicSession（这里的SonicSession对象是activity onCreate的时候通过SonicEngine创建的）的onClientReady方法，告知其webview已经init完毕。剩下的事情交给sonic那边处理。
+这里主要有两条并行线，左边是webview的执行流程，右边是sonic的执行流程。Webview的执行流程比较简单，主要是进行webview的初始化，以及在初始化完之后调用SonicSession（这里的SonicSession对象是activity onCreate的时候通过SonicEngine创建的）的onClientReady方法，告知其webview已经init完毕。剩下的事情交给sonic那边处理。
 
 右边这条sonic的执行流程线相对会复杂一些，首先，在activity create之后通过SonicEngine创建SonicSession对象。接着调用SonicCacheInterceptor来获取本地缓存的url对应的数据。由于是首次加载即本地无缓存数据，所以这里的数据是为空的。获取的数据为空之后会post一个CLIENT_CORE_MSG_PRE_LOAD(arg1 = PRE_LOAD_NO_CACHE )的消息到主线程中，同时继续执行下面的逻辑。主线程的逻辑后面统一分析，这里先分析sonic所在子线程中的逻辑。
 

@@ -30,6 +30,16 @@ public class SonicConfig {
     long SONIC_UNAVAILABLE_TIME = 6 * 60 * 60 * 1000;
 
     /**
+     * The max size of sonic cache, default is 30M.
+     */
+    long SONIC_CACHE_MAX_SIZE = 30 * 1024 * 1024;
+
+    /**
+     * The time interval between check sonic cache, default is 24 hours.
+     */
+    long SONIC_CACHE_CHECK_TIME_INTERVAL = 24 * 60 * 60 * 1000L;
+
+    /**
      * Whether verify file by compare SHA1. If this value is false, sonic will verify file by file's size.
      * Verify the file size is less time consuming than checking SHA1.
      */
@@ -62,6 +72,16 @@ public class SonicConfig {
 
         public Builder setCacheVerifyWithSha1(boolean enable) {
             target.VERIFY_CACHE_FILE_WITH_SHA1 = enable;
+            return this;
+        }
+
+        public Builder setCacheMaxSize(long maxSize) {
+            target.SONIC_CACHE_MAX_SIZE = maxSize;
+            return this;
+        }
+
+        public Builder setCacheCheckTimeInterval(long time) {
+            target.SONIC_CACHE_CHECK_TIME_INTERVAL = time;
             return this;
         }
 

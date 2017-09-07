@@ -20,6 +20,7 @@
 #import <Foundation/Foundation.h>
 #import "SonicSession.h"
 #import "SonicConstants.h"
+#import "SonicSessionConfiguration.h"
 
 /**
  * Manage all sonic sessions.
@@ -50,7 +51,6 @@
 
 /**
  * Clear session memory and file caches with URL.
- * @param url
  */
 - (void)removeCacheByUrl:(NSString *)url;
 
@@ -83,6 +83,13 @@
  * Get the last update timestamp of this URL.
  */
 - (NSString *)localRefreshTimeByUrl:(NSString *)url;
+
+/**
+ * Create a sonic session with URL.
+ * All the same URLs share one single session. Duplicate calls will not create duplicate sessions.
+ * use configuration to add custom request headers or custom response headers
+ */
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration;
 
 /**
  * Create a sonic session with URL.

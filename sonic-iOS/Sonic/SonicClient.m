@@ -167,6 +167,11 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
 {
+    [self createSessionWithUrl:url withWebDelegate:aWebDelegate withConfiguration:nil];
+}
+
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration
+{
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
     }
@@ -182,6 +187,12 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     if (!existSession) {
         
         existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
+        if (configuration.customResponseHeaders.count > 0) {
+            [existSession addCustomResponseHeaders:configuration.customResponseHeaders];
+        }
+        if (configuration.customRequestHeaders.count > 0) {
+            [existSession addCustomRequestHeaders:configuration.customRequestHeaders];
+        }
         
         NSURL *cUrl = [NSURL URLWithString:url];
         existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];
@@ -258,6 +269,8 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     [self.lock unlock];
     
+    //Auto check root cache size
+    [[SonicCache shareCache] autoCheckCacheSizeAndClear];
 }
 
 @end

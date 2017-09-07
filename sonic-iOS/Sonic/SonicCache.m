@@ -350,6 +350,29 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     return cacheItem;
 }
 
+- (SonicCacheItem *)saveStaticModeWithHtmlData:(NSData *)htmlData
+                           withResponseHeaders:(NSDictionary *)headers
+                                       withUrl:(NSString *)url
+{
+    NSString *sessionID = sonicSessionID(url);
+    
+    if (!htmlData || headers.count == 0 || sessionID.length == 0) {
+        return nil;
+    }
+    
+    SonicCacheItem *cacheItem = [self cacheForSession:sessionID];
+    
+    cacheItem.htmlData = htmlData;
+    NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
+    cacheItem.config = config;
+    
+    dealInFileQueue(^{
+        [self staticModeSaveHtmlData:htmlData withConfig:config withSessionID:cacheItem.sessionID];
+    });
+    
+    return cacheItem;
+}
+
 - (NSDictionary *)createConfigFromResponseHeaders:(NSDictionary *)headers
 {
     //Etag,template-tag
@@ -574,6 +597,43 @@ void dealInFileQueue(dispatch_block_t block)
     });
 }
 
+- (void)staticModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withSessionID:(NSString *)sessionID
+{
+    if (!htmlData || config.count == 0 || [config[SonicHeaderKeyETag] length] == 0) {
+//    if (!htmlData || config.count == 0) {
+        return;
+    }
+    
+    //remove template if exist
+    NSString *tempPath = [self filePathWithType:SonicCacheTypeTemplate sessionID:sessionID];
+    if ([SonicFileManager fileExistsAtPath:tempPath]) {
+        [SonicFileManager removeItemAtPath:tempPath error:nil];
+    }
+    
+    //remove dynamic data if exist
+    NSString *dynamicDataPath = [self filePathWithType:SonicCacheTypeData sessionID:sessionID];
+    if ([SonicFileManager fileExistsAtPath:dynamicDataPath]) {
+        [SonicFileManager removeItemAtPath:dynamicDataPath error:nil];
+    }
+    
+    //save HTML data
+    if (htmlData) {
+        NSString *htmlPath = [self filePathWithType:SonicCacheTypeHtml sessionID:sessionID];
+        BOOL isSuccess = [htmlData writeToFile:htmlPath atomically:YES];
+        if (!isSuccess) {
+            return;
+        }
+    }
+    
+    //save the config data
+    NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
+    BOOL isSuccess = [config writeToFile:configPath atomically:YES];
+    if (!isSuccess) {
+        [self removeFileCacheOnly:sessionID];
+        return;
+    }
+}
+
 - (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
 {
     if (!htmlData || config.count == 0 || dynamicData.count == 0) {
@@ -631,5 +691,88 @@ void dealInFileQueue(dispatch_block_t block)
     }
 }
 
+- (void)autoCheckCacheSizeAndClear
+{
+    //Check current root cache directory size
+    if (_rootCachePath.length == 0) {
+        return;
+    }
+
+    unsigned long long cacheSize = [self folderSize:_rootCachePath];
+    
+    CGFloat percent = cacheSize/SonicCacheDirectoryMaxSize;
+    
+    if ( percent < SonicCacheDirectoryWarningPercent ) {
+        
+        return ;
+        
+    }
+    
+    dealInFileQueue(^{
+        
+        //sort sub directory by update time
+        NSArray *contentArray = [SonicFileManager contentsOfDirectoryAtPath:_rootCachePath error:nil];
+        
+        if (contentArray.count == 0) {
+            return;
+        }
+        
+        NSArray *sortArray = [contentArray sortedArrayUsingComparator:^NSComparisonResult(NSString *fileName1, NSString *fileName2) {
+            
+            NSString *subDir1 = [_rootCachePath stringByAppendingPathComponent:fileName1];
+            NSString *subDir2 = [_rootCachePath stringByAppendingPathComponent:fileName2];
+            
+            NSDictionary *fileAttrs1 = [SonicFileManager attributesOfItemAtPath:subDir1 error:nil];
+            NSDictionary *fileAttrs2 = [SonicFileManager attributesOfItemAtPath:subDir2 error:nil];
+            
+            NSTimeInterval modifyTime1 = [[fileAttrs1 fileModificationDate] timeIntervalSince1970];
+            NSTimeInterval modifyTime2 = [[fileAttrs2 fileModificationDate] timeIntervalSince1970];
+            
+            return modifyTime1 < modifyTime2;
+        }];
+        
+        NSMutableArray *willClearSubDirs = [NSMutableArray array];
+        NSInteger totalReadSize = 0;
+        
+        for (NSString *fileItem in sortArray) {
+            
+            NSString *subDir = [_rootCachePath stringByAppendingPathComponent:fileItem];
+            
+            unsigned long long fileSize = [self folderSize:subDir];
+            totalReadSize = totalReadSize + fileSize;
+            [willClearSubDirs addObject:fileItem];
+            
+            if ((cacheSize - totalReadSize)/SonicCacheDirectoryMaxSize < SonicCacheDirectorySafePercent ) {
+                break;
+            }
+        }
+        
+        //do clear action
+        if (totalReadSize > 0 && willClearSubDirs.count > 0) {
+            
+            for (NSString *fileItem in willClearSubDirs) {
+                
+                NSString *subDir = [_rootCachePath stringByAppendingPathComponent:fileItem];
+                
+                [SonicFileManager removeItemAtPath:subDir error:nil];
+            }
+        }
+        
+    });
+}
+
+- (unsigned long long int)folderSize:(NSString *)folderPath {
+    NSArray *filesArray = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:folderPath error:nil];
+    NSEnumerator *filesEnumerator = [filesArray objectEnumerator];
+    NSString *fileName;
+    unsigned long long int fileSize = 0;
+    
+    while (fileName = [filesEnumerator nextObject]) {
+        NSDictionary *fileDictionary = [[NSFileManager defaultManager] fileAttributesAtPath:[folderPath stringByAppendingPathComponent:fileName] traverseLink:YES];
+        fileSize += [fileDictionary fileSize];
+    }
+    
+    return fileSize;
+}
 
 @end

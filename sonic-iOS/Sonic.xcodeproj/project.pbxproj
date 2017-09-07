@@ -39,6 +39,8 @@
 		546B78361F0105F6003F08AE /* SonicSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78261F0105F6003F08AE /* SonicSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78371F0105F6003F08AE /* SonicURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78271F0105F6003F08AE /* SonicURLProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78801F01F91D003F08AE /* Sonic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 546B780D1F0105AA003F08AE /* Sonic.framework */; };
+		E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = E43E03441F618182000F30ED /* SonicSessionConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E43E03471F618182000F30ED /* SonicSessionConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = E43E03451F618182000F30ED /* SonicSessionConfiguration.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,8 @@
 		546B78261F0105F6003F08AE /* SonicSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSession.h; sourceTree = "<group>"; };
 		546B78271F0105F6003F08AE /* SonicURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicURLProtocol.h; sourceTree = "<group>"; };
 		546B787B1F01F91D003F08AE /* SonicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SonicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E43E03441F618182000F30ED /* SonicSessionConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSessionConfiguration.h; sourceTree = "<group>"; };
+		E43E03451F618182000F30ED /* SonicSessionConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicSessionConfiguration.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +135,8 @@
 				546B781F1F0105F6003F08AE /* SonicUitil.m */,
 				546B78241F0105F6003F08AE /* SonicConnection.h */,
 				546B78251F0105F6003F08AE /* SonicConnection.m */,
+				E43E03441F618182000F30ED /* SonicSessionConfiguration.h */,
+				E43E03451F618182000F30ED /* SonicSessionConfiguration.m */,
 			);
 			path = Sonic;
 			sourceTree = "<group>";
@@ -151,6 +157,7 @@
 				546B78331F0105F6003F08AE /* SonicClient.h in Headers */,
 				546B78321F0105F6003F08AE /* SonicCacheItem.h in Headers */,
 				546B78311F0105F6003F08AE /* SonicCache.h in Headers */,
+				E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */,
 				546B78121F0105AA003F08AE /* Sonic.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -280,6 +287,7 @@
 				546B782D1F0105F6003F08AE /* SonicSession.m in Sources */,
 				546B78291F0105F6003F08AE /* SonicCacheItem.m in Sources */,
 				546B78281F0105F6003F08AE /* SonicCache.m in Sources */,
+				E43E03471F618182000F30ED /* SonicSessionConfiguration.m in Sources */,
 				546B78351F0105F6003F08AE /* SonicConnection.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -312,6 +312,16 @@ public class SonicEngine {
     }
 
     /**
+     * It will Post a task to trim sonic cache
+     * if the last time of check sonic cache exceed {@link SonicConfig#SONIC_CACHE_CHECK_TIME_INTERVAL}.
+     */
+    public void trimSonicCache() {
+        if (SonicFileUtils.isNeedCheckSizeOfCache()) {
+            SonicFileUtils.checkAndTrimCache();
+        }
+    }
+
+    /**
      * <p>A callback receives notifications from a SonicSession.
      * Notifications indicate session related events, such as the running or the
      * destroy of the SonicSession.

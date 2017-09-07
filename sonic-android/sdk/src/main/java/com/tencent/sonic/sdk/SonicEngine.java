@@ -317,12 +317,7 @@ public class SonicEngine {
      */
     public void trimSonicCache() {
         if (SonicFileUtils.isNeedCheckSizeOfCache()) {
-            SonicSessionThreadPool.postTask(new Runnable() {
-                @Override
-                public void run() {
-                    SonicFileUtils.checkAndTrimCache();
-                }
-            });
+            SonicFileUtils.checkAndTrimCache();
         }
     }
 

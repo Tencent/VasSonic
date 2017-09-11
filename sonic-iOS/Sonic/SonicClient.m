@@ -278,7 +278,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     [self.lock unlock];
     
     //Auto check root cache size
-    [[SonicCache shareCache] autoCheckCacheSizeAndClear];
+    [[SonicCache shareCache] checkAndTrimCache];
 }
 
 @end

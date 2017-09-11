@@ -38,6 +38,7 @@
         self.title = @"Sonic";
         
         self.url = @"http://mc.vip.qq.com/demo/indexv3";
+        
     }
     return self;
 }

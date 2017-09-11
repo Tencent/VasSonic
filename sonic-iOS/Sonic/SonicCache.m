@@ -767,7 +767,7 @@ void dealInFileQueue(dispatch_block_t block)
     unsigned long long int fileSize = 0;
     
     while (fileName = [filesEnumerator nextObject]) {
-        NSDictionary *fileDictionary = [[NSFileManager defaultManager] fileAttributesAtPath:[folderPath stringByAppendingPathComponent:fileName] traverseLink:YES];
+        NSDictionary *fileDictionary = [[NSFileManager defaultManager] attributesOfItemAtPath:[folderPath stringByAppendingPathComponent:fileName] error:nil];
         fileSize += [fileDictionary fileSize];
     }
     

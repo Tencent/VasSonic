@@ -66,6 +66,13 @@
     _userAgent = [aUserAgent copy];
 }
 
+- (void)runWithConfiguration:(SonicConfiguration *)aConfiguration
+{
+    [_configuration release];
+    _configuration = nil;
+    _configuration = [aConfiguration retain];
+}
+
 - (void)setCurrentUserUniqIdentifier:(NSString *)userIdentifier
 {
     if (userIdentifier.length == 0 || [_currentUserUniq isEqualToString:userIdentifier]) {
@@ -96,6 +103,7 @@
 
 - (void)setupClient
 {
+    _configuration = [[SonicConfiguration defaultConfiguration] retain];
     self.lock = [NSRecursiveLock new];
     self.tasks = [NSMutableDictionary dictionary];
     self.ipDomains = [NSMutableDictionary dictionary];

@@ -170,6 +170,6 @@
 /**
  * Check file cache size, we keep max cache size 30MB
  */
-- (void)autoCheckCacheSizeAndClear;
+- (void)checkAndTrimCache;
 
 @end

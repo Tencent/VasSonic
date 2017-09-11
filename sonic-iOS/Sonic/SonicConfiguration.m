@@ -1,5 +1,5 @@
 //
-//  SonicSessionConfiguration.m
+//  SonicConfiguration.m
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -17,15 +17,20 @@
 //  Copyright © 2017年 Tencent. All rights reserved.
 //
 
-#import "SonicSessionConfiguration.h"
+#import "SonicConfiguration.h"
 
-@implementation SonicSessionConfiguration
+@implementation SonicConfiguration
 
-- (void)dealloc
++ (SonicConfiguration *)defaultConfiguration
 {
-    self.customRequestHeaders = nil;
-    self.customResponseHeaders = nil;
-    [super dealloc];
+    SonicConfiguration *configuration = [[SonicConfiguration new]autorelease];
+    configuration.cacheOfflineDisableTime = 21600;
+    configuration.cacheMaxDirectorySize = 31457280.0;
+    configuration.cacheDirectorySizeWarningPercent = 0.8;
+    configuration.cacheDirectorySizeSafePercent = 0.25;
+    configuration.maxMemroyCacheItemCount = 3;
+    
+    return configuration;
 }
 
 @end

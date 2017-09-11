@@ -108,7 +108,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 - (void)setupInit
 {
-    self.maxCacheCount = 3;
+    self.maxCacheCount = [SonicClient sharedClient].configuration.maxMemroyCacheItemCount;
     self.lock = [NSRecursiveLock new];
     self.memoryCache = [NSMutableDictionary dictionaryWithCapacity:self.maxCacheCount];
     self.recentlyUsedKey = [NSMutableArray arrayWithCapacity:self.maxCacheCount];
@@ -183,7 +183,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSTimeInterval lastTime = [disableStartTime doubleValue];
     NSTimeInterval timeNow = [[NSDate date] timeIntervalSince1970];
     
-    return timeNow - lastTime < SonicCacheOfflineDefaultTime;
+    return timeNow - lastTime < [SonicClient sharedClient].configuration.cacheOfflineDisableTime;
 }
 
 - (void)setupCacheOfflineTimeCfgDict
@@ -691,7 +691,7 @@ void dealInFileQueue(dispatch_block_t block)
     }
 }
 
-- (void)autoCheckCacheSizeAndClear
+- (void)checkAndTrimCache
 {
     //Check current root cache directory size
     if (_rootCachePath.length == 0) {
@@ -700,9 +700,9 @@ void dealInFileQueue(dispatch_block_t block)
 
     unsigned long long cacheSize = [self folderSize:_rootCachePath];
     
-    CGFloat percent = cacheSize/SonicCacheDirectoryMaxSize;
+    CGFloat percent = cacheSize/[SonicClient sharedClient].configuration.cacheMaxDirectorySize;
     
-    if ( percent < SonicCacheDirectoryWarningPercent ) {
+    if ( percent < [SonicClient sharedClient].configuration.cacheDirectorySizeWarningPercent ) {
         
         return ;
         
@@ -742,7 +742,7 @@ void dealInFileQueue(dispatch_block_t block)
             totalReadSize = totalReadSize + fileSize;
             [willClearSubDirs addObject:fileItem];
             
-            if ((cacheSize - totalReadSize)/SonicCacheDirectoryMaxSize < SonicCacheDirectorySafePercent ) {
+            if ((cacheSize - totalReadSize)/[SonicClient sharedClient].configuration.cacheMaxDirectorySize < [SonicClient sharedClient].configuration.cacheDirectorySizeSafePercent ) {
                 break;
             }
         }

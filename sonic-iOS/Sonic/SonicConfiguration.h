@@ -1,5 +1,5 @@
 //
-//  SonicSessionConfiguration.h
+//  SonicConfiguration.h
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -19,17 +19,36 @@
 
 #import <Foundation/Foundation.h>
 
-@interface SonicSessionConfiguration : NSObject
+@interface SonicConfiguration : NSObject
 
 /**
- * Pass custom request headers
+ * Sever default disable sonic time duration: 6 hours.
  */
-@property (nonatomic,retain)NSDictionary *customRequestHeaders;
+@property (nonatomic,assign)unsigned long long cacheOfflineDisableTime;
 
 /**
- * Pass custom response headers
+ * Root cache directory max size,default is 30MB
  */
-@property (nonatomic,retain)NSDictionary *customResponseHeaders;
+@property (nonatomic,assign)unsigned long long cacheMaxDirectorySize;
 
+/**
+ * Clean up the cache if the current cache reaches the maximum cache of 0.8
+ */
+@property (nonatomic,assign)unsigned long long cacheDirectorySizeWarningPercent;
+
+/**
+ * Clean up the cache to the maximum cache of 0.2
+ */
+@property (nonatomic,assign)unsigned long long cacheDirectorySizeSafePercent;
+
+/**
+ * The memory cache maximum count
+ */
+@property (nonatomic,assign)unsigned long long maxMemroyCacheItemCount;
+
+/**
+ * Return default configuration
+ */
++ (SonicConfiguration *)defaultConfiguration;
 
 @end

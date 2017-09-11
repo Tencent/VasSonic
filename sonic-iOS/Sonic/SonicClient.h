@@ -21,6 +21,7 @@
 #import "SonicSession.h"
 #import "SonicConstants.h"
 #import "SonicSessionConfiguration.h"
+#import "SonicConfiguration.h"
 
 /**
  * Manage all sonic sessions.
@@ -33,8 +34,16 @@
 /* Return the global custom User-Agent */
 @property (nonatomic,readonly)NSString *userAgent;
 
+/* Return the configuration */
+@property (nonatomic,readonly)SonicConfiguration *configuration;
+
 /* Share the instance */
 + (SonicClient *)sharedClient;
+
+/**
+ * Client must run with the configuration,default use [SonicConfiguration defaultConfiguration]
+ */
+- (void)runWithConfiguration:(SonicConfiguration *)aConfiguration;
 
 /**
  * Set an unique identifier for the user.

@@ -514,7 +514,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             if ([self isStrictMode]) {
                 cacheItem =  [[SonicCache shareCache] saveFirstWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
             }else{
-                cacheItem =  [[SonicCache shareCache] saveStaticModeWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
+                cacheItem =  [[SonicCache shareCache] saveUnStrictModeWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
             }
             
             if (cacheItem) {
@@ -790,7 +790,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
     if ([self isStrictMode]) {
         cacheItem = [[SonicCache shareCache] saveFirstWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
     }else{
-        cacheItem = [[SonicCache shareCache] saveStaticModeWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
+        cacheItem = [[SonicCache shareCache] saveUnStrictModeWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
     }
     
     if (cacheItem) {

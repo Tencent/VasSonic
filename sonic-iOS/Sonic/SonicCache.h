@@ -147,7 +147,7 @@
 /**
  * Save the HTML without split template and dynamic data
  */
-- (SonicCacheItem *)saveStaticModeWithHtmlData:(NSData *)htmlData
+- (SonicCacheItem *)saveUnStrictModeWithHtmlData:(NSData *)htmlData
                            withResponseHeaders:(NSDictionary *)headers
                                        withUrl:(NSString *)url;
 

@@ -350,7 +350,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     return cacheItem;
 }
 
-- (SonicCacheItem *)saveStaticModeWithHtmlData:(NSData *)htmlData
+- (SonicCacheItem *)saveUnStrictModeWithHtmlData:(NSData *)htmlData
                            withResponseHeaders:(NSDictionary *)headers
                                        withUrl:(NSString *)url
 {
@@ -367,7 +367,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     cacheItem.config = config;
     
     dealInFileQueue(^{
-        [self staticModeSaveHtmlData:htmlData withConfig:config withSessionID:cacheItem.sessionID];
+        [self unStrictModeSaveHtmlData:htmlData withConfig:config withSessionID:cacheItem.sessionID];
     });
     
     return cacheItem;
@@ -597,10 +597,9 @@ void dealInFileQueue(dispatch_block_t block)
     });
 }
 
-- (void)staticModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withSessionID:(NSString *)sessionID
+- (void)unStrictModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withSessionID:(NSString *)sessionID
 {
     if (!htmlData || config.count == 0 || [config[SonicHeaderKeyETag] length] == 0) {
-//    if (!htmlData || config.count == 0) {
         return;
     }
     

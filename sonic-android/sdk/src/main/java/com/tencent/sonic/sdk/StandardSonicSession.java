@@ -66,7 +66,10 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
     @Override
     public boolean handleMessage(Message msg) {
 
-        super.handleMessage(msg);
+        // fix issue[https://github.com/Tencent/VasSonic/issues/89]
+        if (super.handleMessage(msg)) {
+            return true; // handled by super class
+        }
 
         switch (msg.what) {
             case CLIENT_MSG_CLIENT_READY: {
@@ -77,7 +80,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             case CLIENT_MSG_NOTIFY_RESULT: {
                 if (msg.arg2 == SONIC_RESULT_CODE_DATA_UPDATE) {
                     Bundle data = msg.getData();
-                    pendingDiffData = data.getString(DATA_UPDATE_BUNDLE_PARAMS_DIFF) != null ? data.getString(DATA_UPDATE_BUNDLE_PARAMS_DIFF) : null;
+                    pendingDiffData = data.getString(DATA_UPDATE_BUNDLE_PARAMS_DIFF);
                 } else if (msg.arg2 == SONIC_RESULT_CODE_TEMPLATE_CHANGE) {
                     Bundle data = msg.getData();
                     if (data.getBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, false)) {

@@ -146,7 +146,10 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
     @Override
     public boolean handleMessage(Message msg) {
 
-        super.handleMessage(msg);
+        // fix issue[https://github.com/Tencent/VasSonic/issues/89]
+        if (super.handleMessage(msg)) {
+            return true; // handled by super class
+        }
 
         if (CLIENT_CORE_MSG_BEGIN < msg.what && msg.what < CLIENT_CORE_MSG_END && !clientIsReady.get()) {
             pendingClientCoreMessage = Message.obtain(msg);

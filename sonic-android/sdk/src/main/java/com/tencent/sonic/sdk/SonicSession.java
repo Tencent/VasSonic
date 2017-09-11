@@ -336,14 +336,14 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
         if (isDestroyedOrWaitingForDestroy()) {
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleMessage error: is destroyed or waiting for destroy.");
-            return false;
+            return true;
         }
 
         if (SonicUtils.shouldLog(Log.DEBUG)) {
             SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleMessage: msg what = " + msg.what + ".");
         }
 
-        return true;
+        return false;
     }
 
     SonicSession(String id, String url, SonicSessionConfig config) {

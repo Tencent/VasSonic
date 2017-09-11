@@ -137,6 +137,11 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyETag     @"Etag"
 
 /**
+ * Check if sonic using strict mode, default is strict-mode:true
+ */
+#define SonicHeaderKeyStrictMode @"strict-mode"
+
+/**
  * Content-Security-Policy key for header.
  */
 #define SonicHeaderKeyCSPHeader       @"Content-Security-Policy"
@@ -197,11 +202,6 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  * The file name to record Sonic disable list for each URL.
  */
 #define SonicCacheOfflineDisableList       @"cache-offline-disable.cfg"
-
-/**
- * Sever default disable sonic time duration: 6 hours.
- */
-#define SonicCacheOfflineDefaultTime   60*60*6
 
 /**
  * Quick way to get file manager.

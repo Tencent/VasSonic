@@ -1,6 +1,6 @@
 //
-//  Sonic.h
-//  Sonic
+//  SonicConfiguration.m
+//  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
 //  Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
@@ -17,26 +17,20 @@
 //  Copyright © 2017年 Tencent. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
-
-//! Project version number for Sonic.
-FOUNDATION_EXPORT double SonicVersionNumber;
-
-//! Project version string for Sonic.
-FOUNDATION_EXPORT const unsigned char SonicVersionString[];
-
-// In this header, you should import all the public headers of your framework using statements like #import <Sonic/PublicHeader.h>
-
-#import <Foundation/Foundation.h>
-
 #import "SonicConfiguration.h"
-#import "SonicSessionConfiguration.h"
-#import "SonicProtocol.h"
-#import "SonicConstants.h"
-#import "SonicSession.h"
-#import "SonicClient.h"
-#import "SonicUitil.h"
-#import "SonicConnection.h"
-#import "SonicURLProtocol.h"
-#import "SonicCache.h"
-#import "SonicCacheItem.h"
+
+@implementation SonicConfiguration
+
++ (SonicConfiguration *)defaultConfiguration
+{
+    SonicConfiguration *configuration = [[SonicConfiguration new]autorelease];
+    configuration.cacheOfflineDisableTime = 21600;
+    configuration.cacheMaxDirectorySize = 31457280.0;
+    configuration.cacheDirectorySizeWarningPercent = 0.8;
+    configuration.cacheDirectorySizeSafePercent = 0.25;
+    configuration.maxMemroyCacheItemCount = 3;
+    
+    return configuration;
+}
+
+@end

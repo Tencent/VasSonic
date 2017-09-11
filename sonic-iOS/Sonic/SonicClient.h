@@ -20,6 +20,8 @@
 #import <Foundation/Foundation.h>
 #import "SonicSession.h"
 #import "SonicConstants.h"
+#import "SonicSessionConfiguration.h"
+#import "SonicConfiguration.h"
 
 /**
  * Manage all sonic sessions.
@@ -32,8 +34,16 @@
 /* Return the global custom User-Agent */
 @property (nonatomic,readonly)NSString *userAgent;
 
+/* Return the configuration */
+@property (nonatomic,readonly)SonicConfiguration *configuration;
+
 /* Share the instance */
 + (SonicClient *)sharedClient;
+
+/**
+ * Client must run with the configuration,default use [SonicConfiguration defaultConfiguration]
+ */
+- (void)runWithConfiguration:(SonicConfiguration *)aConfiguration;
 
 /**
  * Set an unique identifier for the user.
@@ -50,7 +60,6 @@
 
 /**
  * Clear session memory and file caches with URL.
- * @param url
  */
 - (void)removeCacheByUrl:(NSString *)url;
 
@@ -83,6 +92,13 @@
  * Get the last update timestamp of this URL.
  */
 - (NSString *)localRefreshTimeByUrl:(NSString *)url;
+
+/**
+ * Create a sonic session with URL.
+ * All the same URLs share one single session. Duplicate calls will not create duplicate sessions.
+ * use configuration to add custom request headers or custom response headers
+ */
+- (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration;
 
 /**
  * Create a sonic session with URL.

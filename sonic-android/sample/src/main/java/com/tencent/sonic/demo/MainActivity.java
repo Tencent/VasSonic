@@ -15,14 +15,12 @@ package com.tencent.sonic.demo;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
+import android.support.design.widget.FloatingActionButton;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -34,13 +32,9 @@ import com.tencent.sonic.sdk.SonicConfig;
 import com.tencent.sonic.sdk.SonicEngine;
 import com.tencent.sonic.sdk.SonicSessionConfig;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 
 /**
- *  main activity of this sample
+ * main activity of this sample
  */
 public class MainActivity extends Activity {
 
@@ -52,7 +46,7 @@ public class MainActivity extends Activity {
 
     private static final int PERMISSION_REQUEST_CODE_STORAGE = 1;
 
-    private static final String DEMO_URL = "http://mc.vip.qq.com/demo/indexv3";
+    private String DEMO_URL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +111,23 @@ public class MainActivity extends Activity {
         } else {
             requestPermission();
         }
+
+        final UrlListAdapter urlListAdapter = new UrlListAdapter(MainActivity.this);
+
+        FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.btn_fab);
+        btnFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UrlSelector.launch(MainActivity.this, urlListAdapter, new UrlSelector.OnUrlChangedListener() {
+                    @Override
+                    public void urlChanged(String url) {
+                        DEMO_URL = url;
+                    }
+                });
+            }
+        });
+
+        DEMO_URL = urlListAdapter.getCheckedUrl();
     }
 
     private void init() {
@@ -136,7 +147,7 @@ public class MainActivity extends Activity {
 
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE_STORAGE);
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE_STORAGE);
         }
     }
 

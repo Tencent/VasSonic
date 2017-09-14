@@ -16,18 +16,28 @@ target 'TargetName' do
 end
 ```
 
-### Step 1: import and declare 
+### Step 1: import and declare
 Build Sonic.framework for each platform or using the cocoapods;
 
 Add Sonic.framework to dependency in your main project.
 Then ```@import Sonic``` and register ```SonicURLProtocol``` :
+
+Objective-C
 ```Objective-C
 [NSURLProtocol registerClass:[SonicURLProtocol class]];
 
 @interface SonicWebViewController : UIViewController<SonicSessionDelegate,UIWebViewDelegate>
 ```
+Swift
+```Swift
+URLProtocol.registerClass(SonicURLProtocol.self)
+
+class SonicWebViewController : UIViewController, UIWebViewDelegate, SonicSessionDelegate
+```
 
 ### Step 2: Implement ```SonicSessionDelegate```
+
+Objective-C
 ```Objective-C
 #pragma mark - Sonic Session Delegate
 /*
@@ -45,8 +55,29 @@ Then ```@import Sonic``` and register ```SonicURLProtocol``` :
     [self.webView loadRequest:request];
 }
 ```
+Swift
+
+```Swift
+// MARK: - SonicSessionDelegate
+/*
+ * Call back when Sonic will send request.
+ */
+func sessionWillRequest(_ session: SonicSession!)
+{
+    // This callback can be used to set some information, such as cookie and UA.
+}
+/*
+ * Call back when Sonic require WebView to reload, e.g template changed or error occurred. 
+ */
+func session(_ session: SonicSession!, requireWebViewReload request: URLRequest!) {
+{
+    self.webView.loadRequest(request)
+}
+```
 
 ### Step 3: Use Sonic in WebView ViewController
+
+Objective-C
 ```Objective-C
 - (instancetype)initWithUrl:(NSString *)aUrl
 {
@@ -83,7 +114,45 @@ Then ```@import Sonic``` and register ```SonicURLProtocol``` :
 }
 ```
 
+Swift
+```Swift
+func initWithUrl(aUrl: String) -> SonicWebViewController {
+    if self = super.init() {
+        self.url = aUrl
+        
+        //Create a Sonic session with url.
+        SonicClient.shared().createSession(withUrl: self.url, withWebDelegate: self)
+    }
+    
+    return self
+}
+/*
+ * Send request with Sonic property immediately after the WebView initialization.
+ */
+override func loadView() {
+    super.loadView()
+    
+    self.webView = UIWebView.init(frame: self.view.bounds)
+    self.webView.delegate = self
+    self.view = self.webView
+    
+    let request = URLRequest.init(url: URL.init(string: self.url))
+    
+    /*
+     * If SonicSession is not null, Sonic uses custom SonicWebRequest instead of original network request.
+     */
+    if SonicClient.shared().session(withWebDelegate: self) != nil {
+        self.webView.loadRequest(sonicWebRequest(request))
+    }
+    else {
+        self.webView.loadRequest(request)
+    }
+}
+```
+
 ### Step 4: Interacts with websites by JavaScript callback.
+
+Objective-C
 ```Objective-C
 
 - (void)getDiffData:(NSDictionary *)option withCallBack:(JSValue *)jscallback
@@ -105,12 +174,47 @@ Then ```@import Sonic``` and register ```SonicURLProtocol``` :
     }];
 }
 ```
+
+Swift
+```Swift
+
+func getDiffData(option: Dictionary<String, Any>, withCallBack jscallback: JSValue) {
+    /*
+     * ViewController which sends the Sonic request and return result through callback.
+     */
+    SonicClient.shared().sonicUpdateDiffData(byWebDelegate: self.owner) { (result) in
+        guard let result = result else {return}
+        
+        /*
+         * Return the result.
+         */
+        guard let json = try? JSONSerialization.data(withJSONObject: result, options: JSONSerialization.WritingOptions.prettyPrinted) else {return}
+        
+        guard let jsonStr = String.init(data: json, encoding: String.Encoding.utf8) else {return}
+        
+        guard let callback = self.owner.jscontext.globalObject else {return}
+        
+        callback.invokeMethod("getDiffDataCallback", withArguments: [jsonStr])
+    }
+}
+```
+
 ### Step 5: Remove sonic session.
+
+Objective-C
 ```Objective-C
 
 - (void)dealloc
 {
 [[SonicClient sharedClient] removeSessionWithWebDelegate:self];
+}
+```
+
+Swift
+```Swift
+
+deinit {
+    SonicClient.shared().removeSession(withWebDelegate: self)
 }
 ```
 

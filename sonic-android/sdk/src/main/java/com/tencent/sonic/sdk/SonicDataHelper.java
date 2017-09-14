@@ -79,6 +79,11 @@ class SonicDataHelper {
      */
     private static final String SP_KEY_CSP_REPORT_ONLY = "cspReportOnly_";
 
+    /**
+     * The key of last clear cache time.
+     */
+    private static final String SP_KEY_LAST_CLEAR_CACHE_TIME = "last_clear_cache_time";
+
     private static SharedPreferences sSharedPreferences;
 
     /**
@@ -216,6 +221,15 @@ class SonicDataHelper {
     }
 
     /**
+     * Set the latest time when check and clear the sonic cache.
+     * @param time The time when check and clear the sonic cache.
+     */
+    static void setLastClearCacheTime(long time) {
+        SharedPreferences sharedPreferences = getSonicSharedPref();
+        sharedPreferences.edit().putLong(SP_KEY_LAST_CLEAR_CACHE_TIME, time).apply();
+    }
+
+    /**
      * Get the sonic unavailable time
      *
      * @param sessionId A unique session id
@@ -256,5 +270,14 @@ class SonicDataHelper {
     static String getCSPReportOnlyContent(String sessionId) {
         SharedPreferences sharedPreferences = getSonicSharedPref();
         return sharedPreferences.getString(SP_KEY_CSP_REPORT_ONLY + sessionId, "");
+    }
+
+    /**
+     *
+     * @return the last time when check or clear the sonic cache.
+     */
+    static long getLastClearCacheTime() {
+        SharedPreferences sharedPreferences = getSonicSharedPref();
+        return sharedPreferences.getLong(SP_KEY_LAST_CLEAR_CACHE_TIME, 0L);
     }
 }

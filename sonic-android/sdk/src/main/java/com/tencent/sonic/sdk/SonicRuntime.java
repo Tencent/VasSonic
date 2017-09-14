@@ -171,7 +171,7 @@ public abstract class SonicRuntime {
     public abstract String getCookie(String url);
 
     /**
-     * Det cookies to webview after session connection response with cookies in it's headers.
+     * Set cookies to webview after session connection response with cookies in it's headers.
      *
      * @param url The url which need to set cookies
      * @param cookies The cookies for current input url
@@ -304,13 +304,4 @@ public abstract class SonicRuntime {
      * @param errorCode Error code
      */
     public abstract void notifyError(SonicSessionClient client, String url, int errorCode);
-
-    /**
-     * Get headers provider to get headers for sonic session to do something.
-     *
-     * @return Return a provider
-     */
-    public SonicHeadersProvider getSonicHeadersProvider() {
-        return null;
-    }
 }

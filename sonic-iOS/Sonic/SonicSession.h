@@ -49,7 +49,7 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /**
  * SonicClient will create one SonicSession for each URL request.
- * SonicSession will get network data from SonicConnection and split HTML data to template and dyniamic data.
+ * SonicSession will get network data from SonicConnection and split HTML data to template and dynamic data.
  */
 @interface SonicSession : NSObject<SonicSessionProtocol>
 
@@ -116,6 +116,11 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
  * Add custom headers to request.
  */
 - (void)addCustomRequestHeaders:(NSDictionary *)requestHeaders;
+
+/**
+ * Add custom headers to response.
+ */
+- (void)addCustomResponseHeaders:(NSDictionary *)responseHeaders;
 
 /**
  * Start request.

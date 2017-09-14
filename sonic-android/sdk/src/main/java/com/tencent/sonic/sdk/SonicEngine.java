@@ -260,14 +260,6 @@ public class SonicEngine {
         }
         return false;
     }
-    
-    /**
-     *
-     * @return Return SonicHeadersProvider Object.
-     */
-    public synchronized SonicHeadersProvider getSonicHeadersProvider() {
-        return getInstance().getRuntime().getSonicHeadersProvider();
-    }
 
     /**
      * Removes all of the cache from {@link #preloadSessionPool} and deletes file caches from SDCard.
@@ -317,6 +309,16 @@ public class SonicEngine {
         }
         runtime.log(TAG, Log.ERROR, "sessionId(" + sessionId + ") removeSessionCache fail: session is running.");
         return false;
+    }
+
+    /**
+     * It will Post a task to trim sonic cache
+     * if the last time of check sonic cache exceed {@link SonicConfig#SONIC_CACHE_CHECK_TIME_INTERVAL}.
+     */
+    public void trimSonicCache() {
+        if (SonicFileUtils.isNeedCheckSizeOfCache()) {
+            SonicFileUtils.checkAndTrimCache();
+        }
     }
 
     /**

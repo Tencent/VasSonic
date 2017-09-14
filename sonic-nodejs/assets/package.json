@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@tencent/gulp-ejs2js": "0.0.3",
+    "gulp-ejs2js": "0.0.1",
     "gulp": "^3.9.1",
     "gulp-sequence": "^0.4.6",
     "gulp-util": "^3.0.8",

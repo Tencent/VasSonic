@@ -20,8 +20,11 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -48,6 +51,17 @@ class SonicFileUtils {
      * Html extensions
      */
     private static final String HTML_EXT = ".html";
+
+    /**
+     * The max percent threshold of cache.
+     * If the size of cache exceed max threshold, it will trim cache to{@link SonicFileUtils#THRESHOLD_OF_CACHE_MIN_PERCENT}
+     */
+    private static final double THRESHOLD_OF_CACHE_MAX_PERCENT = 0.8;
+
+    /**
+     * The min percent threshold of cache.
+     */
+    private static final double THRESHOLD_OF_CACHE_MIN_PERCENT = 0.25;
 
     /**
      *
@@ -233,5 +247,84 @@ class SonicFileUtils {
             }
         }
         return deleteSuccess;
+    }
+
+    /**
+     * Check whether the sonic cache has been exceed the limit {@link SonicConfig#SONIC_CACHE_MAX_SIZE}.
+     * If the size of sonic cache exceeds, then it will remove the elder cache
+     * until the size is less than threshold {@link SonicFileUtils#THRESHOLD_OF_CACHE_MIN_PERCENT}.
+     */
+    static void checkAndTrimCache() {
+        File cacheRootDir = new File(getSonicCacheDirPath());
+        if (cacheRootDir.exists() && cacheRootDir.isDirectory()) {
+            File[] childFiles = cacheRootDir.listFiles();
+            if (childFiles != null && childFiles.length > 0) {
+                long startTime = System.currentTimeMillis();
+                long cacheFileSize = 0L;
+                final long MAX_CACHE_SIZE = SonicEngine.getInstance().getConfig().SONIC_CACHE_MAX_SIZE;
+
+                for (int i = 0; i < childFiles.length; i++) {
+                    cacheFileSize += childFiles[i].length();
+                }
+
+                SonicDataHelper.setLastClearCacheTime(System.currentTimeMillis());
+                if (cacheFileSize > (MAX_CACHE_SIZE * THRESHOLD_OF_CACHE_MAX_PERCENT)) {
+                    SonicUtils.log(TAG, Log.INFO, "now try clear cache, current cache size: " + (cacheFileSize / 1024 / 1024) + "m");
+                    List<File> files = Arrays.asList(childFiles);
+                    Collections.sort(files, new Comparator<File>() {
+                        public int compare(File f1, File f2) {
+                            long diff = f1.lastModified() - f2.lastModified();
+                            if (diff > 0)
+                                return 1;
+                            else if (diff == 0)
+                                return 0;
+                            else
+                                return -1;
+                        }
+                    });
+
+                    long fileSize ;
+                    File file ;
+                    String fileName;
+                    for (int i = 0; i < files.size(); i++) {
+                        file = files.get(i);
+                        if (file.isFile() && file.exists()) {
+                            fileName = file.getName();
+                            fileSize = file.length();
+                            if (file.delete()) {
+                                cacheFileSize -= fileSize;
+                                SonicDataHelper.removeSessionData(fileName);
+                                SonicUtils.log(TAG, Log.INFO, "delete " + file.getAbsolutePath());
+                            }
+                        }
+                        if (cacheFileSize <= MAX_CACHE_SIZE * THRESHOLD_OF_CACHE_MIN_PERCENT) {
+                            break;
+                        }
+                    }
+
+                    SonicUtils.log(TAG, Log.INFO, "checkAndTrimCache: finish , cost "
+                            + (System.currentTimeMillis() - startTime) + "ms.");
+                }
+
+            }
+
+        }
+    }
+
+    /**
+     * Decide whether need check the size of sonic cache or not.
+     *
+     * @return  If the last time of check sonic cache exceed {@link SonicConfig#SONIC_CACHE_CHECK_TIME_INTERVAL},
+     *  then return true, otherwise false.
+     */
+    static boolean isNeedCheckSizeOfCache() {
+        long lastCheckTime = SonicDataHelper.getLastClearCacheTime();
+        long now = System.currentTimeMillis();
+        long interval = SonicEngine.getInstance().getConfig().SONIC_CACHE_CHECK_TIME_INTERVAL;
+        if ((now - lastCheckTime) > interval) {
+            return true;
+        }
+
+        return false;
     }
 }

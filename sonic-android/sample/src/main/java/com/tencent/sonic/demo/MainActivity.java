@@ -73,7 +73,7 @@ public class MainActivity extends Activity {
         btnDefault.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_DEFAULT);
+                startBrowserActivity(MODE_DEFAULT, true, false);
             }
         });
 
@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
         btnSonic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_SONIC);
+                startBrowserActivity(MODE_SONIC, true, false);
             }
         });
 
@@ -102,7 +102,16 @@ public class MainActivity extends Activity {
         btnSonicWithOfflineCache.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_SONIC_WITH_OFFLINE_CACHE);
+                startBrowserActivity(MODE_SONIC_WITH_OFFLINE_CACHE, true, false);
+            }
+        });
+
+        //load sonic with no eTag
+        Button btnSonicWithNoETag = (Button) findViewById(R.id.btn_sonic_noETag);
+        btnSonicWithNoETag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startBrowserActivity(MODE_SONIC, false, true);
             }
         });
 
@@ -164,10 +173,12 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void startBrowserActivity(int mode) {
+    private void startBrowserActivity(int mode, boolean strictMode, boolean supportNoETag) {
         Intent intent = new Intent(this, BrowserActivity.class);
         intent.putExtra(BrowserActivity.PARAM_URL, DEMO_URL);
         intent.putExtra(BrowserActivity.PARAM_MODE, mode);
+        intent.putExtra(BrowserActivity.PARAM_STRICT_MODE, strictMode);
+        intent.putExtra(BrowserActivity.PARAM_SUPPORT_NO_ETAG, supportNoETag);
         intent.putExtra(SonicJavaScriptInterface.PARAM_CLICK_TIME, System.currentTimeMillis());
         startActivityForResult(intent, -1);
     }

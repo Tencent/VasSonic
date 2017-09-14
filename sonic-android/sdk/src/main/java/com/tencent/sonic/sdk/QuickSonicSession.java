@@ -422,7 +422,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         return false;
     }
 
-    protected Object onRequestResource(String url) {
+    public Object onClientRequestResource(String url) {
         if (wasInterceptInvoked.get() || !isMatchCurrentUrl(url)) {
             return null;
         }
@@ -495,6 +495,24 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
     protected void handleFlow_ServiceUnavailable(){
         mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_SERVICE_UNAVAILABLE);
+        mainHandler.sendMessage(msg);
+    }
+
+    protected void handleFlow_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
+        if (TextUtils.isEmpty(respHtmlString) || TextUtils.isEmpty(respHtmlSha1)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag_TemplateChange error: respHtmlString is empty");
+            return;
+        }
+
+        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+
+        // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
+        mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
+        Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
+        msg.obj = respHtmlString;
+        if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
+            msg.arg1 = TEMPLATE_CHANGE_REFRESH;
+        }
         mainHandler.sendMessage(msg);
     }
 

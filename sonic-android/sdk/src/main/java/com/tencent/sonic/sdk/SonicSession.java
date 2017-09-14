@@ -76,12 +76,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
     public static final String WEB_RESPONSE_LOCAL_REFRESH_TIME = "local_refresh_time";
 
-
-    /**
-     * Name of chrome file thread
-     */
-    public static final String CHROME_FILE_THREAD = "Chrome_FileThread";
-
     /**
      * Session state : original.
      * <p>
@@ -220,22 +214,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
     protected static final int COMMON_MSG_END = COMMON_MSG_BEGIN + 4;
 
-
-    /**
-     * Resource Intercept State : none
-     */
-    protected static final int RESOURCE_INTERCEPT_STATE_NONE = 0;
-
-    /**
-     * Resource Intercept State : intercepting in file thread
-     */
-    protected static final int RESOURCE_INTERCEPT_STATE_IN_FILE_THREAD = 1;
-
-    /**
-     * Resource Intercept State : intercepting in other thread(may be IOThread or other else)
-     */
-    protected static final int RESOURCE_INTERCEPT_STATE_IN_OTHER_THREAD = 2;
-
     /**
      * Session state, include <code>STATE_NONE</code>, <code>STATE_RUNNING</code>,
      * <code>STATE_READY</code> and <code>STATE_DESTROY</code>.
@@ -274,29 +252,13 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      */
     protected final AtomicBoolean isWaitingForSessionThread = new AtomicBoolean(false);
 
-
     /**
      * Whether the local html is loaded, it is used only the template changes.
      */
     protected final AtomicBoolean wasOnPageFinishInvoked = new AtomicBoolean(false);
 
-
-    /**
-     * Resource intercept state, include <code>RESOURCE_INTERCEPT_STATE_NONE</code>,
-     * <code>RESOURCE_INTERCEPT_STATE_IN_FILE_THREAD</code>,
-     * <code>RESOURCE_INTERCEPT_STATE_IN_OTHER_THREAD</code>
-     * More about it at {https://codereview.chromium.org/1350553005/#ps20001}
-     */
-    protected final AtomicInteger resourceInterceptState = new AtomicInteger(RESOURCE_INTERCEPT_STATE_NONE);
-
-    /**
-     * Session statics var
-     */
     protected final SonicSessionStatistics statistics = new SonicSessionStatistics();
 
-    /**
-     * Session Connection impl var
-     */
     protected volatile SonicSessionConnection sessionConnection;
 
     /**
@@ -505,11 +467,23 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
             // If the page has set cookie, sonic will set the cookie to kernel.
             startTime = System.currentTimeMillis();
-            Map<String, List<String>> headerFieldsMap = sessionConnection.getResponseHeaderFields();
+            Map<String, List<String>> HeaderFieldsMap = sessionConnection.getResponseHeaderFields();
             if (SonicUtils.shouldLog(Log.DEBUG)) {
                 SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") connection get header fields cost = " + (System.currentTimeMillis() - startTime) + " ms.");
             }
-            setCookiesFromHeaders(headerFieldsMap, shouldSetCookieAsynchronous());
+
+            if (null != HeaderFieldsMap) {
+                String keyOfSetCookie = null;
+                if (HeaderFieldsMap.containsKey("Set-Cookie")) {
+                    keyOfSetCookie = "Set-Cookie";
+                } else if (HeaderFieldsMap.containsKey("set-cookie")) {
+                    keyOfSetCookie = "set-cookie";
+                }
+                if (!TextUtils.isEmpty(keyOfSetCookie)) {
+                    List<String> cookieList = HeaderFieldsMap.get(keyOfSetCookie);
+                    SonicEngine.getInstance().getRuntime().setCookie(getCurrentUrl(), cookieList);
+                }
+            }
         }
 
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: respCode = " + responseCode + ", cost " + (System.currentTimeMillis() - statistics.connectionFlowStartTime) + " ms.");
@@ -553,33 +527,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
             if ("false".equalsIgnoreCase(strictMode)) {
-                String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-                if (SonicUtils.shouldLog(Log.INFO)) {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
-                }
-
-                boolean error = false;
-                if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
-                    error = true;
-                } else {
-                    if (!TextUtils.isEmpty(eTag)) {
-                        if (!eTag.equalsIgnoreCase(sessionData.etag)) {
-                            handleFlow_TemplateChange(); // html change
-                        } else {
-                            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
-                        }
-                    } else {
-                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
-                        error = true;
-                    }
-                }
-
-                if (error) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: remove all session.");
-                    SonicUtils.removeSessionCache(id);
-                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
-                }
+                handleNotStrictMode(templateChange, sessionData);
             } else {
                 if (!TextUtils.isEmpty(templateChange)) {
                     if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
@@ -604,6 +552,84 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
 
     }
 
+    protected void handleNotStrictMode(String templateChange, SonicDataHelper.SessionData sessionData){
+        String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        if (SonicUtils.shouldLog(Log.INFO)) {
+            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange);
+        }
+
+        boolean error = false;
+        if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
+            error = true;
+        } else {
+            if (!TextUtils.isEmpty(eTag)) {
+                if (!eTag.equalsIgnoreCase(sessionData.etag)) {
+                    handleFlow_TemplateChange(); // html change
+                } else {
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                }
+            } else if(config.supportNoETag){
+                handleFlow_NoETag();
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
+                error = true;
+            }
+        }
+
+        if (error) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: remove all session.");
+            SonicUtils.removeSessionCache(id);
+            SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
+        }
+    }
+
+    protected void handleFlow_NoETag() {
+        try {
+            String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+            if (!SonicUtils.needRefreshWebView(cacheOffline)) {
+                handleFlow_304();
+            } else {
+                SonicUtils.log(TAG, Log.INFO, "handleFlow_NoETag :");
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                SonicSessionConnection.ResponseDataTuple responseDataTuple = sessionConnection.getResponseData(new AtomicBoolean(false), output);
+                if (responseDataTuple == null || !responseDataTuple.isComplete) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag error:responseDataTuple = null!");
+                    return;
+                }
+                String htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                String respHtmlSha1 = SonicUtils.getSHA1(htmlString);
+                SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
+                if (respHtmlSha1.equals(sessionData.htmlSha1)) {
+                    handleFlow_304();
+                } else {
+                    handleFlow_NoETag_TemplateChange(htmlString, respHtmlSha1);
+                    switchState(STATE_RUNNING, STATE_READY, true);
+                    if (SonicUtils.needSaveData(cacheOffline)) {
+                        Thread.sleep(1500);
+                        if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
+                            long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                            String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
+                            String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
+                            SonicUtils.saveSonicData(id, respHtmlSha1, null, respHtmlSha1, htmlSize, cspContent, cspReportOnlyContent);
+                        } else {
+                            SonicUtils.log(TAG, Log.INFO, "handleFlow_NoETag:save html fail.");
+                        }
+                    } else if (OFFLINE_MODE_FALSE.equals(cacheOffline)) {
+                        SonicUtils.removeSessionCache(id);
+                        SonicUtils.log(TAG, Log.INFO, "handleFlow_NoETag:offline mode is 'false', so clean cache.");
+                    } else {
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_NoETag:offline->" + cacheOffline + " , so do not need cache to file.");
+                    }
+                }
+            }
+
+        }catch (Throwable e){
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleFlow_NoETag error:" + e.getMessage());
+        }
+
+    }
+
     protected void handleLocalHtml(String localHtml) {
 
     }
@@ -617,6 +643,10 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
     }
 
     protected void handleFlow_ServiceUnavailable() {
+
+    }
+
+    protected void handleFlow_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
 
     }
 
@@ -795,8 +825,8 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             return;
         }
         long startTime = System.currentTimeMillis();
-        final String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
-        final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
+        String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
 
         String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
         String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
@@ -814,17 +844,21 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
                 error = true;
             } else {
-                if (!TextUtils.isEmpty(eTag)) {
-                    if (!eTag.equalsIgnoreCase(sessionData.etag)) {
-                        if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
-                            long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                            SonicUtils.saveSonicData(id, eTag, "", SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                boolean needSaveData = false;
+                if(config.supportNoETag || (!TextUtils.isEmpty(eTag) && !eTag.equalsIgnoreCase(sessionData.etag))){
+                    needSaveData = true;
+                }
+                if (needSaveData) {
+                    if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
+                        long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                        String htmlSha1 = SonicUtils.getSHA1(htmlString);
+                        if(TextUtils.isEmpty(eTag)){
+                            eTag = htmlSha1;
                         }
-                    } else {
-                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                        SonicUtils.saveSonicData(id, eTag, "", htmlSha1, htmlSize, cspContent, cspReportOnlyContent);
                     }
                 } else {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: need not save data, config.supportNoETag = " + config.supportNoETag);
                     error = true;
                 }
             }
@@ -959,7 +993,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      *
      * @return True if it is set for the first time
      */
-    public boolean onClientReady() {
+    protected boolean onClientReady() {
         return false;
     }
 
@@ -969,70 +1003,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      * @param url The url of this session
      * @return Return the data to kernel
      */
-    public final Object onClientRequestResource(String url) {
-        String currentThreadName = Thread.currentThread().getName();
-        if (CHROME_FILE_THREAD.equals(currentThreadName)) {
-            resourceInterceptState.set(RESOURCE_INTERCEPT_STATE_IN_FILE_THREAD);
-        } else {
-            resourceInterceptState.set(RESOURCE_INTERCEPT_STATE_IN_OTHER_THREAD);
-            if (SonicUtils.shouldLog(Log.DEBUG)) {
-                SonicUtils.log(TAG, Log.DEBUG, "onClientRequestResource called in " + currentThreadName + ".");
-            }
-        }
-        Object object = onRequestResource(url);
-        resourceInterceptState.set(RESOURCE_INTERCEPT_STATE_NONE);
-        return object;
-    }
-
-    /**
-     * Whether should set cookie asynchronous or not , if {@code onClientRequestResource} is calling
-     * in IOThread, it should not call set cookie synchronous which will handle in IOThread as it may
-     * cause deadlock
-     * More about it see {https://issuetracker.google.com/issues/36989494#c8}
-     * Fix VasSonic issue {https://github.com/Tencent/VasSonic/issues/90}
-     *
-     * @param url The url of this session
-     * @return Return the data to kernel
-     */
-    protected boolean shouldSetCookieAsynchronous() {
-        return RESOURCE_INTERCEPT_STATE_IN_OTHER_THREAD == resourceInterceptState.get();
-    }
-
-    /**
-     * Set cookies to webview from headers
-     *
-     * @param headers headers from server response
-     * @param executeInNewThread whether execute in new thread or not
-     * @return Set cookie success or not
-     */
-    protected boolean setCookiesFromHeaders(Map<String, List<String>> headers, boolean executeInNewThread) {
-        if (null != headers) {
-            final List<String> cookies = headers.get(SonicSessionConnection.HTTP_HEAD_FILED_SET_COOKIE);
-            if (null != cookies && 0 != cookies.size()) {
-                if (!executeInNewThread) {
-                    return SonicEngine.getInstance().getRuntime().setCookie(getCurrentUrl(), cookies);
-                } else {
-                    SonicUtils.log(TAG, Log.INFO, "setCookiesFromHeaders asynchronous in new thread.");
-                    SonicEngine.getInstance().getRuntime().postTaskToThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            SonicEngine.getInstance().getRuntime().setCookie(getCurrentUrl(), cookies);
-                        }
-                    }, 0L);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * When the webview initiates a resource interception, the client invokes the method to retrieve the data
-     *
-     * @param url The url of this session
-     * @return Return the data to kernel
-     */
-    protected Object onRequestResource(String url) {
+    protected Object onClientRequestResource(String url) {
         return null;
     }
 
@@ -1042,11 +1013,11 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      * @param diffDataCallback  Sonic provides the latest data to the page through this callback
      * @return The result
      */
-    public boolean onWebReady(SonicDiffDataCallback diffDataCallback) {
+    protected boolean onWebReady(SonicDiffDataCallback diffDataCallback) {
         return false;
     }
 
-    public boolean onClientPageFinished(String url) {
+    protected boolean onClientPageFinished(String url) {
         if (isMatchCurrentUrl(url)) {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") onClientPageFinished:url=" + url + ".");
             wasOnPageFinishInvoked.set(true);

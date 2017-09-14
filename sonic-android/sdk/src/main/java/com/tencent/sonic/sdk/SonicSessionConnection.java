@@ -107,6 +107,13 @@ public abstract class SonicSessionConnection {
      */
     public final static String HTTP_HEAD_CSP_REPORT_ONLY = "Content-Security-Policy-Report-Only";
 
+
+    /**
+     * HTTP Header：Set-Cookie. <br>
+     * This header represents the HTML Set-Cookie.
+     */
+    public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
+
     /**
      * SonicSession Object used by SonicSessionConnection.
      */

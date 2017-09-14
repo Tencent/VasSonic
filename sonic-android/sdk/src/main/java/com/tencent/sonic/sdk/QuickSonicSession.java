@@ -422,7 +422,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         return false;
     }
 
-    public Object onClientRequestResource(String url) {
+    protected Object onRequestResource(String url) {
         if (wasInterceptInvoked.get() || !isMatchCurrentUrl(url)) {
             return null;
         }

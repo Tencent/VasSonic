@@ -171,7 +171,7 @@ public abstract class SonicRuntime {
     public abstract String getCookie(String url);
 
     /**
-     * Det cookies to webview after session connection response with cookies in it's headers.
+     * Set cookies to webview after session connection response with cookies in it's headers.
      *
      * @param url The url which need to set cookies
      * @param cookies The cookies for current input url

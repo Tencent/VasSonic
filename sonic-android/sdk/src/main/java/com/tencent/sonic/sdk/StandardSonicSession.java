@@ -137,7 +137,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
         return true;
     }
 
-    public Object onClientRequestResource(String url) {
+    protected Object onRequestResource(String url) {
         if (!isMatchCurrentUrl(url)) {
             return null;
         }

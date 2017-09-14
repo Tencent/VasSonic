@@ -498,6 +498,24 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         mainHandler.sendMessage(msg);
     }
 
+    protected void handleFlow_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
+        if (TextUtils.isEmpty(respHtmlString) || TextUtils.isEmpty(respHtmlSha1)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag_TemplateChange error: respHtmlString is empty");
+            return;
+        }
+
+        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+
+        // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
+        mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
+        Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
+        msg.obj = respHtmlString;
+        if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
+            msg.arg1 = TEMPLATE_CHANGE_REFRESH;
+        }
+        mainHandler.sendMessage(msg);
+    }
+	
     /**
      *
      * In this case sonic will always read the new data from the server until the local page finish.

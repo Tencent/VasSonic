@@ -96,6 +96,10 @@ public class SonicSessionConfig {
      */
     Map<String, String> customResponseHeaders = null;
 
+    /**
+     * Support noETag or not
+     */
+    boolean supportNoETag = false;
 
     @Override
     public boolean equals(Object other) {
@@ -184,6 +188,11 @@ public class SonicSessionConfig {
 
         public Builder setCustomResponseHeaders(Map<String, String> customResponseHeaders) {
             target.customResponseHeaders = customResponseHeaders;
+            return this;
+        }
+
+        public Builder setSupportNoEtag(boolean supportNoETag) {
+            target.supportNoETag = supportNoETag;
             return this;
         }
 

@@ -4,7 +4,6 @@
     <string name="sonic">Load With Sonic</string>
     <string name="sonic_preload">DO Sonic Preload</string>
     <string name="sonic_offline">Load Sonic With Offline Cache</string>
-    <string name="sonic_no_eTag">Load Sonic With No ETag</string>
     <string name="reset_clear">Clean Up Cache</string>
     <string name="tencent_vas_team">腾讯增值技术团队出品</string>
     <string name="set_custom_url">设置自定义URL</string>

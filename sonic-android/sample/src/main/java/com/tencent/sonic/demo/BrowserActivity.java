@@ -60,6 +60,12 @@ public class BrowserActivity extends Activity {
 
     public final static String PARAM_MODE = "param_mode";
 
+    public final static String PARAM_STRICT_MODE = "param_strictMode";
+
+    public final static String PARAM_SUPPORT_NO_ETAG = "param_support_no_eTag";
+
+    public final static String PARAM_AUTO_REFRESH = "param_auto_refresh";
+
     private SonicSession sonicSession;
 
     @Override
@@ -85,6 +91,20 @@ public class BrowserActivity extends Activity {
         // if it's sonic mode , startup sonic session at first time
         if (MainActivity.MODE_DEFAULT != mode) { // sonic mode
             SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
+            boolean strictMode = intent.getBooleanExtra(PARAM_STRICT_MODE, true);
+            boolean supportNoETag = intent.getBooleanExtra(PARAM_SUPPORT_NO_ETAG, false);
+            sessionConfigBuilder.setSupportNoEtag(supportNoETag);
+            if (!strictMode) {
+                Map<String, String> customRespHeaders = new HashMap<String, String>();
+                customRespHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE, "false");
+                boolean autoRefresh = intent.getBooleanExtra(PARAM_AUTO_REFRESH, true);
+                if (autoRefresh) {
+                    customRespHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_TRUE);
+                } else {
+                    customRespHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_STORE);
+                }
+                sessionConfigBuilder.setCustomResponseHeaders(customRespHeaders);
+            }
 
             // if it's offline pkg mode, we need to intercept the session connection
             if (MainActivity.MODE_SONIC_WITH_OFFLINE_CACHE == mode) {

@@ -56,6 +56,15 @@
                 />
 
             <Button
+                android:id="@+id/btn_sonic_noETag"
+                style="@style/SonicButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.02"
+                android:text="@string/sonic_no_eTag"
+                />
+
+            <Button
                 android:id="@+id/btn_sonic_with_offline"
                 style="@style/SonicButton"
                 android:layout_width="match_parent"

@@ -468,7 +468,26 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         
         //update cache expire time
         if (![self isStrictMode]) {
-           [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.response.allHeaderFields withSessionID:session.sessionID];
+            
+            BOOL canUpdateCacheExpire = NO;
+            
+            NSString *etag = [self.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
+            
+            //If not support no Etag mode, this is error
+            if(!self.configuration.supportNoEtag && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
+            {
+                canUpdateCacheExpire = YES;
+            }
+            
+            if (self.configuration.supportNoEtag) {
+                canUpdateCacheExpire = YES;
+            }
+            
+            if (canUpdateCacheExpire) {
+                [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.response.allHeaderFields withSessionID:session.sessionID];
+            }else{
+                NSLog(@"unstrict-mode can't update cache expire time");
+            }
         }
         
     };
@@ -769,6 +788,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
                     //If not support no Etag mode, this is error
                     if(!self.configuration.supportNoEtag && (etag.length == 0 || [etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
                     {
+                        NSLog(@"require Etag but etag.length=0 or etag isEqual to response.etag");
                         break;
                     }
                     

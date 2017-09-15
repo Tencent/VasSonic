@@ -179,6 +179,7 @@ public class MainActivity extends Activity {
         intent.putExtra(BrowserActivity.PARAM_MODE, mode);
         intent.putExtra(BrowserActivity.PARAM_STRICT_MODE, strictMode);
         intent.putExtra(BrowserActivity.PARAM_SUPPORT_NO_ETAG, supportNoETag);
+        intent.putExtra(BrowserActivity.PARAM_AUTO_REFRESH, true);
         intent.putExtra(SonicJavaScriptInterface.PARAM_CLICK_TIME, System.currentTimeMillis());
         startActivityForResult(intent, -1);
     }

@@ -498,7 +498,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         mainHandler.sendMessage(msg);
     }
 
-    protected void handleFlow_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
+    protected void handleUnStrictMode_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
         if (TextUtils.isEmpty(respHtmlString) || TextUtils.isEmpty(respHtmlSha1)) {
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag_TemplateChange error: respHtmlString is empty");
             return;

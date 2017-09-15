@@ -20,6 +20,7 @@
 #import <Foundation/Foundation.h>
 #import "SonicProtocol.h"
 #import "SonicConstants.h"
+#import "SonicSessionConfiguration.h"
 
 /**
  * SonicSession use this callback to transfer network data to SonicURLProtocol.
@@ -86,6 +87,9 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 /** Set this property to connect server directly with ip. Without this property sonic will connect to server with domain normally. */
 @property (nonatomic,copy)NSString *serverIP;
 
+/** Return the session configuration */
+@property (nonatomic,readonly)SonicSessionConfiguration *configuration;
+
 /**
  * Register a SonicConnection Class to provide network data.
  */
@@ -121,6 +125,11 @@ void dispatchToSonicSessionQueue(dispatch_block_t block);
  * Add custom headers to response.
  */
 - (void)addCustomResponseHeaders:(NSDictionary *)responseHeaders;
+
+/**
+ * Setup session configuration
+ */
+- (void)setupWithSessionConfiguration:(SonicSessionConfiguration *)aSessionConfiguration;
 
 /**
  * Start request.

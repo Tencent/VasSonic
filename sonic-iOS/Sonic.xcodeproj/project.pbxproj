@@ -78,6 +78,8 @@
 		546B78261F0105F6003F08AE /* SonicSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSession.h; sourceTree = "<group>"; };
 		546B78271F0105F6003F08AE /* SonicURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicURLProtocol.h; sourceTree = "<group>"; };
 		546B787B1F01F91D003F08AE /* SonicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SonicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		54E535A11F694A3A00A98AFE /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		54E535A31F69523500A98AFE /* libsqlite3.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.0.tbd; path = usr/lib/libsqlite3.0.tbd; sourceTree = SDKROOT; };
 		E43E03441F618182000F30ED /* SonicSessionConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSessionConfiguration.h; sourceTree = "<group>"; };
 		E43E03451F618182000F30ED /* SonicSessionConfiguration.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicSessionConfiguration.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -107,6 +109,7 @@
 				546B780F1F0105AA003F08AE /* Sonic */,
 				546B780E1F0105AA003F08AE /* Products */,
 				546B78111F0105AA003F08AE /* Info.plist */,
+				54E535A01F694A3A00A98AFE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -145,6 +148,15 @@
 				545D61C51F623BED00DA8F3A /* SonicConfiguration.m */,
 			);
 			path = Sonic;
+			sourceTree = "<group>";
+		};
+		54E535A01F694A3A00A98AFE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				54E535A31F69523500A98AFE /* libsqlite3.0.tbd */,
+				54E535A11F694A3A00A98AFE /* libsqlite3.tbd */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -446,6 +458,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MACH_O_TYPE = staticlib;
 				OTHER_CFLAGS = "-fembed-bitcode";
+				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.Sonic.Sonic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "708a394e-c58f-44b5-af84-8daba31e4d18";
@@ -471,6 +484,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MACH_O_TYPE = staticlib;
 				OTHER_CFLAGS = "-fembed-bitcode";
+				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.Sonic.Sonic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "708a394e-c58f-44b5-af84-8daba31e4d18";

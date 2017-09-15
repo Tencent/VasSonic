@@ -140,16 +140,26 @@
  * @result An cache item which has finish update dynamic data and HTML document cache.
  */
 - (SonicCacheItem *)updateWithJsonData:(NSData *)jsonData
-                 withResponseHeaders:(NSDictionary *)headers
-                       withUrl:(NSString *)url;
+                   withResponseHeaders:(NSDictionary *)headers
+                               withUrl:(NSString *)url;
 
 
 /**
  * Save the HTML without split template and dynamic data
  */
 - (SonicCacheItem *)saveUnStrictModeWithHtmlData:(NSData *)htmlData
-                           withResponseHeaders:(NSDictionary *)headers
-                                       withUrl:(NSString *)url;
+                             withResponseHeaders:(NSDictionary *)headers
+                                         withUrl:(NSString *)url;
+
+/**
+ * Update cache expire time from response headers with session id
+ */
+- (void)updateCacheExpireTimeWithResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID;
+
+/**
+ * Save the response headers
+ */
+- (void)saveResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID;
 
 /**
  * @brief Get the memory cache item by sessionID.

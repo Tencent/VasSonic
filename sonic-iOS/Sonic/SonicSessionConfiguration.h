@@ -31,5 +31,9 @@
  */
 @property (nonatomic,retain)NSDictionary *customResponseHeaders;
 
+/**
+ * Support no Etag under unstrict mode
+ */
+@property (nonatomic,assign)BOOL supportNoEtag;
 
 @end

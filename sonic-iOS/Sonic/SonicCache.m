@@ -44,6 +44,10 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
      * config
      */
     SonicCacheTypeConfig,
+    /*
+     * response header
+     */
+    SonicCacheTypeResponseHeader,
 };
 
 @interface SonicCache ()
@@ -298,9 +302,11 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSString *sha1 = getDataSha1(htmlData);
     [config setObject:sha1 forKey:kSonicSha1];
     cacheItem.config = config;
+    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
+    cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
     dealInFileQueue(^{
-        [self saveHtmlData:htmlData withConfig:config withTemplate:splitResult[@"temp"] dynamicData:splitResult[@"data"] withSessionID:sessionID isUpdate:NO];
+        [self saveHtmlData:htmlData withConfig:config withTemplate:splitResult[@"temp"] dynamicData:splitResult[@"data"]  withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
     });
     
     return cacheItem;
@@ -342,9 +348,11 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSString *sha1 = dataDict[@"html-sha1"];
     [config setObject:sha1 forKey:kSonicSha1];
     cacheItem.config = config;
+    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
+    cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
     dealInFileQueue(^{
-        [self saveHtmlData:htmlData withConfig:config withTemplate:nil dynamicData:dynamicData withSessionID:sessionID isUpdate:YES];
+        [self saveHtmlData:htmlData withConfig:config withTemplate:nil dynamicData:dynamicData withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:YES];
     });
     
     return cacheItem;
@@ -364,10 +372,14 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     
     cacheItem.htmlData = htmlData;
     NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
+    NSString *sha1 = getDataSha1(htmlData);
+    [config setObject:sha1 forKey:kSonicSha1];
     cacheItem.config = config;
+    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
+    cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
     dealInFileQueue(^{
-        [self unStrictModeSaveHtmlData:htmlData withConfig:config withSessionID:cacheItem.sessionID];
+        [self unStrictModeSaveHtmlData:htmlData withConfig:config withResponseHeaders:filterResponseHeaders withSessionID:cacheItem.sessionID];
     });
     
     return cacheItem;
@@ -378,7 +390,6 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     //Etag,template-tag
     NSString *eTag = headers[@"Etag"];
     NSString *templateTag = headers[@"template-tag"];
-    NSString *csp = headers[SonicHeaderKeyCSPHeader];
     NSTimeInterval timeNow = (long)[[NSDate date ]timeIntervalSince1970]*1000;
     NSString *localRefresh = [@(timeNow) stringValue];
     
@@ -386,15 +397,105 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     eTag = eTag.length > 0? eTag:@"";
     templateTag = templateTag.length > 0? templateTag:@"";
     eTag = eTag.length > 0? eTag:@"";
-    csp = csp.length > 0? csp:@"";
     
     NSDictionary *cfgDict = @{
                               SonicHeaderKeyETag:eTag,
                               SonicHeaderKeyTemplate:templateTag,
                               kSonicLocalRefreshTime:localRefresh,
-                              kSonicCSP:csp
                               };
     return cfgDict;
+}
+
+/**
+ *  Check and save the cache expire timestamp
+ */
+- (unsigned long long)createCacheExpireTimeFromHeaders:(NSDictionary *)headers
+{
+    NSString *maxAge = headers[SonicHeaderMaxAge];
+    NSString *expire = headers[SonicHeaderExpire];
+    
+    unsigned long long now =  (unsigned long long)[[NSDate date] timeIntervalSince1970];
+    
+    unsigned long long configMaxCacheTime = [SonicClient sharedClient].configuration.maxUnStrictModeCacheSeconds;
+    
+    if(maxAge.length == 0 && expire.length == 0){
+        return now + configMaxCacheTime;
+    }
+    
+    if(maxAge.length > 0){
+        
+        unsigned long long duration = [maxAge longLongValue];
+        
+        duration = MIN(duration, configMaxCacheTime);
+        
+        unsigned long long expireTimestamp = now + duration;
+        
+        return expireTimestamp;
+    }
+    
+    if(expire.length > 0){
+        
+        NSDateFormatter *dateFormatter = [NSDateFormatter new];
+        [dateFormatter setDateFormat:@"EEE, dd MMM yyyy HH:mm:ss zzz"];
+        NSDate *date = [dateFormatter dateFromString:expire];
+        unsigned long long expireTime = (unsigned long long)[date timeIntervalSince1970];
+        
+        if (!date) {
+            return now + configMaxCacheTime;
+        }
+        
+        //Beijing 0800 GMT 
+        NSTimeZone *system = [NSTimeZone systemTimeZone];
+        NSInteger seconds = [system secondsFromGMTForDate:date];
+        expireTime = expireTime + seconds;
+        
+        unsigned long long configCacheTime = now + configMaxCacheTime;
+        
+        return MIN(expireTime, configCacheTime);
+    }
+    
+    return now + [SonicClient sharedClient].configuration.maxUnStrictModeCacheSeconds;
+}
+
+- (void)updateCacheExpireTimeWithResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID
+{
+    if (headers.count == 0 || sessionID.length == 0) {
+        return;
+    }
+    
+    SonicCacheItem *cacheItem = [self cacheForSession:sessionID];
+    
+    NSMutableDictionary *mConfig = [NSMutableDictionary dictionaryWithDictionary:cacheItem.config];
+    unsigned long long expireTimestamp = [self createCacheExpireTimeFromHeaders:headers];
+    NSString *expireTime = [@(expireTimestamp) stringValue];
+    [mConfig setObject:expireTime forKey:kSonicLocalCacheExpireTime];
+    cacheItem.config = mConfig;
+    
+    //save to file
+    dealInFileQueue(^{
+       
+        //save the config data
+        NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
+        BOOL isSuccess = [mConfig writeToFile:configPath atomically:YES];
+        if (!isSuccess) {
+            [self removeFileCacheOnly:sessionID];
+        }
+        
+    });
+}
+
+- (void)saveResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID
+{
+    NSDictionary *filterHeaders = [self filterResponseHeaders:headers];
+    
+    //save the response headers
+    if (filterHeaders.count > 0) {
+        NSString *rspHeaderPath = [self filePathWithType:SonicCacheTypeResponseHeader sessionID:sessionID];
+        BOOL isSuccess = [filterHeaders writeToFile:rspHeaderPath atomically:YES];
+        if (!isSuccess) {
+            return;
+        }
+    }
 }
 
 - (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html
@@ -494,7 +595,8 @@ void dealInFileQueue(dispatch_block_t block)
     
     NSData *htmlData = [NSData dataWithContentsOfFile:[self filePathWithType:SonicCacheTypeHtml sessionID:item.sessionID]];
     NSDictionary *config = [NSDictionary dictionaryWithContentsOfFile:[self filePathWithType:SonicCacheTypeConfig sessionID:item.sessionID]];
-    
+    NSDictionary *cacheHeaders = [NSDictionary dictionaryWithContentsOfFile:[self filePathWithType:SonicCacheTypeResponseHeader sessionID:item.sessionID]];
+
     NSString *sha1 = config[kSonicSha1];
     NSString *htmlSha1 = getDataSha1(htmlData);
     if (![sha1 isEqualToString:htmlSha1]) {
@@ -502,6 +604,13 @@ void dealInFileQueue(dispatch_block_t block)
     }else{
         item.htmlData = htmlData;
         item.config = config;
+        item.cacheResponseHeaders = cacheHeaders;//sonic 1.1 read headers
+        
+        //sonic 1.0 use this to read
+        if ([config[kSonicCSP] length] > 0) {
+            item.cacheResponseHeaders = @{kSonicCSP:config[kSonicCSP]};
+        }
+        
         //read templateString and dynamicData where need
     }
 }
@@ -513,7 +622,7 @@ void dealInFileQueue(dispatch_block_t block)
     NSString *subDir = @"SonicCache";
     
     _rootCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:subDir] copy];
-    
+        
     return _rootCachePath.length > 0;
 }
 
@@ -584,6 +693,7 @@ void dealInFileQueue(dispatch_block_t block)
                              @(SonicCacheTypeTemplate):@"temp",
                              @(SonicCacheTypeHtml):@"html",
                              @(SonicCacheTypeData):@"data",
+                             @(SonicCacheTypeResponseHeader):@"rsp",
                              };
     NSString *cacheFileName = [sessionID stringByAppendingPathExtension:extMap[@(cacheType)]];
     return [fileDir stringByAppendingPathComponent:cacheFileName];
@@ -597,7 +707,7 @@ void dealInFileQueue(dispatch_block_t block)
     });
 }
 
-- (void)unStrictModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withSessionID:(NSString *)sessionID
+- (void)unStrictModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID
 {
     if (!htmlData || config.count == 0 || [config[SonicHeaderKeyETag] length] == 0) {
         return;
@@ -624,6 +734,16 @@ void dealInFileQueue(dispatch_block_t block)
         }
     }
     
+    //save the response headers
+    if (responseHeaders.count > 0) {
+        NSString *rspHeaderPath = [self filePathWithType:SonicCacheTypeResponseHeader sessionID:sessionID];
+        BOOL isSuccess = [responseHeaders writeToFile:rspHeaderPath atomically:YES];
+        if (!isSuccess) {
+            [self removeFileCacheOnly:sessionID];
+            return;
+        }
+    }
+    
     //save the config data
     NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
     BOOL isSuccess = [config writeToFile:configPath atomically:YES];
@@ -633,7 +753,7 @@ void dealInFileQueue(dispatch_block_t block)
     }
 }
 
-- (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
+- (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
 {
     if (!htmlData || config.count == 0 || dynamicData.count == 0) {
         return;
@@ -681,6 +801,16 @@ void dealInFileQueue(dispatch_block_t block)
         }
     }
     
+    //save the response headers
+    if (responseHeaders.count > 0) {
+        NSString *rspHeaderPath = [self filePathWithType:SonicCacheTypeResponseHeader sessionID:sessionID];
+        BOOL isSuccess = [responseHeaders writeToFile:rspHeaderPath atomically:YES];
+        if (!isSuccess) {
+            [self removeFileCacheOnly:sessionID];
+            return;
+        }
+    }
+    
     //save the config data
     NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
     BOOL isSuccess = [config writeToFile:configPath atomically:YES];
@@ -688,6 +818,29 @@ void dealInFileQueue(dispatch_block_t block)
         [self removeFileCacheOnly:sessionID];
         return;
     }
+}
+
+- (NSDictionary *)filterResponseHeaders:(NSDictionary *)responseHeaders
+{
+    if (responseHeaders.count == 0) {
+        return @{};
+    }
+    
+    NSMutableDictionary *mRespHeaders = [NSMutableDictionary dictionaryWithDictionary:responseHeaders];
+    
+    __block NSMutableArray *removeKeys = [NSMutableArray arrayWithArray:@[SonicHeaderMaxAge,SonicHeaderKeyCacheOffline,SonicHeaderExpire,SonicHeaderKeyStrictMode,SonicHeaderKeyTemplate,SonicHeaderKeyTemplateChange]];
+    
+    [mRespHeaders enumerateKeysAndObjectsUsingBlock:^(NSString *key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+       
+        if ([[key lowercaseString] rangeOfString:@"cookie"].location != NSNotFound) {
+            [removeKeys addObject:key];
+        }
+        
+    }];
+    
+    [mRespHeaders removeObjectsForKeys:removeKeys];
+    
+    return mRespHeaders;
 }
 
 - (void)checkAndTrimCache

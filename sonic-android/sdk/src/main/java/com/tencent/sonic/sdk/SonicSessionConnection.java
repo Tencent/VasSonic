@@ -126,6 +126,23 @@ public abstract class SonicSessionConnection {
     public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
 
     /**
+     * HTTP Header : Cache-Control. <br/>
+     * This header represents the strategy of cache control.
+     */
+    public final static String HTTP_HEAD_FIELD_CACHE_CONTROL = "Cache-Control";
+
+    /**
+     * HTTP Header : Expires. <br/>
+     */
+    public final static String HTTP_HEAD_FIELD_EXPIRES = "Expires";
+
+    /**
+     * HTTP 1.0 Header : Pragma. <br/>
+     * This old header represents the old strategy of cache control.
+     */
+    public final static String HTTP_HEAD_FIELD_PRAGMA = "Pragma";    //1.0
+
+    /**
      * SonicSession Object used by SonicSessionConnection.
      */
     protected final SonicSession session;

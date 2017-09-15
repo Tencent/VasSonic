@@ -24,6 +24,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -572,7 +574,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             }
 
             //save and separate data
-            if (SonicUtils.needSaveData(cacheOffline)) {
+            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
                 switchState(STATE_RUNNING, STATE_READY, true);
                 if (!TextUtils.isEmpty(htmlString)) {
                     try {
@@ -643,7 +645,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         mainHandler.sendMessage(msg);
 
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-        if (SonicUtils.needSaveData(cacheOffline)) {
+        if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
             try {
                 if (hasCacheData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) {
                     switchState(STATE_RUNNING, STATE_READY, true);
@@ -673,8 +675,6 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             try {
                 final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
                 final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-                String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
-                String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
 
                 String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
                 String serverRsp = output.toString("UTF-8");
@@ -725,7 +725,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     mainHandler.sendMessage(msg);
                 }
 
-                if (null == diffDataJson || null == htmlString || !SonicUtils.needSaveData(cacheOffline)) {
+                if (null == diffDataJson || null == htmlString
+                        || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
                     SonicUtils.removeSessionCache(id);
                 }
@@ -735,9 +736,10 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 Thread.yield();
 
                 startTime = System.currentTimeMillis();
-                if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString())) {
+                Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
+                if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString(), headers)) {
                     long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                    SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, cspContent, cspReportOnlyContent);
+                    SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: finish save session cache, cost " + (System.currentTimeMillis() - startTime) + " ms.");
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate: save session files fail.");

@@ -19,12 +19,18 @@ import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.security.MessageDigest;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -111,20 +117,74 @@ class SonicUtils {
      * @param htmlSize    Html size
      */
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    static void saveSonicData(String sessionId, String eTag, String templateTag, String htmlSha1, long htmlSize, String cspContent, String cspReportOnlyContent) {
+    static void saveSonicData(String sessionId, String eTag, String templateTag, String htmlSha1,
+                              long htmlSize, Map<String, List<String>> headers) {
         if (SonicUtils.shouldLog(Log.INFO)) {
             SonicUtils.log(TAG, Log.INFO, "saveSonicData sessionId = " + sessionId + ", eTag = " + eTag + ", templateTag = " + templateTag + ",htmlSha1 = " + htmlSha1 + ", htmlSize = " + htmlSize );
         }
+
         SonicDataHelper.SessionData sessionData = new SonicDataHelper.SessionData();
+        sessionData.sessionId = sessionId;
+        handleCacheControl(headers, sessionData);
         sessionData.etag = eTag;
         sessionData.templateTag = templateTag;
         sessionData.htmlSha1 = htmlSha1;
         sessionData.htmlSize = htmlSize;
         sessionData.templateUpdateTime = System.currentTimeMillis();
-        sessionData.cspContent = cspContent;
-        sessionData.cspReportOnlyContent = cspReportOnlyContent;
+
         SonicDataHelper.saveSessionData(sessionId, sessionData);
+
     }
+
+    /**
+     * Calculate the expired time of session cache depends on the response header Cache-Control.
+     * @param extraHeaders
+     * @param sessionData
+     */
+    private static void handleCacheControl(Map<String, List<String>> extraHeaders, SonicDataHelper.SessionData sessionData) {
+        List<String> responseHeaderValues;
+        if (extraHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL)) {
+            responseHeaderValues = extraHeaders.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
+            if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
+                String header = responseHeaderValues.get(0).toLowerCase();
+                if (header.contains("max-age")) {
+                    int index = header.indexOf("max-age");
+                    String temp = header.substring(index);
+                    int endIndex = temp.indexOf(",");
+                    endIndex = endIndex == -1 ? temp.length() : endIndex;
+                    String maxAgeStr = temp.substring(8, endIndex);
+                    try {
+                        long maxAgeTime = Long.parseLong(maxAgeStr) * 1000;
+                        if (maxAgeTime != 0) {
+                            sessionData.expiredTime = Long.parseLong(maxAgeStr) * 1000 + System.currentTimeMillis();
+                        }
+                    } catch (Exception e) {
+                        log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());
+                    }
+                } else if (header.contains("private")) {
+                    //max 10min
+                    sessionData.expiredTime = 10 * 60 * 1000 + System.currentTimeMillis();
+                } else if (header.contains("public")) {
+                    //max 24 hour
+                    sessionData.expiredTime = 24 * 60 * 60 * 1000 + System.currentTimeMillis();
+                }
+            }
+        } else if (extraHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES)) {
+            responseHeaderValues = extraHeaders.get(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES);
+            if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
+                String header = responseHeaderValues.get(0);
+                DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.US);
+                df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                try {
+                    Date date = df.parse(header);
+                    sessionData.expiredTime = date.getTime() + 8 * 60 * 60 * 1000;
+                } catch (Exception e) {
+                    log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());
+                }
+            }
+        }
+    }
+
 
     /**
      * Obtain the difference data between the server and the local data
@@ -251,7 +311,7 @@ class SonicUtils {
      * @param dataString     Data content
      * @return The result of save files.true if all data is saved successfully
      */
-    static boolean saveSessionFiles(String sessionId, String htmlString, String templateString, String dataString) {
+    static boolean saveSessionFiles(String sessionId, String htmlString, String templateString, String dataString, Map<String, List<String>> headers) {
         if (!TextUtils.isEmpty(htmlString) && !SonicFileUtils.writeFile(htmlString, SonicFileUtils.getSonicHtmlPath(sessionId))) {
             log(TAG, Log.ERROR, "saveSessionData error: write html file fail.");
             return false;
@@ -264,6 +324,12 @@ class SonicUtils {
 
         if (!TextUtils.isEmpty(dataString) && !SonicFileUtils.writeFile(dataString, SonicFileUtils.getSonicDataPath(sessionId))) {
             log(TAG, Log.ERROR, "saveSessionData error: write data file fail.");
+            return false;
+        }
+
+        if (headers != null && headers.size() > 0
+                &&!SonicFileUtils.writeFile(SonicFileUtils.convertHeadersToString(headers), SonicFileUtils.getSonicHeaderPath(sessionId))) {
+            log(TAG, Log.ERROR, "saveSessionData error: write header file fail.");
             return false;
         }
         return true;
@@ -358,14 +424,33 @@ class SonicUtils {
     }
 
     /**
-     * According to cache-offline head to decide whether to save data
+     * According to cache-offline head and Cache-Control header to decide whether to save data
      *
+     * @param isSupportCacheControl Indicates whether to check Cache-Control header or not
      * @param cacheOffline Cache-offline head
+     * @param headers Response http headers
+     *
      * @return
      */
-    static boolean needSaveData(String cacheOffline) {
-        return !TextUtils.isEmpty(cacheOffline) &&
+    static boolean needSaveData(boolean isSupportCacheControl, String cacheOffline, Map<String, List<String>> headers) {
+        boolean needSaveData =  !TextUtils.isEmpty(cacheOffline) &&
                 (SonicSession.OFFLINE_MODE_STORE.equals(cacheOffline) || SonicSession.OFFLINE_MODE_TRUE.equals(cacheOffline));
+        if (needSaveData && isSupportCacheControl) {
+            //check http header Cache-Control
+            List<String> responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
+            if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL)) {
+                if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
+                    String header = responseHeaderValues.get(0).toLowerCase();
+                    if (header.contains("no-cache") || header.contains("no-store") || header.contains("must-revalidate")) {
+                        needSaveData = false;
+                    }
+                }
+            } else if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_PRAGMA)) {
+                needSaveData = false;
+            }
+        }
+
+        return needSaveData;
     }
 
     /**
@@ -484,4 +569,5 @@ class SonicUtils {
         }
         return sb.toString();
     }
+
 }

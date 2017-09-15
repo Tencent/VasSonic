@@ -67,6 +67,11 @@ public class SonicSessionConfig {
     boolean AUTO_START_WHEN_CREATE = true;
 
     /**
+     * Need to check the Cache-Control response header or not.
+     */
+    boolean SUPPORT_CACHE_CONTROL = false;
+
+    /**
      * The toast when network unavailable
      */
     String USE_SONIC_CACHE_IN_BAD_NETWORK_TOAST = "Bad Network!";
@@ -195,6 +200,12 @@ public class SonicSessionConfig {
             target.supportNoETag = supportNoETag;
             return this;
         }
+
+        public Builder setSupportCacheControl(boolean supportCacheControl) {
+            target.SUPPORT_CACHE_CONTROL = supportCacheControl;
+            return this;
+        }
+
 
         public SonicSessionConfig build() {
             return target;

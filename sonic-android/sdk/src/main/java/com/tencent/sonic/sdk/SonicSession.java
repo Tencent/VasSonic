@@ -639,7 +639,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
                     handleUnStrictMode_NoETag_TemplateChange(htmlString, respHtmlSha1);
                 }
 
-                if (SonicUtils.needSaveData(cacheOffline)) {
+                if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
                     switchState(STATE_RUNNING, STATE_READY, true);
                     try {
                         //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
@@ -801,7 +801,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         //Separate and save html.
         if (readComplete && null != outputStream) {
             String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-            if (SonicUtils.needSaveData(cacheOffline)) {
+            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
                 SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") onClose:offline->" + cacheOffline + " , post separateAndSaveCache task.");
                 SonicEngine.getInstance().getRuntime().postTaskToThread(new Runnable() {
                     @Override
@@ -858,8 +858,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         long startTime = System.currentTimeMillis();
         String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
         String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-        String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
-        String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
 
         if ("false".equalsIgnoreCase(strictMode)) {
             SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
@@ -881,12 +879,13 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
                 }
                 if (!TextUtils.isEmpty(eTag)) {
                     if (!eTag.equalsIgnoreCase(sessionData.etag)) {
-                        if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
+                        Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
+                        if (SonicUtils.saveSessionFiles(id, htmlString, "", "", headers)) {
                             long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
                             if (TextUtils.isEmpty(htmlSha1)) {
                                 htmlSha1 = SonicUtils.getSHA1(htmlString);
                             }
-                            SonicUtils.saveSonicData(id, eTag, "", htmlSha1, htmlSize, cspContent, cspReportOnlyContent);
+                            SonicUtils.saveSonicData(id, eTag, "", htmlSha1, htmlSize, headers);
                         }
                     } else {
                         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: eTag is the same as last eTag!");
@@ -910,9 +909,10 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             StringBuilder templateStringBuilder = new StringBuilder();
             StringBuilder dataStringBuilder = new StringBuilder();
             if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
-                if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString())) {
+                Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
+                if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString(), headers)) {
                     long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                    SonicUtils.saveSonicData(id, eTag, templateTag, SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                    SonicUtils.saveSonicData(id, eTag, templateTag, SonicUtils.getSHA1(htmlString), htmlSize, headers);
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save session files fail.");
                     SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
@@ -1059,7 +1059,6 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      * More about it see {https://issuetracker.google.com/issues/36989494#c8}
      * Fix VasSonic issue {https://github.com/Tencent/VasSonic/issues/90}
      *
-     * @param url The url of this session
      * @return Return the data to kernel
      */
     protected boolean shouldSetCookieAsynchronous() {
@@ -1158,8 +1157,17 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
         HashMap<String, String> headers = new HashMap<String, String>();
 
         // set CSP headers if need
-        String cspContent = SonicDataHelper.getCSPContent(id);
-        String cspReportOnlyContent = SonicDataHelper.getCSPReportOnlyContent(id);
+        Map<String, List<String>> localHeaders = SonicFileUtils.getHeaderFromLocalCache(id);
+        String cspContent = null;
+        String cspReportOnlyContent = null;
+        if (localHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_CSP)) {
+            cspContent = localHeaders.get(SonicSessionConnection.HTTP_HEAD_CSP).get(0);
+        }
+
+        if (localHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY)) {
+            cspReportOnlyContent = localHeaders.get(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY).get(0);
+        }
+
         if (SonicUtils.shouldLog(Log.DEBUG)) {
             SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") cspContent = " + cspContent + ", cspReportOnlyContent = " + cspReportOnlyContent + ".");
         }

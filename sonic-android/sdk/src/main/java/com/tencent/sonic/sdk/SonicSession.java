@@ -553,53 +553,110 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
             if ("false".equalsIgnoreCase(strictMode)) {
-                String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-                if (SonicUtils.shouldLog(Log.INFO)) {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
-                }
-
-                boolean error = false;
-                if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
-                    error = true;
-                } else {
-                    if (!TextUtils.isEmpty(eTag)) {
-                        if (!eTag.equalsIgnoreCase(sessionData.etag)) {
-                            handleFlow_TemplateChange(); // html change
-                        } else {
-                            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
-                        }
-                    } else {
-                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
-                        error = true;
-                    }
-                }
-
-                if (error) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: remove all session.");
-                    SonicUtils.removeSessionCache(id);
-                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
-                }
+                handleUnStrictMode(templateChange, sessionData);
             } else {
-                if (!TextUtils.isEmpty(templateChange)) {
-                    if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
-                        handleFlow_DataUpdate(); // data update
-                    } else {
-                        handleFlow_TemplateChange(); // template change
-                    }
-                } else {
-                    String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-                    if (!TextUtils.isEmpty(templateTag) && !templateTag.equalsIgnoreCase(sessionData.templateTag)) {
-                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:no templateChange field but template-tag has changed.");
-                        handleFlow_TemplateChange(); //fault tolerance
-                    } else {
-                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no templateChange field and template-tag is " + templateTag + ".");
-                        SonicUtils.removeSessionCache(id);
-                        SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
-                    }
-                }
+                handleStrictMode(templateChange, sessionData);
             }
 
+        }
+
+    }
+
+    protected void handleUnStrictMode(String templateChange, SonicDataHelper.SessionData sessionData) {
+        String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        if (SonicUtils.shouldLog(Log.INFO)) {
+            SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleUnStrictMode:templateChange = " + templateChange);
+        }
+
+        boolean error = false;
+        if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleUnStrictMode: data update without strict mode!");
+            error = true;
+        } else {
+            if (!TextUtils.isEmpty(eTag)) {
+                if (!eTag.equalsIgnoreCase(sessionData.etag)) {
+                    handleFlow_TemplateChange(); // html change
+                } else {
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleUnStrictMode: eTag is the same as last eTag!");
+                }
+            } else if (config.supportNoETag) {
+                handleUnStrictMode_NoETag();
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleUnStrictMode:no eTag field and eTag is " + eTag + ".");
+                error = true;
+            }
+        }
+
+        if (error) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: remove all session.");
+            SonicUtils.removeSessionCache(id);
+            SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
+        }
+    }
+
+    protected void handleStrictMode(String templateChange, SonicDataHelper.SessionData sessionData) {
+        if (!TextUtils.isEmpty(templateChange)) {
+            if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
+                handleFlow_DataUpdate(); // data update
+            } else {
+                handleFlow_TemplateChange(); // template change
+            }
+        } else {
+            String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+            if (!TextUtils.isEmpty(templateTag) && !templateTag.equalsIgnoreCase(sessionData.templateTag)) {
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleStrictMode:no templateChange field but template-tag has changed.");
+                handleFlow_TemplateChange(); //fault tolerance
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleStrictMode:no templateChange field and template-tag is " + templateTag + ".");
+                SonicUtils.removeSessionCache(id);
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SERVER_DATA_EXCEPTION);
+            }
+        }
+    }
+
+    protected void handleUnStrictMode_NoETag() {
+        try {
+            String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+            boolean hasHandle304 = false;
+            if (!SonicUtils.needRefreshWebView(cacheOffline)) {
+                handleFlow_304();
+                hasHandle304 = true;
+            }
+
+            SonicUtils.log(TAG, Log.INFO, "handleUnStrictMode_NoETag :");
+            ByteArrayOutputStream output = sessionConnection.getResponseData();
+            if (output == null) {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleUnStrictMode_NoETag error:output = null!");
+                return;
+            }
+            String htmlString = output.toString("UTF-8");
+            String respHtmlSha1 = SonicUtils.getSHA1(htmlString);
+            SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(id);
+            if (respHtmlSha1.equals(sessionData.htmlSha1) && !hasHandle304) {
+                handleFlow_304();
+            } else {
+                if (SonicUtils.needRefreshWebView(cacheOffline)) {
+                    handleUnStrictMode_NoETag_TemplateChange(htmlString, respHtmlSha1);
+                }
+
+                if (SonicUtils.needSaveData(cacheOffline)) {
+                    switchState(STATE_RUNNING, STATE_READY, true);
+                    try {
+                        //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
+                        Thread.sleep(1500);
+                        separateAndSaveCache(htmlString);
+                    } catch (Throwable e) {
+                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleUnStrictMode_NoETag error:" + e.getMessage());
+                    }
+                } else if (OFFLINE_MODE_FALSE.equals(cacheOffline)) {
+                    SonicUtils.removeSessionCache(id);
+                    SonicUtils.log(TAG, Log.INFO, "handleUnStrictMode_NoETag:offline mode is 'false', so clean cache.");
+                } else {
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleUnStrictMode_NoETag:offline->" + cacheOffline + " , so do not need cache to file.");
+                }
+            }
+        }catch (Throwable e){
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleUnStrictMode_NoETag error:" + e.getMessage());
         }
 
     }
@@ -617,6 +674,10 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
     }
 
     protected void handleFlow_ServiceUnavailable() {
+
+    }
+
+    protected void handleUnStrictMode_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
 
     }
 
@@ -795,9 +856,8 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             return;
         }
         long startTime = System.currentTimeMillis();
-        final String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
-        final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-
+        String strictMode = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_STRICT_MODE);
+        String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         String cspContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP);
         String cspReportOnlyContent = sessionConnection.getResponseHeaderField(SonicSessionConnection.HTTP_HEAD_CSP_REPORT_ONLY);
 
@@ -806,25 +866,33 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
             String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
             if (SonicUtils.shouldLog(Log.INFO)) {
-                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection:templateChange = " + templateChange + ", strict mode: " + strictMode);
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache:templateChange = " + templateChange + ", strict mode: " + strictMode);
             }
 
             boolean error = false;
             if ("false".equalsIgnoreCase(templateChange) || "0".equals(templateChange)) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: data update without strict mode!");
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: data update without strict mode!");
                 error = true;
             } else {
+                String htmlSha1 = "";
+                if (TextUtils.isEmpty(eTag) && config.supportNoETag) {
+                    htmlSha1 = SonicUtils.getSHA1(htmlString);
+                    eTag = htmlSha1;
+                }
                 if (!TextUtils.isEmpty(eTag)) {
                     if (!eTag.equalsIgnoreCase(sessionData.etag)) {
                         if (SonicUtils.saveSessionFiles(id, htmlString, "", "")) {
                             long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                            SonicUtils.saveSonicData(id, eTag, "", SonicUtils.getSHA1(htmlString), htmlSize, cspContent, cspReportOnlyContent);
+                            if (TextUtils.isEmpty(htmlSha1)) {
+                                htmlSha1 = SonicUtils.getSHA1(htmlString);
+                            }
+                            SonicUtils.saveSonicData(id, eTag, "", htmlSha1, htmlSize, cspContent, cspReportOnlyContent);
                         }
                     } else {
-                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: eTag is the same as last eTag!");
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: eTag is the same as last eTag!");
                     }
                 } else {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection:no eTag field and eTag is " + eTag + ".");
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: need not save data, config.supportNoETag = " + config.supportNoETag);
                     error = true;
                 }
             }

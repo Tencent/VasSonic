@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -206,6 +207,31 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
         mainHandler.sendMessage(msg);
     }
 
+    protected void handleUnStrictMode_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
+        if (TextUtils.isEmpty(respHtmlString) || TextUtils.isEmpty(respHtmlSha1)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag_TemplateChange error: respHtmlString is empty");
+            return;
+        }
+
+        Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
+        msg.arg1 = msg.arg2 = SONIC_RESULT_CODE_TEMPLATE_CHANGE;
+
+        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+        synchronized (webResponseLock) {
+            if (!wasInterceptInvoked.get()) {
+                pendingWebResourceStream = new ByteArrayInputStream(respHtmlString.getBytes());
+                msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_NoETag_TemplateChange:oh yeah, templateChange load hit 304.");
+            } else {
+                if (SonicUtils.needRefreshWebView(cacheOffline)) {
+                    Bundle data = new Bundle();
+                    data.putBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, true);
+                    pendingWebResourceStream = new ByteArrayInputStream(respHtmlString.getBytes());
+                }
+            }
+        }
+        mainHandler.sendMessage(msg);
+    }
 
     /**
      *
@@ -243,27 +269,25 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
             msg.arg1 = msg.arg2 = SONIC_RESULT_CODE_TEMPLATE_CHANGE;
 
-            if (!wasInterceptInvoked.get()) {
-                if (!TextUtils.isEmpty(htmlString)) {
-                    synchronized (webResponseLock) {
+            synchronized (webResponseLock) {
+                if (!wasInterceptInvoked.get()) {
+                    if (!TextUtils.isEmpty(htmlString)) {
                         pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
-                    }
-                    msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_TemplateChange:oh yeah, templateChange load hit 304.");
-                } else {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple not complete!");
-                    return;
-                }
-            } else {
-                if (SonicUtils.needRefreshWebView(cacheOffline)) {
-                    Bundle data = new Bundle();
-                    data.putBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, true);
-                    if (responseDataTuple.isComplete) {
-                        synchronized (webResponseLock) {
-                            pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
-                        }
+                        msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
+                        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_TemplateChange:oh yeah, templateChange load hit 304.");
                     } else {
-                        pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
+                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple not complete!");
+                        return;
+                    }
+                } else {
+                    if (SonicUtils.needRefreshWebView(cacheOffline)) {
+                        Bundle data = new Bundle();
+                        data.putBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, true);
+                        if (responseDataTuple.isComplete) {
+                            pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
+                        } else {
+                            pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
+                        }
                     }
                 }
             }

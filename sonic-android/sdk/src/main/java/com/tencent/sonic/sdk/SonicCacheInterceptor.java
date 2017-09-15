@@ -72,13 +72,16 @@ public abstract class SonicCacheInterceptor {
             }
 
             SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(session.id);
+            boolean isExpired = session.config.SUPPORT_CACHE_CONTROL
+                    && sessionData.expiredTime > 0 && System.currentTimeMillis() > sessionData.expiredTime;
             boolean verifyError;
             String htmlString = "";
             // verify local data
-            if (TextUtils.isEmpty(sessionData.etag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
+            if (isExpired || TextUtils.isEmpty(sessionData.etag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
                 verifyError = true;
                 SonicUtils.log(TAG, Log.INFO, "session(" + session.sId + ") runSonicFlow : session data is empty.");
             } else {
+                SonicDataHelper.updateSonicCacheHitCount(session.id);
                 File htmlCacheFile = new File(SonicFileUtils.getSonicHtmlPath(session.id));
                 htmlString = SonicFileUtils.readFile(htmlCacheFile);
                 verifyError = TextUtils.isEmpty(htmlString);

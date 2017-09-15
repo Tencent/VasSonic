@@ -21,10 +21,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -51,6 +55,11 @@ class SonicFileUtils {
      * Html extensions
      */
     private static final String HTML_EXT = ".html";
+
+    /**
+     * Response header extensions.
+     */
+    private static final String HEADER_EXT = ".header";
 
     /**
      * The max percent threshold of cache.
@@ -97,6 +106,15 @@ class SonicFileUtils {
     /**
      *
      * @param sessionId
+     * @return he path of the directory holding sonic response http header cache files.
+     */
+    static String getSonicHeaderPath(String sessionId) {
+        return getSonicCacheDirPath() + sessionId + HEADER_EXT;
+    }
+
+    /**
+     *
+     * @param sessionId
      * @return The path of the directory holding sonic html cache files.
      */
     static String getSonicHtmlPath(String sessionId) {
@@ -123,6 +141,11 @@ class SonicFileUtils {
         File dataFile = new File(getSonicDataPath(sessionId));
         if (dataFile.exists()) {
             deleteSuccess &= dataFile.delete();
+        }
+
+        File headerFile = new File(getSonicHeaderPath(sessionId));
+        if (headerFile.exists()){
+            deleteSuccess &= headerFile.delete();
         }
 
         return deleteSuccess;
@@ -261,42 +284,54 @@ class SonicFileUtils {
             if (childFiles != null && childFiles.length > 0) {
                 long startTime = System.currentTimeMillis();
                 long cacheFileSize = 0L;
+                String fileName;
+                File file ;
+
                 final long MAX_CACHE_SIZE = SonicEngine.getInstance().getConfig().SONIC_CACHE_MAX_SIZE;
 
+                HashMap<String, List<String>> currentCacheFileMap = new HashMap<String, List<String>>();
+                List<String> files;
                 for (int i = 0; i < childFiles.length; i++) {
-                    cacheFileSize += childFiles[i].length();
+                    file = childFiles[i];
+                    cacheFileSize += file.length();
+                    fileName = file.getName();
+
+                    files = currentCacheFileMap.get(fileName);
+                    if (files == null) {
+                        files = new ArrayList<String>();
+                    }
+
+                    files.add(file.getAbsolutePath());
+                    currentCacheFileMap.put(fileName, files);
                 }
 
                 SonicDataHelper.setLastClearCacheTime(System.currentTimeMillis());
                 if (cacheFileSize > (MAX_CACHE_SIZE * THRESHOLD_OF_CACHE_MAX_PERCENT)) {
                     SonicUtils.log(TAG, Log.INFO, "now try clear cache, current cache size: " + (cacheFileSize / 1024 / 1024) + "m");
-                    List<File> files = Arrays.asList(childFiles);
-                    Collections.sort(files, new Comparator<File>() {
-                        public int compare(File f1, File f2) {
-                            long diff = f1.lastModified() - f2.lastModified();
-                            if (diff > 0)
-                                return 1;
-                            else if (diff == 0)
-                                return 0;
-                            else
-                                return -1;
-                        }
-                    });
+
+                    List<SonicDataHelper.SessionData> allSessions = SonicDataHelper.getAllSessionByHitCount();
 
                     long fileSize ;
-                    File file ;
-                    String fileName;
-                    for (int i = 0; i < files.size(); i++) {
-                        file = files.get(i);
-                        if (file.isFile() && file.exists()) {
-                            fileName = file.getName();
-                            fileSize = file.length();
-                            if (file.delete()) {
-                                cacheFileSize -= fileSize;
-                                SonicDataHelper.removeSessionData(fileName);
-                                SonicUtils.log(TAG, Log.INFO, "delete " + file.getAbsolutePath());
+                    SonicDataHelper.SessionData sessionData;
+                    for (int i = 0; i < allSessions.size(); i++) {
+                        sessionData = allSessions.get(i);
+                        files = currentCacheFileMap.get(sessionData.sessionId);
+
+                        if (files != null && files.size() > 0) {
+                            for (String filePath : files) {
+                                file = new File(filePath);
+                                if (file.isFile() && file.exists()) {
+                                    fileName = file.getName();
+                                    fileSize = file.length();
+                                    if (file.delete()) {
+                                        cacheFileSize -= fileSize;
+                                        SonicDataHelper.removeSessionData(fileName);
+                                        SonicUtils.log(TAG, Log.INFO, "delete " + file.getAbsolutePath());
+                                    }
+                                }
                             }
                         }
+
                         if (cacheFileSize <= MAX_CACHE_SIZE * THRESHOLD_OF_CACHE_MIN_PERCENT) {
                             break;
                         }
@@ -326,5 +361,67 @@ class SonicFileUtils {
         }
 
         return false;
+    }
+
+    /**
+     *
+     * @param extraHeaders
+     * @return the string which represent the last response header split by "\r\n
+     */
+    static String convertHeadersToString(Map<String, List<String>> extraHeaders) {
+        if (extraHeaders != null && extraHeaders.size() > 0) {
+            StringBuilder headerString = new StringBuilder();
+            Set<Map.Entry<String, List<String>>> entrys =  extraHeaders.entrySet();
+            for (Map.Entry<String, List<String>> entry : entrys) {
+                String key = entry.getKey();
+                if (!TextUtils.isEmpty(key)) {
+                    List<String> values = entry.getValue();
+                    for (String value : values) {
+                        if (!TextUtils.isEmpty(value)) {
+                            headerString.append(key).append(" : ");
+                            headerString.append(value).append("\r\n");
+                        }
+                    }
+                }
+            }
+            return headerString.toString();
+        }
+
+        return "";
+    }
+
+    /**
+     *
+     * @param sessionId
+     * @return The last http response headers from local cache.
+     */
+    static Map<String, List<String>> getHeaderFromLocalCache(String sessionId) {
+        Map<String, List<String>> headers = new HashMap<String, List<String>>();
+
+        File headerFile = new File(getSonicHeaderPath(sessionId));
+        if (headerFile.exists()) {
+            String headerString = readFile(headerFile);
+            if (!TextUtils.isEmpty(headerString)) {
+                String[] headerArray = headerString.split("\r\n");
+                if (headerArray != null && headerArray.length > 0) {
+                    List<String> tmpHeaderList;
+                    for (String header : headerArray) {
+                        String[] keyValues = header.split(" : ");
+                        if (keyValues != null && keyValues.length == 2) {
+                            String key = keyValues[0].trim();
+                            tmpHeaderList = headers.get(key.toLowerCase());
+                            if (null == tmpHeaderList) {
+                                tmpHeaderList = new ArrayList<String>(1);
+                                headers.put(key.toLowerCase(), tmpHeaderList);
+                            }
+
+                            tmpHeaderList.add(keyValues[1].trim());
+                        }
+                    }
+                }
+            }
+        }
+
+        return headers;
     }
 }

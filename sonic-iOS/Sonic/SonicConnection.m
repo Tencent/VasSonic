@@ -145,7 +145,15 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
 {
-    completionHandler(request);
+    completionHandler(nil);
+    
+    //Sonic didn't support 302 request
+    if (![self validateSessionState]) {
+        return;
+    }
+    
+    NSError *redirectErr = [NSError errorWithDomain:@"com.sonic.connection" code:302 userInfo:@{@"msg":@"sonic can't make 302 jump"}];
+    [self.session session:self.session didFaild:redirectErr];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask

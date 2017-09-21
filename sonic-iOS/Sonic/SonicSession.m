@@ -423,6 +423,10 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         }else{
             if (self.isFirstLoad) {
                 [self firstLoadDidFaild:error];
+                //If 302 error in first request,make the webview reload in normal request
+                if (error.code == 302) {
+                    [self webViewRequireloadNormalRequest];
+                }
             }else{
                 [self updateDidFaild];
             }

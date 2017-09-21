@@ -129,13 +129,11 @@ NSMutableDictionary * queryComponents(NSString *aUrlStr)
     return results;
 }
 
-void dispatchToMain (dispatch_block_t block)
+NSString * dispatchToMain (dispatch_block_t block)
 {
-    if ([NSThread isMainThread]) {
-        block();
-    }else{
-        dispatch_async(dispatch_get_main_queue(), block);
-    }
+    NSBlockOperation *blockOp = [NSBlockOperation blockOperationWithBlock:block];
+    [[NSOperationQueue mainQueue] addOperation:blockOp];
+    return [NSString stringWithFormat:@"%lu",blockOp.hash];
 }
 
 NSString * getDataSha1(NSData *data)

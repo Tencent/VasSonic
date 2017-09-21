@@ -167,6 +167,10 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
 {
+    if (url.length == 0 || ![NSURL URLWithString:url] || !ValidateSessionDelegate(aWebDelegate)) {
+        return;
+    }
+    
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
     }

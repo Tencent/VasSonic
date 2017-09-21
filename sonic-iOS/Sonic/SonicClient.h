@@ -50,7 +50,6 @@
 
 /**
  * Clear session memory and file caches with URL.
- * @param url
  */
 - (void)removeCacheByUrl:(NSString *)url;
 

@@ -553,6 +553,15 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             return;
         }
 
+        //When the charset is different from last time, we will delete the cache.
+        String newCharset = getCharsetFromHeaders();
+        if (!newCharset.equalsIgnoreCase(sessionData.charset)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: charset ( "
+                            + newCharset  + " ) is different from last time( " + sessionData.charset + " ).");
+            SonicUtils.removeSessionCache(id);
+            return;
+        }
+
         // Handle cache-offline
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: cacheOffline is " + cacheOffline + ".");
@@ -603,7 +612,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             }
 
             try {
-                newHtml = byteArrayOutputStream.toString("UTF-8");
+                newHtml = byteArrayOutputStream.toString(newCharset);
             } catch (UnsupportedEncodingException e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error:" + e.getMessage() + ".");
                 SonicUtils.removeSessionCache(id);
@@ -774,7 +783,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
 
                         String htmlString;
                         try {
-                            htmlString = outputStream.toString("UTF-8");
+                            htmlString = outputStream.toString(getCharsetFromHeaders());
                             outputStream.close();
                         } catch (Throwable e) {
                             htmlString = null;
@@ -1085,6 +1094,23 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             return SonicUtils.getFilteredHeaders(sessionConnection.getResponseHeaderFields());
         }
         return null;
+    }
+
+    /**
+     * Get the charset from the latest response http header.
+     * @return The charset.
+     */
+    protected String getCharsetFromHeaders() {
+        HashMap<String, String> headers = getHeaders();
+        String charset = SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET;
+        String key = SonicSessionConnection.HTTP_HEAD_FIELD_CONTENT_TYPE.toLowerCase();
+        if (headers != null && headers.containsKey(key)) {
+            String headerValue = headers.get(key);
+            if (!TextUtils.isEmpty(headerValue) ) {
+                charset = SonicUtils.getCharset(headerValue);
+            }
+        }
+        return charset;
     }
 
     /**

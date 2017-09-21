@@ -110,13 +110,12 @@ public abstract class SonicSessionConnection {
      */
     public final static String HTTP_HEAD_CSP_REPORT_ONLY = "Content-Security-Policy-Report-Only";
 
-
     /**
      * HTTP Header：Set-Cookie. <br>
      * This header represents the HTML Set-Cookie.
      */
     public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
-
+    
     /**
      * HTTP Header : Cache-Control. <br/>
      * This header represents the strategy of cache control.
@@ -133,6 +132,11 @@ public abstract class SonicSessionConnection {
      * This old header represents the old strategy of cache control.
      */
     public final static String HTTP_HEAD_FIELD_PRAGMA = "Pragma";    //1.0
+
+    /**
+     * HTTP Header : Content-Type. </br>
+     */
+    public final static String HTTP_HEAD_FIELD_CONTENT_TYPE = "Content-Type";
 
     /**
      * SonicSession Object used by SonicSessionConnection.
@@ -381,7 +385,7 @@ public abstract class SonicSessionConnection {
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
                 connection.setRequestProperty("method", "GET");
-                connection.setRequestProperty("accept-Charset", "utf-8");
+                connection.setRequestProperty("accept-Charset", SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET);
                 connection.setRequestProperty("accept-Encoding", "gzip");
                 connection.setRequestProperty("accept-Language", "zh-CN,zh;");
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);

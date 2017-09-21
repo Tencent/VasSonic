@@ -180,7 +180,10 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                 Object webResourceResponse;
                 if (!isDestroyedOrWaitingForDestroy()) {
                     String mime = SonicUtils.getMime(srcUrl);
-                    webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime, "utf-8", pendingWebResourceStream, isCachePendingStream.get() ? getCacheHeaders() : getHeaders());
+                    webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime,
+                            isCachePendingStream.get() ? SonicDataHelper.getCharset(id) : getCharsetFromHeaders(),
+                            pendingWebResourceStream,
+                            isCachePendingStream.get() ? getCacheHeaders() : getHeaders());
                 } else {
                     webResourceResponse = null;
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") onClientRequestResource error: session is destroyed!");
@@ -280,7 +283,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
             if (null != responseDataTuple && responseDataTuple.isComplete) {
-                htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
             }
 
             Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
@@ -380,7 +383,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
         String htmlString = null;
         if (responseDataTuple.isComplete) {
             try {
-                htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
                 synchronized (webResponseLock) {
                     pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
                 }
@@ -441,7 +444,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                 final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
                 String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-                String serverRsp = output.toString("UTF-8");
+                String serverRsp = output.toString(getCharsetFromHeaders());
 
                 long startTime = System.currentTimeMillis();
                 JSONObject serverRspJson = new JSONObject(serverRsp);

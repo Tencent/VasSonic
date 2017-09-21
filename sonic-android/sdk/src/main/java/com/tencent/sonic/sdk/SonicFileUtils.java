@@ -22,9 +22,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +84,7 @@ class SonicFileUtils {
 
     /**
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return The path of the directory holding sonic template cache files.
      */
     static String getSonicTemplatePath(String sessionId) {
@@ -96,7 +93,7 @@ class SonicFileUtils {
 
     /**
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return The path of the directory holding sonic data cache files.
      */
     static String getSonicDataPath(String sessionId) {
@@ -105,7 +102,7 @@ class SonicFileUtils {
 
     /**
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return he path of the directory holding sonic response http header cache files.
      */
     static String getSonicHeaderPath(String sessionId) {
@@ -114,7 +111,7 @@ class SonicFileUtils {
 
     /**
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return The path of the directory holding sonic html cache files.
      */
     static String getSonicHtmlPath(String sessionId) {
@@ -123,7 +120,7 @@ class SonicFileUtils {
 
     /**
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return Return {@code true} if all of the cache files have been deleted, such as html template and the data cache files.
      */
     static boolean deleteSonicFiles(String sessionId) {
@@ -167,7 +164,7 @@ class SonicFileUtils {
     /**
      *
      * @param file The file path of template
-     * @return Returns a string containing all of the content readed from template file.
+     * @return Returns a string containing all of the content read from template file.
      */
     static String readFile(File file) {
         if (file == null || !file.exists() || !file.canRead()) {
@@ -222,7 +219,7 @@ class SonicFileUtils {
      * the specified <code>File</code> object.
      *
      * @param str      The string is to be saved
-     * @param filePath
+     * @param filePath path to write
      * @return Returns {@code true} if string is saved successfully.
      */
     static boolean writeFile(String str, String filePath) {
@@ -291,8 +288,8 @@ class SonicFileUtils {
 
                 HashMap<String, List<String>> currentCacheFileMap = new HashMap<String, List<String>>();
                 List<String> files;
-                for (int i = 0; i < childFiles.length; i++) {
-                    file = childFiles[i];
+                for (File childFile : childFiles) {
+                    file = childFile;
                     cacheFileSize += file.length();
                     fileName = file.getName();
 
@@ -305,7 +302,6 @@ class SonicFileUtils {
                     currentCacheFileMap.put(fileName, files);
                 }
 
-                SonicDataHelper.setLastClearCacheTime(System.currentTimeMillis());
                 if (cacheFileSize > (MAX_CACHE_SIZE * THRESHOLD_OF_CACHE_MAX_PERCENT)) {
                     SonicUtils.log(TAG, Log.INFO, "now try clear cache, current cache size: " + (cacheFileSize / 1024 / 1024) + "m");
 
@@ -347,32 +343,15 @@ class SonicFileUtils {
     }
 
     /**
-     * Decide whether need check the size of sonic cache or not.
      *
-     * @return  If the last time of check sonic cache exceed {@link SonicConfig#SONIC_CACHE_CHECK_TIME_INTERVAL},
-     *  then return true, otherwise false.
-     */
-    static boolean isNeedCheckSizeOfCache() {
-        long lastCheckTime = SonicDataHelper.getLastClearCacheTime();
-        long now = System.currentTimeMillis();
-        long interval = SonicEngine.getInstance().getConfig().SONIC_CACHE_CHECK_TIME_INTERVAL;
-        if ((now - lastCheckTime) > interval) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     *
-     * @param extraHeaders
+     * @param headers response headers
      * @return the string which represent the last response header split by "\r\n
      */
-    static String convertHeadersToString(Map<String, List<String>> extraHeaders) {
-        if (extraHeaders != null && extraHeaders.size() > 0) {
+    static String convertHeadersToString(Map<String, List<String>> headers) {
+        if (headers != null && headers.size() > 0) {
             StringBuilder headerString = new StringBuilder();
-            Set<Map.Entry<String, List<String>>> entrys =  extraHeaders.entrySet();
-            for (Map.Entry<String, List<String>> entry : entrys) {
+            Set<Map.Entry<String, List<String>>> entries =  headers.entrySet();
+            for (Map.Entry<String, List<String>> entry : entries) {
                 String key = entry.getKey();
                 if (!TextUtils.isEmpty(key)) {
                     List<String> values = entry.getValue();
@@ -391,30 +370,29 @@ class SonicFileUtils {
     }
 
     /**
+     * Get headers from local cache file
      *
-     * @param sessionId
+     * @param sessionId session id
      * @return The last http response headers from local cache.
      */
     static Map<String, List<String>> getHeaderFromLocalCache(String sessionId) {
         Map<String, List<String>> headers = new HashMap<String, List<String>>();
-
         File headerFile = new File(getSonicHeaderPath(sessionId));
         if (headerFile.exists()) {
             String headerString = readFile(headerFile);
             if (!TextUtils.isEmpty(headerString)) {
                 String[] headerArray = headerString.split("\r\n");
-                if (headerArray != null && headerArray.length > 0) {
+                if (headerArray.length > 0) {
                     List<String> tmpHeaderList;
                     for (String header : headerArray) {
                         String[] keyValues = header.split(" : ");
-                        if (keyValues != null && keyValues.length == 2) {
+                        if (keyValues.length == 2) {
                             String key = keyValues[0].trim();
                             tmpHeaderList = headers.get(key.toLowerCase());
                             if (null == tmpHeaderList) {
                                 tmpHeaderList = new ArrayList<String>(1);
                                 headers.put(key.toLowerCase(), tmpHeaderList);
                             }
-
                             tmpHeaderList.add(keyValues[1].trim());
                         }
                     }

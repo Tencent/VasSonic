@@ -45,6 +45,11 @@ public class SonicConfig {
      */
     boolean VERIFY_CACHE_FILE_WITH_SHA1 = true;
 
+    /**
+     * Whether auto call init db when create sonicEngine or not, default is true.
+     */
+    boolean AUTO_INIT_DB_WHEN_CREATE = true;
+
     private SonicConfig() {
 
     }
@@ -82,6 +87,11 @@ public class SonicConfig {
 
         public Builder setCacheCheckTimeInterval(long time) {
             target.SONIC_CACHE_CHECK_TIME_INTERVAL = time;
+            return this;
+        }
+
+        public Builder setAutoInitDBWhenCreate(boolean autoInitDBWhenCreate) {
+            target.AUTO_INIT_DB_WHEN_CREATE = autoInitDBWhenCreate;
             return this;
         }
 

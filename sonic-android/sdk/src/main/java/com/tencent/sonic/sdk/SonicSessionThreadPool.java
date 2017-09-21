@@ -13,6 +13,7 @@
 
 package com.tencent.sonic.sdk;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.concurrent.ExecutorService;
@@ -79,7 +80,7 @@ class SonicSessionThreadPool {
          * @return Constructed thread, or {@code null} if the request to
          * create a thread is rejected
          */
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NonNull Runnable r) {
             Thread thread = new Thread(this.group, r, NAME_PREFIX + this.threadNumber.getAndIncrement(), 0L);
             if (thread.isDaemon()) {
                 thread.setDaemon(false);

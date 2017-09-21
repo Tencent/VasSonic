@@ -17,7 +17,7 @@ import java.net.HttpURLConnection;
 
 
 /**
- * The Statistic model specifies the data models which are requried to be used to provide
+ * The Statistic model specifies the data models which are required to be used to provide
  * the performance data described by the specific attributes in a SonicSession.
  */
 public class SonicSessionStatistics {

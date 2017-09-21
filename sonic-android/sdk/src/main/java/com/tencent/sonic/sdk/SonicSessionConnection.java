@@ -53,7 +53,7 @@ public abstract class SonicSessionConnection {
      * HTTP header:eTag. <br>
      * This header represents SHA1 value of the whole website, including template and data.
      */
-    public final static String CUSTOM_HEAD_FILED_ETAG = "etag";
+    public final static String CUSTOM_HEAD_FILED_ETAG = "eTag";
 
     /**
      * HTTP header:accept-diff. <br>
@@ -78,14 +78,6 @@ public abstract class SonicSessionConnection {
      * This header indicates whether the website needs to be refreshed or not.
      */
     public final static String CUSTOM_HEAD_FILED_CACHE_OFFLINE = "cache-offline";
-
-    /**
-     * HTTP header:strict_mode. <br>
-     * This header indicates whether the website is user sonic strict mode which means
-     * html page supports VasSonic Specification obeyed by client and server and it can
-     * separate html into template And data cache.
-     */
-    public final static String CUSTOM_HEAD_FILED_STRICT_MODE = "strict_mode";
 
     /**
      * HTTP header:dns-prefetch-address <br>
@@ -314,7 +306,7 @@ public abstract class SonicSessionConnection {
                 URL url = new URL(currentUrl);
                 String dnsPrefetchAddress = intent.getStringExtra(SonicSessionConnection.DNS_PREFETCH_ADDRESS);
                 String originHost = null;
-                /**
+                /*
                  * Use the ip value mapped by {@code SonicSessionConnection.DNS_PREFETCH_ADDRESS} to avoid the cost time of DNS resolution.
                  * Meanwhile it can reduce the risk from hijacking http session.
                  */
@@ -330,7 +322,7 @@ public abstract class SonicSessionConnection {
                     }
 
                     if (!TextUtils.isEmpty(originHost)) {
-                        /**
+                        /*
                          * If originHost is not empty, that means connection uses the ip value instead of http host.
                          * So http header need to set the Host and {@link com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_DNS_PREFETCH} request property.
                          */
@@ -338,7 +330,7 @@ public abstract class SonicSessionConnection {
 
                         connection.setRequestProperty(SonicSessionConnection.CUSTOM_HEAD_FILED_DNS_PREFETCH, url.getHost());
                         if (connection instanceof HttpsURLConnection) { // 如果属于https，需要特殊处理，比如支持sni
-                            /**
+                            /*
                              * If the scheme of url is https, then it needs extra processing, such as the sni support.
                              */
                             final String finalOriginHost = originHost;
@@ -374,7 +366,7 @@ public abstract class SonicSessionConnection {
                 SonicSessionConfig config = session.config;
                 connection.setConnectTimeout(config.CONNECT_TIMEOUT_MILLIS);
                 connection.setReadTimeout(config.READ_TIMEOUT_MILLIS);
-                /**
+                /*
                  *  {@link SonicSessionConnection#CUSTOM_HEAD_FILED_ACCEPT_DIFF} is need to be set If client accepts incrementally updates. <br>
                  *  <p><b>Note: It doesn't support incrementally updated for template file.</b><p/>
                  */

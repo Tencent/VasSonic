@@ -72,6 +72,11 @@ public class SonicSessionConfig {
     boolean SUPPORT_CACHE_CONTROL = false;
 
     /**
+     * Support noETag or not
+     */
+    boolean SUPPORT_NO_ETAG = false;
+
+    /**
      * The toast when network unavailable
      */
     String USE_SONIC_CACHE_IN_BAD_NETWORK_TOAST = "Bad Network!";
@@ -100,11 +105,6 @@ public class SonicSessionConfig {
      * The custom response headers which will be sent to webView for intercept WebResourceResponse
      */
     Map<String, String> customResponseHeaders = null;
-
-    /**
-     * Support noETag or not
-     */
-    boolean supportNoETag = false;
 
     @Override
     public boolean equals(Object other) {
@@ -197,7 +197,7 @@ public class SonicSessionConfig {
         }
 
         public Builder setSupportNoEtag(boolean supportNoETag) {
-            target.supportNoETag = supportNoETag;
+            target.SUPPORT_NO_ETAG = supportNoETag;
             return this;
         }
 

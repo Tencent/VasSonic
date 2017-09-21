@@ -118,12 +118,12 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
     /**
      * First loaded message type : server data has not finished reading when send this message.
      */
-    private static final int FIRST_LOAD_NO_CACHE = 1;
+    private static final int FIRST_LOAD_NO_DATA = 1;
 
     /**
      * First loaded message type : server data has finished reading when send this message.
      */
-    private static final int FIRST_LOAD_WITH_CACHE = 2;
+    private static final int FIRST_LOAD_WITH_DATA = 2;
 
     /**
      * Whether refresh page content when template change or not.
@@ -250,7 +250,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 if (wasLoadDataInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_PreLoad:PRE_LOAD_WITH_CACHE load data.");
                     String html = (String) msg.obj;
-                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getCacheHeaders());
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleClientCoreMessage_PreLoad:wasLoadDataInvoked = true.");
                 }
@@ -260,11 +260,11 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
     }
 
     /**
-     * Handle first load message.If the type of this message is <code>FIRST_LOAD_NO_CACHE</code> and client did not
+     * Handle first load message.If the type of this message is <code>FIRST_LOAD_NO_DATA</code> and client did not
      * initiated request for load url,the quickSonicSession will do nothing but assign a value to sonic by invoke
      * setResult method.
      *
-     * If the type of this message is <code>FIRST_LOAD_WITH_CACHE</code> and client did not initiated request for load url,
+     * If the type of this message is <code>FIRST_LOAD_WITH_DATA</code> and client did not initiated request for load url,
      * client will load the html content that comes from server . In this case, the value of <code>finalResultCode</code>
      * will be set as <code>SONIC_RESULT_CODE_HIT_CACHE</code>.If client has a request for load url before,the value of
      * <code>finalResultCode</code> will be set as <code>SONIC_RESULT_CODE_FIRST_LOAD</code>.
@@ -273,22 +273,22 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
      */
     private void handleClientCoreMessage_FirstLoad(Message msg) {
         switch (msg.arg1) {
-            case FIRST_LOAD_NO_CACHE: {
+            case FIRST_LOAD_NO_DATA: {
                 if (wasInterceptInvoked.get()) {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_FirstLoad:FIRST_LOAD_NO_CACHE.");
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_FirstLoad:FIRST_LOAD_NO_DATA.");
                     setResult(SONIC_RESULT_CODE_FIRST_LOAD, SONIC_RESULT_CODE_FIRST_LOAD, true);
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleClientCoreMessage_FirstLoad:url was not invoked.");
                 }
             }
             break;
-            case FIRST_LOAD_WITH_CACHE: {
+            case FIRST_LOAD_WITH_DATA: {
                 if (wasLoadUrlInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_FirstLoad:oh yeah, first load hit 304.");
                     sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, (String) msg.obj, "text/html", "utf-8", srcUrl, getHeaders());
                     setResult(SONIC_RESULT_CODE_FIRST_LOAD, SONIC_RESULT_CODE_HIT_CACHE, false);
                 } else {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") FIRST_LOAD_WITH_CACHE load url was invoked.");
+                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") FIRST_LOAD_WITH_DATA load url was invoked.");
                     setResult(SONIC_RESULT_CODE_FIRST_LOAD, SONIC_RESULT_CODE_FIRST_LOAD, true);
                 }
             }
@@ -377,15 +377,18 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         mainHandler.removeMessages(CLIENT_MSG_ON_WEB_READY);
     }
 
-    @Override
     /**
-     * Send preload message
+     * Handle load local cache of html if exist.
+     * This handle is called before connection.
+     *
+     * @param cacheHtml local cache of html
      */
-    protected void handleLocalHtml(String localHtml) {
+    @Override
+    protected void handleFlow_LoadLocalCache(String cacheHtml) {
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_PRE_LOAD);
-        if (!TextUtils.isEmpty(localHtml)) {
+        if (!TextUtils.isEmpty(cacheHtml)) {
             msg.arg1 = PRE_LOAD_WITH_CACHE;
-            msg.obj = localHtml;
+            msg.obj = cacheHtml;
         } else {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") runSonicFlow has no cache, do first load flow.");
             msg.arg1 = PRE_LOAD_NO_CACHE;
@@ -478,7 +481,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
     /**
      * Handle 304{@link SonicSession#SONIC_RESULT_CODE_HIT_CACHE}, it just updates the sonic code.
      */
-    protected void handleFlow_304(){
+    protected void handleFlow_NotModified(){
         Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
         msg.arg1 = SONIC_RESULT_CODE_HIT_CACHE;
         msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
@@ -499,24 +502,6 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_SERVICE_UNAVAILABLE);
         mainHandler.sendMessage(msg);
     }
-
-    protected void handleUnStrictMode_NoETag_TemplateChange(String respHtmlString, String respHtmlSha1) {
-        if (TextUtils.isEmpty(respHtmlString) || TextUtils.isEmpty(respHtmlSha1)) {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_NoETag_TemplateChange error: respHtmlString is empty");
-            return;
-        }
-
-        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-
-        // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
-        mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
-        Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
-        msg.obj = respHtmlString;
-        if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
-            msg.arg1 = TEMPLATE_CHANGE_REFRESH;
-        }
-        mainHandler.sendMessage(msg);
-    }
 	
     /**
      *
@@ -530,17 +515,30 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
      *
      * <p>
      * If need save and separate data, sonic will save the server data and separate the server data to template and data.
+     *
+     * @param newHtml html content from server
+     * @param newHtmlSha1 sha1 of html content from server
      */
-    protected void handleFlow_TemplateChange() {
+    protected void handleFlow_TemplateChange(String newHtml, String newHtmlSha1) {
         try {
-            SonicUtils.log(TAG, Log.INFO, "handleFlow_TemplateChange :");
+            SonicUtils.log(TAG, Log.INFO, "handleFlow_TemplateChange : newHtmlSha1 = " + newHtmlSha1);
+            String htmlString = newHtml;
             long startTime = System.currentTimeMillis();
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            SonicSessionConnection.ResponseDataTuple responseDataTuple;
+            ByteArrayOutputStream output = null;
 
-            SonicSessionConnection.ResponseDataTuple responseDataTuple = sessionConnection.getResponseData(wasOnPageFinishInvoked, output);
-            if (responseDataTuple == null) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple = null!");
-                return;
+            // When newHtml is empty
+            if (TextUtils.isEmpty(htmlString)) {
+                output = new ByteArrayOutputStream();
+                responseDataTuple = sessionConnection.getResponseData(wasOnPageFinishInvoked, output);
+                if (responseDataTuple == null) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple = null!");
+                    return;
+                }
+
+                if (responseDataTuple.isComplete) {
+                    htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                }
             }
 
             String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
@@ -548,17 +546,14 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
             mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
             Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
-            String htmlString = "";
-            if (responseDataTuple.isComplete) {
-                htmlString = responseDataTuple.outputStream.toString("UTF-8");
-                msg.obj = htmlString;
-            }
+            msg.obj = htmlString;
             if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
                 msg.arg1 = TEMPLATE_CHANGE_REFRESH;
             }
             mainHandler.sendMessage(msg);
 
-            if (!responseDataTuple.isComplete) {
+
+            if (TextUtils.isEmpty(htmlString)) { // response data is not complete yet
                 responseDataTuple = sessionConnection.getResponseData(wasInterceptInvoked, output);
                 if (responseDataTuple != null) {
                     pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
@@ -581,7 +576,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                         //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
                         Thread.sleep(1500);
                         startTime = System.currentTimeMillis();
-                        separateAndSaveCache(htmlString);
+                        separateAndSaveCache(htmlString, newHtmlSha1);
                         SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleFlow_TemplateChange: read complete and finish separate and save cache cost " + (System.currentTimeMillis() - startTime) + " ms.");
                     } catch (Throwable e) {
                         SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:" + e.getMessage());
@@ -641,7 +636,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_FIRST_LOAD);
         msg.obj = htmlString;
-        msg.arg1 = hasCacheData ? FIRST_LOAD_WITH_CACHE : FIRST_LOAD_NO_CACHE;
+        msg.arg1 = hasCacheData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
         mainHandler.sendMessage(msg);
 
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
@@ -651,7 +646,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     switchState(STATE_RUNNING, STATE_READY, true);
                     //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
                     Thread.sleep(1500);
-                    separateAndSaveCache(htmlString);
+                    separateAndSaveCache(htmlString, null);
                 }
             } catch (Throwable e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:  " + e.getMessage());
@@ -725,10 +720,10 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     mainHandler.sendMessage(msg);
                 }
 
-                if (null == diffDataJson || null == htmlString
-                        || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+                if (null == diffDataJson || null == htmlString || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
                     SonicUtils.removeSessionCache(id);
+                    return;
                 }
 
                 switchState(STATE_RUNNING, STATE_READY, true);

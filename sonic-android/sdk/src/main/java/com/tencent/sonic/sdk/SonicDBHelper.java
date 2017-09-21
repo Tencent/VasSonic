@@ -1,21 +1,46 @@
+/*
+ * Tencent is pleased to support the open source community by making VasSonic available.
+ *
+ * Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ *
+ *
+ */
+
 package com.tencent.sonic.sdk;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Created by marlonlu on 2017/9/14.
- */
 
 public class SonicDBHelper extends SQLiteOpenHelper {
 
+    /**
+     * log filter
+     */
+    private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicDBHelper";
+
+    /**
+     * name of the database file
+     */
     private static final String SONIC_DATABASE_NAME = "sonic.db";
 
+    /**
+     * number of the database (starting at 1)
+     */
     private static final int SONIC_DATABASE_VERSION = 1;
 
+    /**
+     * table name of the SessionData
+     */
     protected static final String Sonic_SESSION_TABLE_NAME = "SessionData";
 
     /**
@@ -26,7 +51,7 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     /**
      * The key of eTag
      */
-    protected static final String SESSION_DATA_COLUMN_ETAG = "etag";
+    protected static final String SESSION_DATA_COLUMN_ETAG = "eTag";
 
     /**
      * The key of templateTag
@@ -65,15 +90,22 @@ public class SonicDBHelper extends SQLiteOpenHelper {
 
     private static SonicDBHelper sInstance = null;
 
-    private static AtomicBoolean upgradOldData = new AtomicBoolean(false);
+    private static AtomicBoolean isDBUpgrading = new AtomicBoolean(false);
 
-    public SonicDBHelper(Context context) {
+    private SonicDBHelper(Context context) {
         super(context, SONIC_DATABASE_NAME, null, SONIC_DATABASE_VERSION);
     }
 
-    public static synchronized SonicDBHelper getInstance(Context context) {
-        if (sInstance == null) {
+    static synchronized SonicDBHelper createInstance(Context context) {
+        if (null == sInstance) {
             sInstance = new SonicDBHelper(context);
+        }
+        return sInstance;
+    }
+
+    public static synchronized SonicDBHelper getInstance() {
+        if (null == sInstance) {
+            throw new IllegalStateException("SonicDBHelper::createInstance() needs to be called before SonicDBHelper::getInstance()!");
         }
         return sInstance;
     }
@@ -90,49 +122,65 @@ public class SonicDBHelper extends SQLiteOpenHelper {
                 SESSION_DATA_COLUMN_CACHE_HIT_COUNT};
     }
 
+    /**
+     * Called when the database is created for the first time. This is where the
+     * creation of tables and the initial population of the tables should happen.
+     *
+     * @param db The database.
+     */
     @Override
     public void onCreate(SQLiteDatabase db) {
-        StringBuilder createTableSql = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
+        // create sessionData table
+        String createTableSql = "CREATE TABLE IF NOT EXISTS " + Sonic_SESSION_TABLE_NAME + " ( " +
+                "id  integer PRIMARY KEY autoincrement" +
+                " , " + SESSION_DATA_COLUMN_SESSION_ID + " text not null" +
+                " , " + SESSION_DATA_COLUMN_ETAG + " text not null" +
+                " , " + SESSION_DATA_COLUMN_TEMPLATE_EAG + " text" +
+                " , " + SESSION_DATA_COLUMN_HTML_SHA1 + " text not null" +
+                " , " + SESSION_DATA_COLUMN_UNAVAILABLE_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_HTML_SIZE + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " integer default 0" +
+                " ); ";
+        db.execSQL(createTableSql);
 
-        createTableSql.append(Sonic_SESSION_TABLE_NAME).append(" ( ");
-
-        //column
-        createTableSql.append("id  integer PRIMARY KEY autoincrement");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_SESSION_ID).append(" text not null");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_ETAG).append(" text not null");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_TEMPLATE_EAG).append(" text");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_HTML_SHA1).append(" text not null");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_UNAVAILABLE_TIME).append(" integer default 0");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_HTML_SIZE).append(" integer default 0");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME).append(" integer default 0");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME).append(" integer default 0");
-        createTableSql.append(" , ").append(SESSION_DATA_COLUMN_CACHE_HIT_COUNT).append(" integer default 0");
-
-        createTableSql.append(" ); ");
-
-        db.execSQL(createTableSql.toString());
+        // upgrade SP if need(session data save in SP on sdk 1.0)
+        onUpgrade(db, -1, SONIC_DATABASE_VERSION);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        upgrade();
+        if (isDBUpgrading.compareAndSet(false, true)) {
+            long startTime = System.currentTimeMillis();
+            SonicUtils.log(TAG, Log.INFO, "onUpgrade start, from " + oldVersion + " to " + newVersion + ".");
+            if (-1 == oldVersion) {
+                SonicEngine.getInstance().getRuntime().postTaskToThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        SonicUtils.removeAllSessionCache();
+                        isDBUpgrading.set(false);
+                    }
+                }, 0L);
+            } else {
+                doUpgrade(db, oldVersion, newVersion);
+                isDBUpgrading.set(false);
+            }
+            SonicUtils.log(TAG, Log.INFO, "onUpgrade finish, cost " + (System.currentTimeMillis() - startTime) + "ms.");
+        }
     }
 
     /**
      * Upgrade old session data from SP into Database.
      */
-    public static void upgrade() {
-        upgradOldData.set(true);
-        SonicDataHelper.upgradeOldDataFromSp();
-        upgradOldData.set(false);
-
+    private void doUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
 
     /**
-     * Indicates whether is upgrading or not. If return true, It will fail to make any session request.
-     * @return
+     * Indicates whether is upgrading or not. If return true, It will fail to create session.
+     * @return is Upgrading or not
      */
-    public static boolean isUpgrading() {
-        return upgradOldData.get();
+    public boolean isUpgrading() {
+        return isDBUpgrading.get();
     }
 }

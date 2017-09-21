@@ -66,7 +66,7 @@ public abstract class SonicRuntime {
      * @return A unique session id
      */
     public String makeSessionId(String url, boolean isAccountRelated) {
-        if (!SonicDBHelper.isUpgrading() && isSonicUrl(url)) {
+        if (isSonicUrl(url)) {
             StringBuilder sessionIdBuilder = new StringBuilder();
             try {
                 Uri uri = Uri.parse(url);

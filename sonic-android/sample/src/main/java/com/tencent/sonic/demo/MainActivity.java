@@ -30,7 +30,12 @@ import android.widget.Toast;
 import com.tencent.sonic.R;
 import com.tencent.sonic.sdk.SonicConfig;
 import com.tencent.sonic.sdk.SonicEngine;
+import com.tencent.sonic.sdk.SonicSession;
 import com.tencent.sonic.sdk.SonicSessionConfig;
+import com.tencent.sonic.sdk.SonicSessionConnection;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -73,7 +78,7 @@ public class MainActivity extends Activity {
         btnDefault.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_DEFAULT, true, false);
+                startBrowserActivity(MODE_DEFAULT);
             }
         });
 
@@ -82,8 +87,19 @@ public class MainActivity extends Activity {
         btnSonicPreload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SonicSessionConfig sessionConfig = new SonicSessionConfig.Builder().build();
-                boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfig);
+                SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
+
+                // set setSupportNoEtag true to support un-sonic server
+                sessionConfigBuilder.setSupportNoEtag(true);
+
+                // setup CUSTOM_HEAD_FILED_CACHE_OFFLINE mode
+                // Tips: You can setup CUSTOM_HEAD_FILED_CACHE_OFFLINE = OFFLINE_MODE_STORE for better user experience
+                HashMap<String, String> customResponseHeaders = new HashMap<>();
+                customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_TRUE);
+                sessionConfigBuilder.setCustomResponseHeaders(customResponseHeaders);
+
+                // preload session
+                boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfigBuilder.build());
                 Toast.makeText(getApplicationContext(), preloadSuccess ? "Preload start up success!" : "Preload start up fail!", Toast.LENGTH_LONG).show();
             }
         });
@@ -93,7 +109,7 @@ public class MainActivity extends Activity {
         btnSonic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_SONIC, true, false);
+                startBrowserActivity(MODE_SONIC);
             }
         });
 
@@ -102,16 +118,7 @@ public class MainActivity extends Activity {
         btnSonicWithOfflineCache.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startBrowserActivity(MODE_SONIC_WITH_OFFLINE_CACHE, true, false);
-            }
-        });
-
-        //load sonic with no eTag
-        Button btnSonicWithNoETag = (Button) findViewById(R.id.btn_sonic_noETag);
-        btnSonicWithNoETag.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startBrowserActivity(MODE_SONIC, false, true);
+                startBrowserActivity(MODE_SONIC_WITH_OFFLINE_CACHE);
             }
         });
 
@@ -173,13 +180,10 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    private void startBrowserActivity(int mode, boolean strictMode, boolean supportNoETag) {
+    private void startBrowserActivity(int mode) {
         Intent intent = new Intent(this, BrowserActivity.class);
         intent.putExtra(BrowserActivity.PARAM_URL, DEMO_URL);
         intent.putExtra(BrowserActivity.PARAM_MODE, mode);
-        intent.putExtra(BrowserActivity.PARAM_STRICT_MODE, strictMode);
-        intent.putExtra(BrowserActivity.PARAM_SUPPORT_NO_ETAG, supportNoETag);
-        intent.putExtra(BrowserActivity.PARAM_AUTO_REFRESH, true);
         intent.putExtra(SonicJavaScriptInterface.PARAM_CLICK_TIME, System.currentTimeMillis());
         startActivityForResult(intent, -1);
     }

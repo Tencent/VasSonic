@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -61,7 +62,7 @@ class SonicUtils {
     private static final String SONIC_TAG_TITLE_KEY = "{title}";
 
     /**
-     * Sonic pattern : through the pattern sonic splites the html to template and data
+     * Sonic pattern : through the pattern sonic splits the html to template and data
      */
     private static final String SONIC_TAG_PATTERN = "<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->";
 
@@ -111,7 +112,7 @@ class SonicUtils {
      * Save sonic data to SharedPreferences, such as the eTag, template tag and so on
      *
      * @param sessionId   A unique session id
-     * @param eTag        Html etag
+     * @param eTag        Html eTag
      * @param templateTag Template tag
      * @param htmlSha1    Html sha1
      * @param htmlSize    Html size
@@ -122,29 +123,27 @@ class SonicUtils {
         if (SonicUtils.shouldLog(Log.INFO)) {
             SonicUtils.log(TAG, Log.INFO, "saveSonicData sessionId = " + sessionId + ", eTag = " + eTag + ", templateTag = " + templateTag + ",htmlSha1 = " + htmlSha1 + ", htmlSize = " + htmlSize );
         }
-
         SonicDataHelper.SessionData sessionData = new SonicDataHelper.SessionData();
         sessionData.sessionId = sessionId;
         handleCacheControl(headers, sessionData);
-        sessionData.etag = eTag;
+        sessionData.eTag = eTag;
         sessionData.templateTag = templateTag;
         sessionData.htmlSha1 = htmlSha1;
         sessionData.htmlSize = htmlSize;
         sessionData.templateUpdateTime = System.currentTimeMillis();
-
         SonicDataHelper.saveSessionData(sessionId, sessionData);
 
     }
 
     /**
      * Calculate the expired time of session cache depends on the response header Cache-Control.
-     * @param extraHeaders
-     * @param sessionData
+     * @param headers response headers
+     * @param sessionData session data
      */
-    private static void handleCacheControl(Map<String, List<String>> extraHeaders, SonicDataHelper.SessionData sessionData) {
+    private static void handleCacheControl(Map<String, List<String>> headers, SonicDataHelper.SessionData sessionData) {
         List<String> responseHeaderValues;
-        if (extraHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL)) {
-            responseHeaderValues = extraHeaders.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
+        if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL)) {
+            responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
             if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
                 String header = responseHeaderValues.get(0).toLowerCase();
                 if (header.contains("max-age")) {
@@ -169,8 +168,8 @@ class SonicUtils {
                     sessionData.expiredTime = 24 * 60 * 60 * 1000 + System.currentTimeMillis();
                 }
             }
-        } else if (extraHeaders.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES)) {
-            responseHeaderValues = extraHeaders.get(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES);
+        } else if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES)) {
+            responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES);
             if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
                 String header = responseHeaderValues.get(0);
                 DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.US);
@@ -279,7 +278,7 @@ class SonicUtils {
      * @param templateString The contents of the template
      * @param dataJson       The contents of the data
      * @param dataMaxSize    the length of data.Through it to determine StringBuilder's original length
-     * @return
+     * @return final html string
      */
     static String buildHtml(String templateString, JSONObject dataJson, int dataMaxSize) {
         if (TextUtils.isEmpty(templateString) || dataJson == null) {
@@ -334,6 +333,33 @@ class SonicUtils {
         }
         return true;
     }
+
+    /**
+     * Get filtered headers by session id, this method will return a map of header(k-v) which
+     * will not contains "Set-Cookie", "Cache-Control", "Expires".
+     *
+     * @param srcHeaders      The source headers
+     * @return The headers of sessionId
+     */
+    static HashMap<String, String> getFilteredHeaders(Map<String, List<String>> srcHeaders) {
+        HashMap<String, String> headers = new HashMap<String, String>();
+        if (null != srcHeaders) {
+            List<String> headerValues;
+            for (Map.Entry<String, List<String>> entry : srcHeaders.entrySet()) {
+                if ("Set-Cookie".equalsIgnoreCase(entry.getKey()) || "Cache-Control".equalsIgnoreCase(entry.getKey()) ||
+                        "Expires".equalsIgnoreCase(entry.getKey()) || "Etag".equalsIgnoreCase(entry.getKey())) {
+                    // forbid webview kernel to run cache related logic
+                    continue;
+                }
+                headerValues = entry.getValue();
+                if (null != headerValues && 1 == headerValues.size()) {
+                    headers.put(entry.getKey(), headerValues.get(0));
+                }
+            }
+        }
+        return headers;
+    }
+
 
     /**
      * Separate html into templates and data
@@ -430,11 +456,10 @@ class SonicUtils {
      * @param cacheOffline Cache-offline head
      * @param headers Response http headers
      *
-     * @return
+     * @return need or not
      */
     static boolean needSaveData(boolean isSupportCacheControl, String cacheOffline, Map<String, List<String>> headers) {
-        boolean needSaveData =  !TextUtils.isEmpty(cacheOffline) &&
-                (SonicSession.OFFLINE_MODE_STORE.equals(cacheOffline) || SonicSession.OFFLINE_MODE_TRUE.equals(cacheOffline));
+        boolean needSaveData =  !TextUtils.isEmpty(cacheOffline) && (SonicSession.OFFLINE_MODE_STORE.equals(cacheOffline) || SonicSession.OFFLINE_MODE_TRUE.equals(cacheOffline));
         if (needSaveData && isSupportCacheControl) {
             //check http header Cache-Control
             List<String> responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
@@ -454,14 +479,13 @@ class SonicUtils {
     }
 
     /**
-     * According to cache-offline head decide whether to refresh webview
+     * According to cache-offline head decide whether to refresh page
      *
      * @param cacheOffline Cache-offline head
-     * @return
+     * @return need refresh or not
      */
-    static boolean needRefreshWebView(String cacheOffline) {
-        return !TextUtils.isEmpty(cacheOffline) &&
-                (SonicSession.OFFLINE_MODE_FALSE.equals(cacheOffline) || SonicSession.OFFLINE_MODE_TRUE.equals(cacheOffline));
+    static boolean needRefreshPage(String cacheOffline) {
+        return !TextUtils.isEmpty(cacheOffline) && (SonicSession.OFFLINE_MODE_FALSE.equals(cacheOffline) || SonicSession.OFFLINE_MODE_TRUE.equals(cacheOffline));
     }
 
 

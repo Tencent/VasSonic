@@ -77,7 +77,7 @@ public abstract class SonicCacheInterceptor {
             boolean verifyError;
             String htmlString = "";
             // verify local data
-            if (isExpired || TextUtils.isEmpty(sessionData.etag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
+            if (isExpired || TextUtils.isEmpty(sessionData.eTag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
                 verifyError = true;
                 SonicUtils.log(TAG, Log.INFO, "session(" + session.sId + ") runSonicFlow : session data is empty.");
             } else {

@@ -20,7 +20,10 @@ import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/**
+ * SonicDBHelper interacts with the database, such as managing database creation and
+ * the version management.
+ */
 public class SonicDBHelper extends SQLiteOpenHelper {
 
     /**
@@ -84,6 +87,11 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     protected static final String SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME = "cacheExpiredTime";
 
     /**
+     * The key of the charset
+     */
+    protected static final String SESSION_DATA_COLUMN_CHARSET = "cacheCharset";
+
+    /**
      * The key of cache hit count
      */
     protected static final String SESSION_DATA_COLUMN_CACHE_HIT_COUNT = "cacheHitCount";
@@ -119,7 +127,7 @@ public class SonicDBHelper extends SQLiteOpenHelper {
                 SESSION_DATA_COLUMN_TEMPLATE_EAG, SESSION_DATA_COLUMN_HTML_SHA1,
                 SESSION_DATA_COLUMN_UNAVAILABLE_TIME, SESSION_DATA_COLUMN_HTML_SIZE,
                 SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME, SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME,
-                SESSION_DATA_COLUMN_CACHE_HIT_COUNT};
+                SESSION_DATA_COLUMN_CACHE_HIT_COUNT, SESSION_DATA_COLUMN_CHARSET};
     }
 
     /**
@@ -142,6 +150,7 @@ public class SonicDBHelper extends SQLiteOpenHelper {
                 " , " + SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME + " integer default 0" +
                 " , " + SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME + " integer default 0" +
                 " , " + SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_CHARSET + " text not null" +
                 " ); ";
         db.execSQL(createTableSql);
 
@@ -171,7 +180,11 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     }
 
     /**
-     * Upgrade old session data from SP into Database.
+     * Called when the database needs to be upgraded.
+     *
+     * @param db The database.
+     * @param oldVersion The old database version.
+     * @param newVersion The new database version.
      */
     private void doUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }

@@ -250,7 +250,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 if (wasLoadDataInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_PreLoad:PRE_LOAD_WITH_CACHE load data.");
                     String html = (String) msg.obj;
-                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getCacheHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html",
+                            SonicDataHelper.getCharset(id), srcUrl, getCacheHeaders());
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleClientCoreMessage_PreLoad:wasLoadDataInvoked = true.");
                 }
@@ -285,7 +286,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             case FIRST_LOAD_WITH_DATA: {
                 if (wasLoadUrlInvoked.compareAndSet(false, true)) {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_FirstLoad:oh yeah, first load hit 304.");
-                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, (String) msg.obj, "text/html", "utf-8", srcUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, (String) msg.obj, "text/html",
+                            getCharsetFromHeaders(), srcUrl, getHeaders());
                     setResult(SONIC_RESULT_CODE_FIRST_LOAD, SONIC_RESULT_CODE_HIT_CACHE, false);
                 } else {
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") FIRST_LOAD_WITH_DATA load url was invoked.");
@@ -323,7 +325,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             if (!TextUtils.isEmpty(htmlString)) {
                 SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_DataUpdate:oh yeah data update hit 304, now clear pending data ->" + (null != pendingDiffData) + ".");
                 pendingDiffData = null;
-                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, htmlString, "text/html", "utf-8", srcUrl, getHeaders());
+                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, htmlString, "text/html", getCharsetFromHeaders(), srcUrl, getHeaders());
                 setResult(SONIC_RESULT_CODE_DATA_UPDATE, SONIC_RESULT_CODE_HIT_CACHE, false);
                 return;
             }
@@ -354,7 +356,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     sessionClient.loadUrl(srcUrl, null);
                 } else {
                     SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:load data.");
-                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
+                    sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html",
+                            getCharsetFromHeaders(), srcUrl, getHeaders());
                 }
                 setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_TEMPLATE_CHANGE, false);
             } else {
@@ -365,7 +368,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:oh yeah template change hit 304.");
             if (msg.obj instanceof String) {
                 String html = (String) msg.obj;
-                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html", "utf-8", srcUrl, getHeaders());
+                sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html",
+                        getCharsetFromHeaders(), srcUrl, getHeaders());
                 setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_HIT_CACHE, false);
             } else {
                 SonicUtils.log(TAG, Log.ERROR, "handleClientCoreMessage_TemplateChange error:call load url.");
@@ -465,7 +469,8 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             Object webResourceResponse;
             if (!isDestroyedOrWaitingForDestroy()) {
                 String mime = SonicUtils.getMime(srcUrl);
-                webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime, "utf-8", pendingWebResourceStream, getHeaders());
+                webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime,
+                        getCharsetFromHeaders(), pendingWebResourceStream, getHeaders());
             } else {
                 webResourceResponse = null;
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") onClientRequestResource error: session is destroyed!");
@@ -537,7 +542,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 }
 
                 if (responseDataTuple.isComplete) {
-                    htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                    htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
                 }
             }
 
@@ -623,7 +628,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         String htmlString = null;
         if (responseDataTuple.isComplete) {
             try {
-                htmlString = responseDataTuple.outputStream.toString("UTF-8");
+                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
             } catch (Throwable e) {
                 pendingWebResourceStream = null;
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:" + e.getMessage() + ".");
@@ -672,7 +677,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
                 String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-                String serverRsp = output.toString("UTF-8");
+                String serverRsp = output.toString(getCharsetFromHeaders());
 
                 long startTime = System.currentTimeMillis();
                 JSONObject serverRspJson = new JSONObject(serverRsp);

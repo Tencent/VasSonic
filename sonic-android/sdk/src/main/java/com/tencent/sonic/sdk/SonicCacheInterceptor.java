@@ -83,7 +83,7 @@ public abstract class SonicCacheInterceptor {
             } else {
                 SonicDataHelper.updateSonicCacheHitCount(session.id);
                 File htmlCacheFile = new File(SonicFileUtils.getSonicHtmlPath(session.id));
-                htmlString = SonicFileUtils.readFile(htmlCacheFile, sessionData.charset);
+                htmlString = SonicFileUtils.readFile(htmlCacheFile);
                 verifyError = TextUtils.isEmpty(htmlString);
                 if (verifyError) {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + ") runSonicFlow error:cache data is null.");

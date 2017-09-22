@@ -87,11 +87,6 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     protected static final String SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME = "cacheExpiredTime";
 
     /**
-     * The key of the charset
-     */
-    protected static final String SESSION_DATA_COLUMN_CHARSET = "cacheCharset";
-
-    /**
      * The key of cache hit count
      */
     protected static final String SESSION_DATA_COLUMN_CACHE_HIT_COUNT = "cacheHitCount";
@@ -127,7 +122,7 @@ public class SonicDBHelper extends SQLiteOpenHelper {
                 SESSION_DATA_COLUMN_TEMPLATE_EAG, SESSION_DATA_COLUMN_HTML_SHA1,
                 SESSION_DATA_COLUMN_UNAVAILABLE_TIME, SESSION_DATA_COLUMN_HTML_SIZE,
                 SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME, SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME,
-                SESSION_DATA_COLUMN_CACHE_HIT_COUNT, SESSION_DATA_COLUMN_CHARSET};
+                SESSION_DATA_COLUMN_CACHE_HIT_COUNT};
     }
 
     /**
@@ -150,7 +145,6 @@ public class SonicDBHelper extends SQLiteOpenHelper {
                 " , " + SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME + " integer default 0" +
                 " , " + SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME + " integer default 0" +
                 " , " + SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " integer default 0" +
-                " , " + SESSION_DATA_COLUMN_CHARSET + " text not null" +
                 " ); ";
         db.execSQL(createTableSql);
 

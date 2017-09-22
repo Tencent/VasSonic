@@ -19,6 +19,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,6 @@ import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_SESSION_ID
 import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_EAG;
 import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME;
 import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_UNAVAILABLE_TIME;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_CHARSET;
 /**
  *
  * SonicDataHelper provides sonic data such as eTag, templateTag, etc.
@@ -43,11 +43,6 @@ class SonicDataHelper {
      * Log filter
      */
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicDataHelper";
-
-    /**
-     * the default charset is UTF-8.
-     */
-    public static final String SONIC_CACHE_DEFAULT_CHARSET = "UTF-8";
 
     /**
      * Sonic data structure
@@ -98,12 +93,6 @@ class SonicDataHelper {
         int cacheHitCount;
 
         /**
-         * Represent the charset of this cache
-         *  the default charset is UTF-8.
-         */
-        String charset = SONIC_CACHE_DEFAULT_CHARSET;
-
-        /**
          * Reset data
          */
         public void reset() {
@@ -115,7 +104,6 @@ class SonicDataHelper {
             expiredTime = 0;
             cacheHitCount = 0;
             unAvailableTime = 0;
-            charset = SONIC_CACHE_DEFAULT_CHARSET;
         }
     }
     
@@ -174,7 +162,6 @@ class SonicDataHelper {
         sessionData.expiredTime = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME));
         sessionData.unAvailableTime = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_UNAVAILABLE_TIME));
         sessionData.cacheHitCount = cursor.getInt(cursor.getColumnIndex(SESSION_DATA_COLUMN_CACHE_HIT_COUNT));
-        sessionData.charset = cursor.getString(cursor.getColumnIndex(SESSION_DATA_COLUMN_CHARSET));
         return sessionData;
     }
 
@@ -249,7 +236,6 @@ class SonicDataHelper {
         contentValues.put(SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME, sessionData.expiredTime);
         contentValues.put(SESSION_DATA_COLUMN_UNAVAILABLE_TIME, sessionData.unAvailableTime);
         contentValues.put(SESSION_DATA_COLUMN_CACHE_HIT_COUNT, sessionData.cacheHitCount);
-        contentValues.put(SESSION_DATA_COLUMN_CHARSET, sessionData.charset);
         return contentValues;
     }
 
@@ -295,17 +281,6 @@ class SonicDataHelper {
     static long getLastSonicUnavailableTime(String sessionId) {
         SessionData sessionData = getSessionData(sessionId);
         return sessionData.unAvailableTime;
-    }
-
-    /**
-     * Get the charset of sonic cache
-     *
-     * @param sessionId A unique session id
-     * @return Charset of sonic cache
-     */
-    static String getCharset(String sessionId) {
-        SessionData sessionData = getSessionData(sessionId);
-        return sessionData.charset;
     }
 
     /**

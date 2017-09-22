@@ -181,7 +181,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                 if (!isDestroyedOrWaitingForDestroy()) {
                     String mime = SonicUtils.getMime(srcUrl);
                     webResourceResponse = SonicEngine.getInstance().getRuntime().createWebResourceResponse(mime,
-                            isCachePendingStream.get() ? SonicDataHelper.getCharset(id) : getCharsetFromHeaders(),
+                            isCachePendingStream.get() ? SonicUtils.DEFAULT_CHARSET : getCharsetFromHeaders(),
                             pendingWebResourceStream,
                             isCachePendingStream.get() ? getCacheHeaders() : getHeaders());
                 } else {

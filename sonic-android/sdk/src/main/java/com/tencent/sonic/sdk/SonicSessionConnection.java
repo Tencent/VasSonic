@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ import javax.net.ssl.SSLSession;
  * read from and to write to the resource referenced by the URL
  */
 public abstract class SonicSessionConnection {
+
 
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicSessionConnection";
 
@@ -385,7 +387,6 @@ public abstract class SonicSessionConnection {
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
                 connection.setRequestProperty("method", "GET");
-                connection.setRequestProperty("accept-Charset", SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET);
                 connection.setRequestProperty("accept-Encoding", "gzip");
                 connection.setRequestProperty("accept-Language", "zh-CN,zh;");
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);

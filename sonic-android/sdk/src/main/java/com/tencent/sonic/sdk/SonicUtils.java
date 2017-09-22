@@ -22,6 +22,7 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -39,6 +40,11 @@ import java.util.regex.Pattern;
  * Sonic Utils
  */
 class SonicUtils {
+
+    /**
+     * the default charset is UTF-8.
+     */
+    public static final String DEFAULT_CHARSET = Charset.defaultCharset().name();
 
     /**
      * Log filter
@@ -131,9 +137,7 @@ class SonicUtils {
         sessionData.htmlSha1 = htmlSha1;
         sessionData.htmlSize = htmlSize;
         sessionData.templateUpdateTime = System.currentTimeMillis();
-        sessionData.charset = getCharsetFromHeaders(headers);
         SonicDataHelper.saveSessionData(sessionId, sessionData);
-
     }
 
     /**
@@ -196,9 +200,7 @@ class SonicUtils {
     static JSONObject getDiffData(String sessionId, JSONObject serverDataJson) {
         JSONObject diffData;
         try {
-            String localDataString = SonicFileUtils.readFile(
-                    new File(SonicFileUtils.getSonicDataPath(sessionId)),
-                    SonicDataHelper.getCharset(sessionId));
+            String localDataString = SonicFileUtils.readFile(new File(SonicFileUtils.getSonicDataPath(sessionId)));
             if (!TextUtils.isEmpty(localDataString)) {
                 JSONObject localDataJson = new JSONObject(localDataString);
                 diffData = getDiffData(localDataJson, serverDataJson);
@@ -248,7 +250,7 @@ class SonicUtils {
     static String buildHtml(final String sessionId, JSONObject dataJson, String sha1, int dataMaxSize) {
         File templateFile = new File(SonicFileUtils.getSonicTemplatePath(sessionId));
         if (templateFile.exists()) {
-            String templateString = SonicFileUtils.readFile(templateFile, SonicDataHelper.getCharset(sessionId));
+            String templateString = SonicFileUtils.readFile(templateFile);
             if (!TextUtils.isEmpty(templateString)) {
 
                 final String htmlString = buildHtml(templateString, dataJson, dataMaxSize);
@@ -364,29 +366,12 @@ class SonicUtils {
     }
 
     /**
-     * Find and return the charset. The default charset is {@link SonicDataHelper#SONIC_CACHE_DEFAULT_CHARSET}.
-     * @param headers      The http headers
-     * @return The charset of the http headers
-     */
-    static String getCharsetFromHeaders(Map<String, List<String>> headers) {
-        String charset = SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET;
-        String key = SonicSessionConnection.HTTP_HEAD_FIELD_CONTENT_TYPE.toLowerCase();
-        if (null != headers && headers.containsKey(key)) {
-            List<String> headerValues = headers.get(key);
-            if (null != headerValues && 1 == headerValues.size()) {
-                charset = getCharset(headerValues.get(0));
-            }
-        }
-        return charset;
-    }
-
-    /**
      * Find and get the charset from the Content-Type value.
      * @param headerValue The value corresponding to the HTTP Header Content-Type
      * @return The charset.
      */
     static String getCharset(String headerValue) {
-        String charset = SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET;
+        String charset = DEFAULT_CHARSET;
         if (!TextUtils.isEmpty(headerValue) ) {
             headerValue = headerValue.toLowerCase();
             int index = headerValue.indexOf("charset");
@@ -397,7 +382,7 @@ class SonicUtils {
                 endIndex = endIndex == -1 ? temp.length() : endIndex;
                 charset = temp.substring(8, endIndex);
 
-                charset = TextUtils.isEmpty(charset) ? SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET : charset;
+                charset = TextUtils.isEmpty(charset) ? DEFAULT_CHARSET : charset;
             }
         }
         return charset;

@@ -553,15 +553,6 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             return;
         }
 
-        //When the charset is different from last time, we will delete the cache.
-        String newCharset = getCharsetFromHeaders();
-        if (!newCharset.equalsIgnoreCase(sessionData.charset)) {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection: charset ( "
-                            + newCharset  + " ) is different from last time( " + sessionData.charset + " ).");
-            SonicUtils.removeSessionCache(id);
-            return;
-        }
-
         // Handle cache-offline
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: cacheOffline is " + cacheOffline + ".");
@@ -612,14 +603,14 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             }
 
             try {
-                newHtml = byteArrayOutputStream.toString(newCharset);
+                newHtml = byteArrayOutputStream.toString(getCharsetFromHeaders());
             } catch (UnsupportedEncodingException e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error:" + e.getMessage() + ".");
                 SonicUtils.removeSessionCache(id);
                 return;
             }
 
-            // Add Client Etag to headers
+            // Add Client eTag to headers
             eTag = newHtmlSha1 = SonicUtils.getSHA1(newHtml);
             ArrayList<String> eTagFields = new ArrayList<>(1);
             eTagFields.add(newHtmlSha1);
@@ -1102,7 +1093,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
      */
     protected String getCharsetFromHeaders() {
         HashMap<String, String> headers = getHeaders();
-        String charset = SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET;
+        String charset = SonicUtils.DEFAULT_CHARSET;
         String key = SonicSessionConnection.HTTP_HEAD_FIELD_CONTENT_TYPE.toLowerCase();
         if (headers != null && headers.containsKey(key)) {
             String headerValue = headers.get(key);

@@ -164,10 +164,9 @@ class SonicFileUtils {
     /**
      *
      * @param file The file path of template
-     * @param charset The charset of this file.
      * @return Returns a string containing all of the content read from template file.
      */
-    static String readFile(File file, String charset) {
+    static String readFile(File file) {
         if (file == null || !file.exists() || !file.canRead()) {
             return null;
         }
@@ -180,7 +179,7 @@ class SonicFileUtils {
         int n;
         try {
             bis = new BufferedInputStream(new FileInputStream(file));
-            reader = new InputStreamReader(bis, charset);
+            reader = new InputStreamReader(bis);
             int size = (int) file.length();
             if (size > 1024 * 12) {
                 buffer = new char[1024 * 4];
@@ -380,7 +379,7 @@ class SonicFileUtils {
         Map<String, List<String>> headers = new HashMap<String, List<String>>();
         File headerFile = new File(getSonicHeaderPath(sessionId));
         if (headerFile.exists()) {
-            String headerString = readFile(headerFile, SonicDataHelper.SONIC_CACHE_DEFAULT_CHARSET);
+            String headerString = readFile(headerFile);
             if (!TextUtils.isEmpty(headerString)) {
                 String[] headerArray = headerString.split("\r\n");
                 if (headerArray.length > 0) {

@@ -251,7 +251,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleClientCoreMessage_PreLoad:PRE_LOAD_WITH_CACHE load data.");
                     String html = (String) msg.obj;
                     sessionClient.loadDataWithBaseUrlAndHeader(srcUrl, html, "text/html",
-                            SonicDataHelper.getCharset(id), srcUrl, getCacheHeaders());
+                            SonicUtils.DEFAULT_CHARSET, srcUrl, getCacheHeaders());
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleClientCoreMessage_PreLoad:wasLoadDataInvoked = true.");
                 }

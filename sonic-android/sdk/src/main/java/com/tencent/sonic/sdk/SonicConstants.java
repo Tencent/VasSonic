@@ -26,7 +26,7 @@ public class SonicConstants {
     /**
      * SonicSDK version
      */
-    public final static String SONIC_VERSION_NUM = "1.0.1";
+    public final static String SONIC_VERSION_NUM = "1.1.0";
 
     /**
      * Sonic parameter prefix

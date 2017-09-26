@@ -12,7 +12,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
 target 'TargetName' do
-    pod 'VasSonic', '1.0'
+    pod 'VasSonic', '1.1.0'
 end
 ```
 

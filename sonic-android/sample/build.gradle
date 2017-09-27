@@ -26,7 +26,7 @@ dependencies {
     })
 
     // compile sdk from jcenter
-     compile 'com.tencent.sonic:sdk:1.1.0'
+     compile 'com.tencent.sonic:sdk:1.1.1'
 
     // compile sonic-sdk from local path
     // compile project(path: ':sdk')

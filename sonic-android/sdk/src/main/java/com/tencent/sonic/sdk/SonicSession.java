@@ -350,6 +350,11 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
     protected SonicDiffDataCallback diffDataCallback;
 
     /**
+     * This intent saves all of the initialization param.
+     */
+    protected final Intent intent = new Intent();
+
+    /**
      * The interface is used to inform the listeners that the state of the
      * session has changed.
      */
@@ -396,6 +401,16 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
         this.sId = (sNextSessionLogId++);
         this.srcUrl = statistics.srcUrl = url.trim();
         this.createdTime = System.currentTimeMillis();
+
+        SonicConfig sonicConfig = SonicEngine.getInstance().getConfig();
+        if (sonicConfig.GET_COOKIE_WHEN_SESSION_CREATE) {
+            SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
+            String cookie = runtime.getCookie(srcUrl);
+            if (!TextUtils.isEmpty(cookie)) {
+                intent.putExtra(SonicSessionConnection.HTTP_HEAD_FIELD_COOKIE, cookie);
+            }
+        }
+
         if (SonicUtils.shouldLog(Log.INFO)) {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") create:id=" + id + ", url = " + url + ".");
         }
@@ -475,6 +490,39 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
         }
     }
 
+    protected Intent createConnectionIntent(SonicDataHelper.SessionData sessionData) {
+        Intent connectionIntent = new Intent();
+        connectionIntent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, sessionData.eTag);
+        connectionIntent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, sessionData.templateTag);
+
+        String hostDirectAddress = SonicEngine.getInstance().getRuntime().getHostDirectAddress(srcUrl);
+        if (!TextUtils.isEmpty(hostDirectAddress)) {
+            connectionIntent.putExtra(SonicSessionConnection.DNS_PREFETCH_ADDRESS, hostDirectAddress);
+            statistics.isDirectAddress = true;
+        }
+
+        SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
+        SonicConfig sonicConfig = SonicEngine.getInstance().getConfig();
+        if (!sonicConfig.GET_COOKIE_WHEN_SESSION_CREATE) {
+            String cookie = runtime.getCookie(srcUrl);
+            if (!TextUtils.isEmpty(cookie)) {
+                connectionIntent.putExtra(SonicSessionConnection.HTTP_HEAD_FIELD_COOKIE, cookie);
+            }
+        } else {
+            connectionIntent.putExtra(SonicSessionConnection.HTTP_HEAD_FIELD_COOKIE, intent.getStringExtra(SonicSessionConnection.HTTP_HEAD_FIELD_COOKIE));
+        }
+
+        String userAgent = runtime.getUserAgent();
+        if (!TextUtils.isEmpty(userAgent)) {
+            userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
+        } else {
+            userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
+        }
+        connectionIntent.putExtra(SonicSessionConnection.HTTP_HEAD_FILED_USER_AGENT, userAgent);
+        return connectionIntent;
+
+    }
+
     /**
      * Initiate a network request to obtain server data.
      *
@@ -483,22 +531,14 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
     protected void handleFlow_Connection(String cacheHtml) {
         // create connection for current session
         statistics.connectionFlowStartTime = System.currentTimeMillis();
-        Intent intent = new Intent();
         SonicDataHelper.SessionData sessionData;
         if (TextUtils.isEmpty(cacheHtml)) { // no need query db
             sessionData = new SonicDataHelper.SessionData();
         } else {
             sessionData = SonicDataHelper.getSessionData(id);
-            intent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, sessionData.eTag);
-            intent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, sessionData.templateTag);
-        }
-        String hostDirectAddress = SonicEngine.getInstance().getRuntime().getHostDirectAddress(srcUrl);
-        if (!TextUtils.isEmpty(hostDirectAddress)) {
-            intent.putExtra(SonicSessionConnection.DNS_PREFETCH_ADDRESS, hostDirectAddress);
-            statistics.isDirectAddress = true;
         }
 
-        sessionConnection = SonicSessionConnectionInterceptor.getSonicSessionConnection(this, intent);
+        sessionConnection = SonicSessionConnectionInterceptor.getSonicSessionConnection(this, createConnectionIntent(sessionData));
 
         // Connect to web server
         long startTime = System.currentTimeMillis();

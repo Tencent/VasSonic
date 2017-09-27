@@ -48,7 +48,6 @@ import javax.net.ssl.SSLSession;
  */
 public abstract class SonicSessionConnection {
 
-
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicSessionConnection";
 
     /**
@@ -117,7 +116,7 @@ public abstract class SonicSessionConnection {
      * This header represents the HTML Set-Cookie.
      */
     public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
-    
+
     /**
      * HTTP Header : Cache-Control. <br/>
      * This header represents the strategy of cache control.
@@ -139,6 +138,16 @@ public abstract class SonicSessionConnection {
      * HTTP Header : Content-Type. </br>
      */
     public final static String HTTP_HEAD_FIELD_CONTENT_TYPE = "Content-Type";
+
+    /**
+     * HTTP Request Header : Cookie. </br>
+     */
+    public final static String HTTP_HEAD_FIELD_COOKIE = "Cookie";
+
+    /**
+     * HTTP Request Header：User-Agent. <br>
+     */
+    public final static String HTTP_HEAD_FILED_USER_AGENT = "User-Agent";
 
     /**
      * SonicSession Object used by SonicSessionConnection.
@@ -398,20 +407,14 @@ public abstract class SonicSessionConnection {
                     }
                 }
 
-                SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
-                String cookie = runtime.getCookie(session.srcUrl);
+                String cookie = intent.getStringExtra(HTTP_HEAD_FIELD_COOKIE);
                 if (!TextUtils.isEmpty(cookie)) {
-                    connection.setRequestProperty("cookie", cookie);
+                    connection.setRequestProperty(HTTP_HEAD_FIELD_COOKIE, cookie);
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "create UrlConnection cookie is empty");
                 }
-                String userAgent = runtime.getUserAgent();
-                if (!TextUtils.isEmpty(userAgent)) {
-                    userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                } else {
-                    userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                }
-                connection.setRequestProperty("User-Agent", userAgent);
+
+                connection.setRequestProperty(HTTP_HEAD_FILED_USER_AGENT, intent.getStringExtra(HTTP_HEAD_FILED_USER_AGENT));
 
                 return true;
             }

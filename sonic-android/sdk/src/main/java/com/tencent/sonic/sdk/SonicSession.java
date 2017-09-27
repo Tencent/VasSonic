@@ -980,8 +980,7 @@ public class SonicSession implements SonicSessionStream.Callback, Handler.Callba
      * More about it see {https://issuetracker.google.com/issues/36989494#c8}
      * Fix VasSonic issue {https://github.com/Tencent/VasSonic/issues/90}
      *
-     * @param url The url of this session
-     * @return Return the data to kernel
+     * @return Return true if app will set cookie asynchronous.
      */
     protected boolean shouldSetCookieAsynchronous() {
         return RESOURCE_INTERCEPT_STATE_IN_OTHER_THREAD == resourceInterceptState.get();

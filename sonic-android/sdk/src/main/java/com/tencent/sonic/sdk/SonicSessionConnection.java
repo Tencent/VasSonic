@@ -116,7 +116,7 @@ public abstract class SonicSessionConnection {
     
 
     /**
-     * HTTP Request Header : Cookie. </br>
+     * HTTP Request Header : Cookie. <br>
      */
     public final static String HTTP_HEAD_FIELD_COOKIE = "Cookie";
 

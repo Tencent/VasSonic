@@ -133,7 +133,7 @@ NSString * dispatchToMain (dispatch_block_t block)
 {
     NSBlockOperation *blockOp = [NSBlockOperation blockOperationWithBlock:block];
     [[NSOperationQueue mainQueue] addOperation:blockOp];
-    return [NSString stringWithFormat:@"%lu",blockOp.hash];
+    return [NSString stringWithFormat:@"%ld",(unsigned long)blockOp.hash];
 }
 
 NSString * getDataSha1(NSData *data)

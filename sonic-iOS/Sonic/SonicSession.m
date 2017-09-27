@@ -202,10 +202,9 @@ static NSLock *sonicRequestClassLock;
             [self.delegate sessionWillRequest:self];
         }
         [self syncCookies];
+        [self requestStartInOperation];
     });
     [self.mainQueueOperationIdentifiers addObject:opIdentifier];
-
-    [self requestStartInOperation];
 }
 
 - (void)cancel
@@ -365,7 +364,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 {
     NSBlockOperation *blkOp = [NSBlockOperation blockOperationWithBlock:block];
     [[SonicSession sonicSessionQueue] addOperation:blkOp];
-    return [NSString stringWithFormat:@"%lu",blkOp.hash];
+    return [NSString stringWithFormat:@"%ld",(unsigned long)blkOp.hash];
 }
 
 - (void)session:(SonicSession *)session didRecieveResponse:(NSHTTPURLResponse *)response

@@ -122,9 +122,9 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeySDKVersion @"sonic-sdk-version"
 
 /**
- * Current sonic version: Sonic/1.0.
+ * Current sonic version.
  */
-#define SonicHeaderValueSDKVersion         @"Sonic/1.1.0"
+#define SonicHeaderValueSDKVersion         @"Sonic/1.1.1"
 
 /**
  * Pass template tag through this field.

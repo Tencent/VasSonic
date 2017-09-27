@@ -113,6 +113,17 @@ public abstract class SonicSessionConnection {
      * This header represents the HTML Set-Cookie.
      */
     public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
+    
+
+    /**
+     * HTTP Request Header : Cookie. </br>
+     */
+    public final static String HTTP_HEAD_FIELD_COOKIE = "Cookie";
+
+    /**
+     * HTTP Request Header：User-Agent. <br>
+     */
+    public final static String HTTP_HEAD_FILED_USER_AGENT = "User-Agent";
 
     /**
      * SonicSession Object used by SonicSessionConnection.
@@ -335,7 +346,6 @@ public abstract class SonicSessionConnection {
             if (null == connectionImpl) {
                 connectionImpl = createConnection();
                 if (null != connectionImpl) {
-                    String currentUrl = session.srcUrl;
                     SonicSessionConfig config = session.config;
                     connectionImpl.setConnectTimeout(config.CONNECT_TIMEOUT_MILLIS);
                     connectionImpl.setReadTimeout(config.READ_TIMEOUT_MILLIS);
@@ -358,21 +368,14 @@ public abstract class SonicSessionConnection {
                     connectionImpl.setRequestProperty("accept-Encoding", "gzip");
                     connectionImpl.setRequestProperty("accept-Language", "zh-CN,zh;");
                     connectionImpl.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
-
-                    SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
-                    String cookie = runtime.getCookie(currentUrl);
+                    String cookie = intent.getStringExtra(HTTP_HEAD_FIELD_COOKIE);
                     if (!TextUtils.isEmpty(cookie)) {
                         connectionImpl.setRequestProperty("cookie", cookie);
                     } else {
                         SonicUtils.log(TAG, Log.ERROR, "create UrlConnection cookie is empty");
                     }
-                    String userAgent = runtime.getUserAgent();
-                    if (!TextUtils.isEmpty(userAgent)) {
-                        userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                    } else {
-                        userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                    }
-                    connectionImpl.setRequestProperty("User-Agent", userAgent);
+
+                    connectionImpl.setRequestProperty(HTTP_HEAD_FILED_USER_AGENT, intent.getStringExtra(HTTP_HEAD_FILED_USER_AGENT));
                 }
             }
             return connectionImpl;

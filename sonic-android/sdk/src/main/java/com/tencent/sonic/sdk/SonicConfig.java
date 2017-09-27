@@ -50,6 +50,14 @@ public class SonicConfig {
      */
     boolean AUTO_INIT_DB_WHEN_CREATE = true;
 
+    /**
+     * There will be a deadlock when ShouldInterceptRequest and getCookie are running at the same thread.
+     * This bug was found on Android ( < 5.0) system. @see <a href="https://github.com/Tencent/VasSonic/issues/90">Issue 90</a> <br>
+     * So Sonic will call getCookie before sending Sonic request If GET_COOKIE_WHEN_SESSION_CREATE is true.<br>
+     * The value of this property should be true unless your app uses <a href="https://x5.tencent.com/tbs">X5 kernel</a>.
+     */
+    boolean GET_COOKIE_WHEN_SESSION_CREATE = true;
+
     private SonicConfig() {
 
     }
@@ -92,6 +100,11 @@ public class SonicConfig {
 
         public Builder setAutoInitDBWhenCreate(boolean autoInitDBWhenCreate) {
             target.AUTO_INIT_DB_WHEN_CREATE = autoInitDBWhenCreate;
+            return this;
+        }
+
+        public Builder setGetCookieWhenSessionCreate(boolean value) {
+            target.GET_COOKIE_WHEN_SESSION_CREATE = value;
             return this;
         }
 

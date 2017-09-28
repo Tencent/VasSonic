@@ -473,7 +473,6 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             
             NSString *etag = [self.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
             
-            //If not support no Etag mode, this is error
             if(!self.configuration.supportNoEtag && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
             {
                 canUpdateCacheExpire = YES;
@@ -1018,15 +1017,10 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (BOOL)isStrictMode
 {
-    if ([self.mCustomResponseHeaders[SonicHeaderKeyStrictMode] length] > 0) {
-        return [self.mCustomResponseHeaders[SonicHeaderKeyStrictMode] boolValue];
-    }
-    
-    if ([self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyStrictMode].length == 0) {
+    if ([self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyTemplateChange].length > 0 && [self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyTemplate].length > 0) {
         return YES;
     }
-    
-    return [[self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyStrictMode] boolValue];
+    return NO;
 }
 
 

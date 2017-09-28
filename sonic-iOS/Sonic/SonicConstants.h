@@ -142,11 +142,6 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyETag     @"Etag"
 
 /**
- * Check if sonic using strict mode, default is strict-mode:true
- */
-#define SonicHeaderKeyStrictMode @"strict-mode"
-
-/**
  * Content-Security-Policy key for header.
  */
 #define SonicHeaderKeyCSPHeader       @"Content-Security-Policy"
@@ -185,12 +180,12 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * The last time to refresh the cache.
  */
-#define kSonicLocalRefreshTime  @"local_refresh"
+#define kSonicLocalRefreshTime  @"local-refresh"
 
 /**
  * The timestamp when the local cache expire
  */
-#define kSonicLocalCacheExpireTime @"cache_expire_time"
+#define kSonicLocalCacheExpireTime @"cache-expire-time"
 
 /**
  * The http response header key Max-Age
@@ -221,6 +216,8 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  * The file name to record Sonic disable list for each URL.
  */
 #define SonicCacheOfflineDisableList       @"cache-offline-disable.cfg"
+
+#define SonicCacheDatabase @"sonic.db"
 
 /**
  * Quick way to get file manager.

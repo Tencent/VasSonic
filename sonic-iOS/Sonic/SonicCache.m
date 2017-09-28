@@ -26,6 +26,7 @@
 #import "SonicUitil.h"
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
+#import "SonicDatabase.h"
 
 typedef NS_ENUM(NSUInteger, SonicCacheType) {
     /*
@@ -75,6 +76,8 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
  */
 @property (nonatomic,retain)NSMutableDictionary *offlineCacheTimeCfg;
 
+@property (nonatomic,retain)SonicDatabase *database;
+
 @end
 
 @implementation SonicCache
@@ -123,6 +126,10 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     //read server disable sonic request timestamps
     [self setupCacheOfflineTimeCfgDict];
     
+    //setup database
+    NSString *dbPath = [self.rootCachePath stringByAppendingPathComponent:SonicCacheDatabase];
+    self.database = [[SonicDatabase alloc]initWithPath:dbPath];
+    
     //release the memory cache when did recieved memory warning
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(memoryWarningClearCache) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
 }
@@ -155,6 +162,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     dealInFileQueue(^{
         NSString *fileDir = [self sessionSubCacheDir:sessionID];
         [SonicFileManager removeItemAtPath:fileDir error:nil];
+        [self.database clearWithSessionID:sessionID];
     });
     
     //we need clear or create memory cache in sonic queue
@@ -166,7 +174,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     });
 }
 
-- (BOOL)isFirstLoad:(NSString *)sessionID;
+- (BOOL)isFirstLoad:(NSString *)sessionID
 {
     if (sessionID.length == 0) {
         return YES;
@@ -475,11 +483,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     dealInFileQueue(^{
        
         //save the config data
-        NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
-        BOOL isSuccess = [mConfig writeToFile:configPath atomically:YES];
-        if (!isSuccess) {
-            [self removeFileCacheOnly:sessionID];
-        }
+        [self.database updateWithKeyAndValue:@{kSonicLocalCacheExpireTime:expireTime} withSessionID:sessionID];
         
     });
 }
@@ -594,7 +598,7 @@ void dealInFileQueue(dispatch_block_t block)
     }
     
     NSData *htmlData = [NSData dataWithContentsOfFile:[self filePathWithType:SonicCacheTypeHtml sessionID:item.sessionID]];
-    NSDictionary *config = [NSDictionary dictionaryWithContentsOfFile:[self filePathWithType:SonicCacheTypeConfig sessionID:item.sessionID]];
+    NSDictionary *config = [self.database queryAllKeysWithSessionID:item.sessionID];
     NSDictionary *cacheHeaders = [NSDictionary dictionaryWithContentsOfFile:[self filePathWithType:SonicCacheTypeResponseHeader sessionID:item.sessionID]];
 
     NSString *sha1 = config[kSonicSha1];
@@ -622,7 +626,9 @@ void dealInFileQueue(dispatch_block_t block)
     NSString *subDir = @"SonicCache";
     
     _rootCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:subDir] copy];
-        
+    
+    NSLog(@"rootCachePath:%@",_rootCachePath);
+    
     return _rootCachePath.length > 0;
 }
 
@@ -652,10 +658,10 @@ void dealInFileQueue(dispatch_block_t block)
 - (BOOL)isAllCacheExist:(NSString *)sessionID
 {
     NSUInteger checkList[4] = {
-        SonicCacheTypeConfig,
         SonicCacheTypeHtml,
         SonicCacheTypeTemplate,
-        SonicCacheTypeData
+        SonicCacheTypeData,
+        SonicCacheTypeResponseHeader
     };
     
     for (int i=0; i<4; i++) {
@@ -667,12 +673,7 @@ void dealInFileQueue(dispatch_block_t block)
 
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID
 {
-    if (![self checkCacheTypeExist:SonicCacheTypeConfig sessionID:sessionID]) {
-        return nil;
-    }
-    NSString *cfgPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
-    NSDictionary *cfgDict = [NSDictionary dictionaryWithContentsOfFile:cfgPath];
-    return cfgDict[kSonicLocalRefreshTime];
+    return [self.database queryKey:@"local_refresh" withSessionID:sessionID];
 }
 
 - (BOOL)checkCacheTypeExist:(SonicCacheType)type sessionID:(NSString *)sessionID
@@ -709,7 +710,7 @@ void dealInFileQueue(dispatch_block_t block)
 
 - (void)unStrictModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID
 {
-    if (!htmlData || config.count == 0 || [config[SonicHeaderKeyETag] length] == 0) {
+    if (!htmlData || config.count == 0) {
         return;
     }
     
@@ -745,12 +746,7 @@ void dealInFileQueue(dispatch_block_t block)
     }
     
     //save the config data
-    NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
-    BOOL isSuccess = [config writeToFile:configPath atomically:YES];
-    if (!isSuccess) {
-        [self removeFileCacheOnly:sessionID];
-        return;
-    }
+    [self.database insertWithKeyAndValue:config withSessionID:sessionID];
 }
 
 - (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
@@ -812,12 +808,7 @@ void dealInFileQueue(dispatch_block_t block)
     }
     
     //save the config data
-    NSString *configPath = [self filePathWithType:SonicCacheTypeConfig sessionID:sessionID];
-    BOOL isSuccess = [config writeToFile:configPath atomically:YES];
-    if (!isSuccess) {
-        [self removeFileCacheOnly:sessionID];
-        return;
-    }
+    [self.database insertWithKeyAndValue:config withSessionID:sessionID];
 }
 
 - (NSDictionary *)filterResponseHeaders:(NSDictionary *)responseHeaders
@@ -828,7 +819,7 @@ void dealInFileQueue(dispatch_block_t block)
     
     NSMutableDictionary *mRespHeaders = [NSMutableDictionary dictionaryWithDictionary:responseHeaders];
     
-    __block NSMutableArray *removeKeys = [NSMutableArray arrayWithArray:@[SonicHeaderMaxAge,SonicHeaderKeyCacheOffline,SonicHeaderExpire,SonicHeaderKeyStrictMode,SonicHeaderKeyTemplate,SonicHeaderKeyTemplateChange]];
+    __block NSMutableArray *removeKeys = [NSMutableArray arrayWithArray:@[SonicHeaderMaxAge,SonicHeaderKeyCacheOffline,SonicHeaderExpire,SonicHeaderKeyTemplate,SonicHeaderKeyTemplateChange]];
     
     [mRespHeaders enumerateKeysAndObjectsUsingBlock:^(NSString *key, id  _Nonnull obj, BOOL * _Nonnull stop) {
        
@@ -925,6 +916,13 @@ void dealInFileQueue(dispatch_block_t block)
     }
     
     return fileSize;
+}
+
+- (BOOL)upgradeSonicVersion
+{
+    [self clearAllCache];
+
+    return YES;
 }
 
 @end

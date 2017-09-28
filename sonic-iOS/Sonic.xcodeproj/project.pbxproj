@@ -41,6 +41,8 @@
 		546B78361F0105F6003F08AE /* SonicSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78261F0105F6003F08AE /* SonicSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78371F0105F6003F08AE /* SonicURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78271F0105F6003F08AE /* SonicURLProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78801F01F91D003F08AE /* Sonic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 546B780D1F0105AA003F08AE /* Sonic.framework */; };
+		54C2E2D21F6B79CF003EC647 /* SonicDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = 54C2E2D01F6B79CF003EC647 /* SonicDatabase.h */; };
+		54C2E2D31F6B79CF003EC647 /* SonicDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E2D11F6B79CF003EC647 /* SonicDatabase.m */; };
 		E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = E43E03441F618182000F30ED /* SonicSessionConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E43E03471F618182000F30ED /* SonicSessionConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = E43E03451F618182000F30ED /* SonicSessionConfiguration.m */; };
 /* End PBXBuildFile section */
@@ -78,6 +80,8 @@
 		546B78261F0105F6003F08AE /* SonicSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSession.h; sourceTree = "<group>"; };
 		546B78271F0105F6003F08AE /* SonicURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicURLProtocol.h; sourceTree = "<group>"; };
 		546B787B1F01F91D003F08AE /* SonicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SonicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		54C2E2D01F6B79CF003EC647 /* SonicDatabase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicDatabase.h; sourceTree = "<group>"; };
+		54C2E2D11F6B79CF003EC647 /* SonicDatabase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicDatabase.m; sourceTree = "<group>"; };
 		54E535A11F694A3A00A98AFE /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		54E535A31F69523500A98AFE /* libsqlite3.0.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.0.tbd; path = usr/lib/libsqlite3.0.tbd; sourceTree = SDKROOT; };
 		E43E03441F618182000F30ED /* SonicSessionConfiguration.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSessionConfiguration.h; sourceTree = "<group>"; };
@@ -146,6 +150,8 @@
 				E43E03451F618182000F30ED /* SonicSessionConfiguration.m */,
 				545D61C41F623BED00DA8F3A /* SonicConfiguration.h */,
 				545D61C51F623BED00DA8F3A /* SonicConfiguration.m */,
+				54C2E2D01F6B79CF003EC647 /* SonicDatabase.h */,
+				54C2E2D11F6B79CF003EC647 /* SonicDatabase.m */,
 			);
 			path = Sonic;
 			sourceTree = "<group>";
@@ -174,6 +180,7 @@
 				546B782C1F0105F6003F08AE /* SonicProtocol.h in Headers */,
 				546B78331F0105F6003F08AE /* SonicClient.h in Headers */,
 				546B78321F0105F6003F08AE /* SonicCacheItem.h in Headers */,
+				54C2E2D21F6B79CF003EC647 /* SonicDatabase.h in Headers */,
 				546B78311F0105F6003F08AE /* SonicCache.h in Headers */,
 				E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */,
 				545D61C61F623BED00DA8F3A /* SonicConfiguration.h in Headers */,
@@ -301,6 +308,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				546B782F1F0105F6003F08AE /* SonicUitil.m in Sources */,
+				54C2E2D31F6B79CF003EC647 /* SonicDatabase.m in Sources */,
 				545D61C71F623BED00DA8F3A /* SonicConfiguration.m in Sources */,
 				546B782A1F0105F6003F08AE /* SonicClient.m in Sources */,
 				546B78301F0105F6003F08AE /* SonicURLProtocol.m in Sources */,
@@ -458,7 +466,10 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MACH_O_TYPE = staticlib;
 				OTHER_CFLAGS = "-fembed-bitcode";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-l",
+					sqlite3,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.Sonic.Sonic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "708a394e-c58f-44b5-af84-8daba31e4d18";
@@ -484,7 +495,10 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				MACH_O_TYPE = staticlib;
 				OTHER_CFLAGS = "-fembed-bitcode";
-				OTHER_LDFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-l",
+					sqlite3,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.Sonic.Sonic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "708a394e-c58f-44b5-af84-8daba31e4d18";

@@ -182,4 +182,9 @@
  */
 - (void)checkAndTrimCache;
 
+/**
+ * Check and update version
+ */
+- (BOOL)upgradeSonicVersion;
+
 @end

@@ -39,7 +39,7 @@
         if (isSonic) {
             if (state) {
                 SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
-                configuration.customResponseHeaders = @{SonicHeaderKeyStrictMode:@"false",SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
+                configuration.customResponseHeaders = @{SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
                 configuration.supportNoEtag = YES;
                 [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
             }else{

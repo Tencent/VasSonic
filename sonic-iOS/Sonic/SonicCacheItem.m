@@ -77,30 +77,21 @@
     return self.htmlData.length > 0? NO:YES;
 }
 
-- (void)setConfig:(NSDictionary *)config
-{
-    if (_config) {
-        [_config release];
-        _config = nil;
-    }
-    _config = [config retain];
-    
-    NSString *csp = _config[kSonicCSP];
-    if (csp.length > 0) {
-        if (_cacheResponseHeaders) {
-            [_cacheResponseHeaders release];
-            _cacheResponseHeaders = nil;
-        }
-        _cacheResponseHeaders = [@{SonicHeaderKeyCSPHeader:csp} retain];
-    }
-}
-
 - (NSString *)lastRefreshTime
 {
     if (!self.config) {
         return nil;
     }
     return self.config[kSonicLocalRefreshTime];
+}
+
+- (BOOL)isCacheExpired
+{
+    unsigned long long now = (unsigned long long)[[NSDate date] timeIntervalSince1970];
+    
+    unsigned long long cacheExpireTime = [self.config[kSonicLocalCacheExpireTime] longLongValue];
+    
+    return now > cacheExpireTime;
 }
 
 @end

@@ -182,6 +182,14 @@ static NSLock *sonicRequestClassLock;
 
 - (void)start
 {
+    //Check if cache expired
+    if (![self isStrictMode]) {
+        SonicCacheItem *cacheItem = [[SonicCache shareCache] cacheForSession:self.sessionID];
+        if (![cacheItem isCacheExpired]) {
+            return;
+        }
+    }
+    
     dispatchToMain(^{
         if (self.delegate && [self.delegate respondsToSelector:@selector(sessionWillRequest:)]) {
             [self.delegate sessionWillRequest:self];
@@ -266,7 +274,21 @@ static NSLock *sonicRequestClassLock;
 
 - (void)addCustomResponseHeaders:(NSDictionary *)responseHeaders
 {
+    if(responseHeaders.count == 0) return;
     self.mCustomResponseHeaders = responseHeaders;
+}
+
+- (void)setupWithSessionConfiguration:(SonicSessionConfiguration *)aSessionConfiguration
+{
+    if(!aSessionConfiguration) return;
+    
+    [_configuration release];
+    _configuration = nil;
+    
+    _configuration = [aSessionConfiguration retain];
+    
+    [self addCustomRequestHeaders:_configuration.customRequestHeaders];
+    [self addCustomResponseHeaders:_configuration.customResponseHeaders];
 }
 
 - (void)setupConfigRequestHeaders
@@ -361,6 +383,12 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 {
     dispatch_block_t opBlock = ^{
         
+        //sync cookie to NSHTTPCookieStorage
+        dispatchToMain(^{
+            NSArray *cookiesFromResp = [NSHTTPCookie cookiesWithResponseHeaderFields:response.allHeaderFields forURL:response.URL];
+            [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookies:cookiesFromResp forURL:response.URL mainDocumentURL:self.request.mainDocumentURL];
+        });
+        
         NSHTTPURLResponse *modifyResponse = nil;
         if (self.mCustomResponseHeaders.count > 0) {
             NSMutableDictionary *headers = [[response.allHeaderFields mutableCopy]autorelease];
@@ -438,6 +466,29 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             [self updateDidSuccess];
         }
         
+        //update cache expire time
+        if (![self isStrictMode]) {
+            
+            BOOL canUpdateCacheExpire = NO;
+            
+            NSString *etag = [self.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
+            
+            if(!self.configuration.supportNoEtag && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
+            {
+                canUpdateCacheExpire = YES;
+            }
+            
+            if (self.configuration.supportNoEtag) {
+                canUpdateCacheExpire = YES;
+            }
+            
+            if (canUpdateCacheExpire) {
+                [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.response.allHeaderFields withSessionID:session.sessionID];
+            }else{
+                NSLog(@"unstrict-mode can't update cache expire time");
+            }
+        }
+        
     };
     dispatchToSonicSessionQueue(opBlock);
 }
@@ -500,7 +551,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineDisable]) {
             
-            [[SonicCache shareCache] saveServerDisabeSonicTimeNow:self.sessionID];
+            [[SonicCache shareCache] saveServerDisableSonicTimeNow:self.sessionID];
             
             self.isDataUpdated = YES;
             
@@ -715,6 +766,9 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         {
             self.sonicStatusCode = SonicStatusCodeAllCached;
             self.sonicStatusFinalCode = SonicStatusCodeAllCached;
+            
+            //update headers
+            [[SonicCache shareCache] saveResponseHeaders:self.response.allHeaderFields withSessionID:self.sessionID];
         }
             break;
         case 200:
@@ -725,9 +779,40 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             
             if ([self isTemplateChange] || ![self isStrictMode]) {
                 
-                self.cacheFileData = self.responseData;
-                
-                [self dealWithTemplateChange];
+                /* strict mode should check Etag */
+                if(![self isStrictMode]){
+                    
+                    NSString *etag = [self.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
+                    
+                    //If not support no Etag mode, this is error
+                    if(!self.configuration.supportNoEtag && (etag.length == 0 || [etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
+                    {
+                        NSLog(@"require Etag but etag.length=0 or etag isEqual to response.etag");
+                        break;
+                    }
+                    
+                    //If support no Etag mode , check sha1 to decide is html content changed
+                    NSString *sha1 = getDataSha1(self.responseData);
+                    NSString *existSha1 = self.cacheConfigHeaders[kSonicSha1];
+                    
+                    //304 if html content not changed
+                    if(![sha1 isEqualToString:existSha1])
+                    {
+                        [self dealWithTemplateChange];
+                        
+                    }else{
+                        
+                        self.sonicStatusCode = SonicStatusCodeAllCached;
+                        self.sonicStatusFinalCode = SonicStatusCodeAllCached;
+                        
+                        //update headers
+                        [[SonicCache shareCache] saveResponseHeaders:self.response.allHeaderFields withSessionID:self.sessionID];
+                    }
+                    
+                }else{
+                    
+                    [self dealWithTemplateChange];
+                }
                 
             }else{
                 
@@ -780,12 +865,6 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)dealWithTemplateChange
 {
-    /* strict mode should check Etag */
-    NSString *etag = [self.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
-    if ( ![self isStrictMode] && (etag.length == 0 || [etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]])) {
-        return;
-    }
-    
     SonicCacheItem *cacheItem = nil;
     if ([self isStrictMode]) {
         cacheItem = [[SonicCache shareCache] saveFirstWithHtmlData:self.responseData withResponseHeaders:self.response.allHeaderFields withUrl:self.url];
@@ -938,11 +1017,10 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (BOOL)isStrictMode
 {
-    if ([self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyStrictMode].length == 0) {
+    if ([self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyTemplateChange].length > 0 && [self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyTemplate].length > 0) {
         return YES;
     }
-    
-    return [[self responseHeaderValueByIgnoreCaseKey:SonicHeaderKeyStrictMode] boolValue];
+    return NO;
 }
 
 

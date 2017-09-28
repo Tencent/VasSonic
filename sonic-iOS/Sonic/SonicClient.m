@@ -180,6 +180,10 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration
 {
+    if (url.length == 0 || ![NSURL URLWithString:url]) {
+        return;
+    }
+    
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
     }
@@ -195,12 +199,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     if (!existSession) {
         
         existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
-        if (configuration.customResponseHeaders.count > 0) {
-            [existSession addCustomResponseHeaders:configuration.customResponseHeaders];
-        }
-        if (configuration.customRequestHeaders.count > 0) {
-            [existSession addCustomRequestHeaders:configuration.customRequestHeaders];
-        }
+        [existSession setupWithSessionConfiguration:configuration];
         
         NSURL *cUrl = [NSURL URLWithString:url];
         existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];

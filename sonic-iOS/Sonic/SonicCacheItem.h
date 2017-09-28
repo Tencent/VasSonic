@@ -49,9 +49,14 @@
 @property (nonatomic,readonly)NSString     *lastRefreshTime;
 
 /** Cache some header fields which will be used later. */
-@property (nonatomic,readonly)NSDictionary *cacheResponseHeaders;
+@property (nonatomic,retain)NSDictionary   *cacheResponseHeaders;
 
 /** Initialize an item with session id. */
 - (instancetype)initWithSessionID:(NSString *)aSessionID;
+
+/**
+ * Check if current cache expired
+ */
+- (BOOL)isCacheExpired;
 
 @end

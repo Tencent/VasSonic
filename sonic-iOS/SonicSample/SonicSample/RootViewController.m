@@ -38,6 +38,7 @@
         self.title = @"Sonic";
         
         self.url = @"http://mc.vip.qq.com/demo/indexv3";
+
     }
     return self;
 }
@@ -75,9 +76,10 @@
 {
     [self createButtonWithIndex:0 withTitle:@"LOAD WITHOUT SONIC" withAction:@selector(normalRequestAction)];
     [self createButtonWithIndex:1 withTitle:@"LOAD WITH SONIC" withAction:@selector(sonicRequestAction)];
-    [self createButtonWithIndex:2 withTitle:@"DO SONIC PRELOAD" withAction:@selector(sonicPreloadAction)];
-    [self createButtonWithIndex:3 withTitle:@"LOAD SONIC WITH OFFLINE CACHE" withAction:@selector(loadWithOfflineFileAction)];
-    [self createButtonWithIndex:4 withTitle:@"CLEAN UP CACHE" withAction:@selector(clearAllCacheAction)];
+    [self createButtonWithIndex:2 withTitle:@"LOAD WITH UNSTRICT SONIC" withAction:@selector(unstrictModeSonicRequestAction)];
+    [self createButtonWithIndex:3 withTitle:@"DO SONIC PRELOAD" withAction:@selector(sonicPreloadAction)];
+    [self createButtonWithIndex:4 withTitle:@"LOAD SONIC WITH OFFLINE CACHE" withAction:@selector(loadWithOfflineFileAction)];
+    [self createButtonWithIndex:5 withTitle:@"CLEAN UP CACHE" withAction:@selector(clearAllCacheAction)];
 }
 
 - (void)setupBottomLabel
@@ -129,7 +131,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)normalRequestAction
 {
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:self.url useSonicMode:NO];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:self.url useSonicMode:NO unStrictMode:NO];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 
@@ -141,13 +143,20 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)sonicRequestAction
 {
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:self.url useSonicMode:YES];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:self.url useSonicMode:YES unStrictMode:NO];
+    [self.navigationController pushViewController:webVC animated:YES];
+}
+
+- (void)unstrictModeSonicRequestAction
+{
+//    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://mc.vip.qq.com/demo/indexv2" useSonicMode:YES unStrictMode:YES];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://www.hupu.com" useSonicMode:YES unStrictMode:YES];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 
 - (void)loadWithOfflineFileAction
 {
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://mc.vip.qq.com/demo/indexv3?offline=1" useSonicMode:YES];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://mc.vip.qq.com/demo/indexv3?offline=1" useSonicMode:YES unStrictMode:NO];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 

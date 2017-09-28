@@ -29,6 +29,7 @@
     configuration.cacheDirectorySizeWarningPercent = 0.8;
     configuration.cacheDirectorySizeSafePercent = 0.25;
     configuration.maxMemroyCacheItemCount = 3;
+    configuration.maxUnStrictModeCacheSeconds = 300;
     
     return configuration;
 }

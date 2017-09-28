@@ -47,6 +47,11 @@
 @property (nonatomic,assign)unsigned long long maxMemroyCacheItemCount;
 
 /**
+ * The max cache time under strict-mode:false,default is 5 min
+ */
+@property (nonatomic,assign)unsigned long long maxUnStrictModeCacheSeconds;
+
+/**
  * Return default configuration
  */
 + (SonicConfiguration *)defaultConfiguration;

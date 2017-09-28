@@ -28,7 +28,7 @@
 
 @implementation SonicWebViewController
 
-- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic
+- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic unStrictMode:(BOOL)state
 {
     if (self = [super init]) {
         
@@ -37,7 +37,14 @@
         self.clickTime = (long long)([[NSDate date]timeIntervalSince1970]*1000);
         
         if (isSonic) {
-            [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self];
+            if (state) {
+                SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
+                configuration.customResponseHeaders = @{SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
+                configuration.supportNoEtag = YES;
+                [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
+            }else{
+                [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self];
+            }
         }
     }
     return self;

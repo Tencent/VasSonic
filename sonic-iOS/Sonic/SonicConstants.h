@@ -124,7 +124,7 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * Current sonic version: Sonic/1.0.
  */
-#define SonicHeaderValueSDKVersion         @"Sonic/1.0"
+#define SonicHeaderValueSDKVersion @"Sonic/1.0"
 
 /**
  * Pass template tag through this field.
@@ -132,20 +132,19 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyTemplate @"template-tag"
 
 /**
+ * Pass true/false to decide if template-change
+ */
+#define SonicHeaderKeyTemplateChange @"template-change"
+
+/**
  * Pass Etag through this field.
  */
 #define SonicHeaderKeyETag     @"Etag"
 
 /**
- * Check if sonic using strict mode, default is strict-mode:true
- */
-#define SonicHeaderKeyStrictMode @"strict-mode"
-
-/**
  * Content-Security-Policy key for header.
  */
 #define SonicHeaderKeyCSPHeader       @"Content-Security-Policy"
-
 
 /**
  * Pass cache policy through this field: SonicHeaderValueCacheOfflineStore, SonicHeaderValueCacheOfflineStoreRefresh, SonicHeaderValueCacheOfflineRefresh, SonicHeaderValueCacheOfflineDisable.
@@ -181,7 +180,22 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * The last time to refresh the cache.
  */
-#define kSonicLocalRefreshTime  @"local_refresh"
+#define kSonicLocalRefreshTime  @"local-refresh"
+
+/**
+ * The timestamp when the local cache expire
+ */
+#define kSonicLocalCacheExpireTime @"cache-expire-time"
+
+/**
+ * The http response header key Max-Age
+ */
+#define SonicHeaderMaxAge @"Max-Age"
+
+/**
+ * The http response header key Expires
+ */
+#define SonicHeaderExpire @"Expires"
 
 /**
  * Html-SHA1
@@ -202,6 +216,8 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  * The file name to record Sonic disable list for each URL.
  */
 #define SonicCacheOfflineDisableList       @"cache-offline-disable.cfg"
+
+#define SonicCacheDatabase @"sonic.db"
 
 /**
  * Quick way to get file manager.

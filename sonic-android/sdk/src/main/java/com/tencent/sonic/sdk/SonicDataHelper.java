@@ -116,7 +116,6 @@ class SonicDataHelper {
     @NonNull static SessionData getSessionData(String sessionId) {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
         SessionData sessionData = getSessionData(db, sessionId);
-        db.close();
         if (null == sessionData) {
             sessionData = new SessionData();
         }
@@ -179,7 +178,6 @@ class SonicDataHelper {
             sessionDatas.add(querySessionData(cursor));
         }
 
-        db.close();
         return sessionDatas;
     }
 
@@ -192,7 +190,6 @@ class SonicDataHelper {
     static void saveSessionData(String sessionId, SessionData sessionData) {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
         saveSessionData(db, sessionId, sessionData);
-        db.close();
     }
 
     /**
@@ -249,7 +246,6 @@ class SonicDataHelper {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
         db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, SESSION_DATA_COLUMN_SESSION_ID + "=?",
                 new String[] {sessionId});
-        db.close();
     }
 
     /**
@@ -265,10 +261,8 @@ class SonicDataHelper {
         if (sessionData != null) {
             sessionData.unAvailableTime = unavailableTime;
             updateSessionData(db, sessionId, sessionData);
-            db.close();
             return true;
         }
-        db.close();
         return false;
     }
 
@@ -290,7 +284,6 @@ class SonicDataHelper {
     static void updateSonicCacheHitCount(String sessionId) {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
         updateSonicCacheHitCount(db, sessionId);
-        db.close();
     }
 
     /**
@@ -313,6 +306,5 @@ class SonicDataHelper {
     static synchronized void clear() {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
         db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, null, null);
-        db.close();
     }
 }

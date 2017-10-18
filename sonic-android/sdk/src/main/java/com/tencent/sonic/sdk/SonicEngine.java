@@ -110,7 +110,7 @@ public class SonicEngine {
      * Init sonic DB which will upgrade to new version of database.
      */
     public void initSonicDB() {
-        SonicDBHelper.createInstance(getRuntime().getContext()).getWritableDatabase().close(); // init and update db
+        SonicDBHelper.createInstance(getRuntime().getContext()).getWritableDatabase(); // init and update db
     }
 
     /**

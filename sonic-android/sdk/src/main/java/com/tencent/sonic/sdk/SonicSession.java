@@ -792,6 +792,11 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
      */
     @Override
     public void onClose(final boolean readComplete, final ByteArrayOutputStream outputStream) {
+        // if the session has been destroyed, exit directly
+        if(isDestroyedOrWaitingForDestroy()) {
+            return;
+        }
+
         // set pendingWebResourceStream to null，or it has a problem when client reload the page.
         if (null != pendingWebResourceStream) {
             pendingWebResourceStream = null;

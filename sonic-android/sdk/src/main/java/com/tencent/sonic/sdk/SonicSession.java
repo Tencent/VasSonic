@@ -793,7 +793,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
     @Override
     public void onClose(final boolean readComplete, final ByteArrayOutputStream outputStream) {
         // if the session has been destroyed, exit directly
-        if(STATE_DESTROY == sessionState.get()) {
+        if(isDestroyedOrWaitingForDestroy()) {
             return;
         }
 

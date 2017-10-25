@@ -22,7 +22,7 @@
 #endif
 
 #import "SonicUitil.h"
-#import "SonicClient.h"
+#import "SonicEngine.h"
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 
@@ -30,8 +30,9 @@
 
 NSString *sonicSessionID(NSString *url)
 {
-    if ([[SonicClient sharedClient].currentUserUniq length] > 0) {
-        return stringFromMD5([NSString stringWithFormat:@"%@_%@",[SonicClient sharedClient].currentUserUniq,sonicUrl(url)]);
+    NSString* userAccount = [SonicEngine sharedEngine].currentUserAccount;
+    if ([userAccount length] > 0) {
+        return stringFromMD5([NSString stringWithFormat:@"%@_%@",userAccount,sonicUrl(url)]);
     }else{
         return stringFromMD5([NSString stringWithFormat:@"%@",sonicUrl(url)]);
     }
@@ -154,12 +155,52 @@ NSString * getDataSha1(NSData *data)
     return output;
 }
 
-NSURLRequest *sonicWebRequest(NSURLRequest *originRequest)
+NSURLRequest *sonicWebRequest(SonicSession *session, NSURLRequest *originRequest)
 {
     NSMutableURLRequest *request = [[originRequest mutableCopy]autorelease];
     [request setValue:SonicHeaderValueWebviewLoad forHTTPHeaderField:SonicHeaderKeyLoadType];
-    [request setValue:sonicSessionID(request.URL.absoluteString) forHTTPHeaderField:SonicHeaderKeySessionID];
+    if (session) {
+        [request setValue:session.sessionID forHTTPHeaderField:SonicHeaderKeySessionID];
+        if (session.delegateId.length != 0) {
+            [request setValue:session.delegateId forHTTPHeaderField:SonicHeaderKeyDelegateId];
+        }
+    }
     return request;
+}
+
++ (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html
+{
+    //using sonicdiff tag to split the HTML to template and dynamic data.
+    NSError *error = nil;
+    NSRegularExpression *reg = [NSRegularExpression regularExpressionWithPattern:@"<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->" options:NSRegularExpressionCaseInsensitive error:&error];
+    if (error) {
+        return nil;
+    }
+    
+    //create dynamic data
+    NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
+    
+    NSMutableDictionary *dataDict = [NSMutableDictionary dictionary];
+    [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *matchStr = [html substringWithRange:obj.range];
+        NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
+        NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
+        NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
+        [dataDict setObject:matchStr forKey:formatKey];
+    }];
+    
+    //create template
+    NSMutableString *mResult = [NSMutableString stringWithString:html];
+    [dataDict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
+        [mResult replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, mResult.length)];
+    }];
+    
+    //if split HTML faild , we can return nothing ,it is not a validat sonic request.
+    if (dataDict.count == 0 || mResult.length == 0) {
+        return nil;
+    }
+    
+    return @{@"data":dataDict,@"temp":mResult};
 }
 
 @end

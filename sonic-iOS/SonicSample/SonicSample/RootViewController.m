@@ -137,7 +137,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)sonicPreloadAction
 {
-    [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:nil];
+    [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:nil];
     [self alertMessage:@"Preload Start!"];
 }
 
@@ -162,7 +162,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)clearAllCacheAction
 {
-    [[SonicClient sharedClient] clearAllCache];
+    [[SonicEngine sharedEngine] clearAllCache];
     [self alertMessage:@"Clear Success!"];
 }
 

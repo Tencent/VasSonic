@@ -22,32 +22,65 @@
 /**
  * @brief Use this protocal to trasfer data to sonic session, when you provide custom SonicConnection.
  */
-@class SonicSession;
-@protocol SonicSessionProtocol <NSObject>
+
+@class SonicConnection;
+
+@protocol SonicConnectionDelegate <NSObject>
 
 @required
 
 /**
- * @brief Call when the network connection did recieve response.
+ * @brief Notify when the network connection did recieve response.
  */
-- (void)session:(SonicSession *)session didRecieveResponse:(NSHTTPURLResponse *)response;
+- (void)connection:(SonicConnection *)connection didReceiveResponse:(NSHTTPURLResponse *)response;
 
 /**
- * @brief Call when the network connection did load data.
+ * @brief Notify when the network connection did recieve data.
  */
-- (void)session:(SonicSession *)session didLoadData:(NSData *)data;
+- (void)connection:(SonicConnection *)connection didReceiveData:(NSData *)data;
 
 /**
  * @brief Call when the network connection did fail.
  */
-- (void)session:(SonicSession *)session didFaild:(NSError *)error;
+- (void)connection:(SonicConnection *)connection didCompleteWithError:(NSError *)error;
 
 /**
- * @brief Call when the network connection did finish load.
+ * @brief Call when the network connection did success.
  */
-- (void)sessionDidFinish:(SonicSession *)session;
+- (void)connectionDidCompleteWithoutError:(SonicConnection *)connection;
+
 
 @end
+
+@class SonicServer;
+
+@protocol SonicServerDelegate <NSObject>
+
+@required
+
+/**
+ * @brief Call when the server did recieve response.
+ */
+- (void)server:(SonicServer *)server didRecieveResponse:(NSHTTPURLResponse *)response;
+
+/**
+ * @brief Call when the server did receive data.
+ */
+- (void)server:(SonicServer *)server didReceiveData:(NSData *)data;
+
+/**
+ * @brief Call when the server did fail.
+ */
+- (void)server:(SonicServer *)server didCompleteWithError:(NSError *)error;
+
+/**
+ * @brief Call when the the server did success.
+ */
+- (void)serverDidCompleteWithoutError:(SonicServer *)server;
+
+@end
+
+@class SonicSession;
 
 /**
  * @brief Notify the webView holder what happened during the connection.

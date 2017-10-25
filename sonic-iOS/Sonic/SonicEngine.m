@@ -1,5 +1,5 @@
 //
-//  SonicClient.m
+//  SonicEngine.m
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -21,11 +21,11 @@
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
 #endif
 
-#import "SonicClient.h"
+#import "SonicEngine.h"
 #import "SonicCache.h"
 #import "SonicUitil.h"
 
-@interface SonicClient ()
+@interface SonicEngine ()
 
 @property (nonatomic,retain)NSRecursiveLock *lock;
 @property (nonatomic,retain)NSMutableDictionary *tasks;
@@ -34,22 +34,22 @@
 
 @end
 
-@implementation SonicClient
+@implementation SonicEngine
 
-+ (SonicClient *)sharedClient
++ (SonicEngine *)sharedEngine
 {
-    static SonicClient *_client = nil;
+    static SonicEngine *_engine = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _client = [[self alloc]init];
+        _engine = [[self alloc]init];
     });
-    return _client;
+    return _engine;
 }
 
 - (instancetype)init
 {
     if (self = [super init]) {
-        [self setupClient];
+        [self setupEngine];
     }
     return self;
 }
@@ -66,6 +66,14 @@
     _userAgent = [aUserAgent copy];
 }
 
+- (NSString *)getGlobalUserAgent
+{
+    if (_userAgent.length > 0) {
+        return _userAgent;
+    }
+    return SonicDefaultUserAgent;
+}
+
 - (void)runWithConfiguration:(SonicConfiguration *)aConfiguration
 {
     [_configuration release];
@@ -73,24 +81,19 @@
     _configuration = [aConfiguration retain];
 }
 
-- (void)setCurrentUserUniqIdentifier:(NSString *)userIdentifier
+- (void)setCurrentUserAccount:(NSString *)userAccount
 {
-    if (userIdentifier.length == 0 || [_currentUserUniq isEqualToString:userIdentifier]) {
+    if (userAccount.length == 0 || [_currentUserAccount isEqualToString:userAccount]) {
         return;
     }
-    if (_currentUserUniq) {
-        [_currentUserUniq release];
-        _currentUserUniq = nil;
+    if (_currentUserAccount) {
+        [_currentUserAccount release];
+        _currentUserAccount = nil;
     }
-    _currentUserUniq = [userIdentifier copy];
+    _currentUserAccount = [userAccount copy];
     
     //create root cache path by user id
     [[SonicCache shareCache] setupCacheDirectory];
-}
-
-- (NSString *)sonicDefaultUserAgent
-{
-    return SonicDefaultUserAgent;
 }
 
 - (void)addDomain:(NSString *)domain withIpAddress:(NSString *)ipAddress
@@ -101,7 +104,7 @@
     [self.ipDomains setObject:ipAddress forKey:domain];
 }
 
-- (void)setupClient
+- (void)setupEngine
 {
     _configuration = [[SonicConfiguration defaultConfiguration] retain];
     self.lock = [NSRecursiveLock new];
@@ -197,9 +200,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     
     if (!existSession) {
-        
-        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
-        [existSession setupWithSessionConfiguration:configuration];
+        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate Configuration:configuration];
         
         NSURL *cUrl = [NSURL URLWithString:url];
         existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];
@@ -215,7 +216,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
         [existSession start];
         [existSession release];
 
-    }else{
+    } else {
         
         if (existSession.delegate == nil) {
             existSession.delegate = aWebDelegate;
@@ -243,6 +244,22 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     [self.lock unlock];
     
+    return findSession;
+}
+
+- (SonicSession *)sessionWithDelegateId:(NSString *)delegateId
+{
+    SonicSession *findSession = nil;
+    if (delegateId.length != 0) {
+        [self.lock lock];
+        for (SonicSession *session in self.tasks.allValues) {
+            if ([delegateId isEqualToString:session.delegateId]) {
+                findSession = session;
+                break;
+            }
+        }
+        [self.lock unlock];
+    }
     return findSession;
 }
 

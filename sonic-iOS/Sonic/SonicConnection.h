@@ -18,7 +18,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "SonicSession.h"
+#import "SonicProtocol.h"
 #import "SonicConnection.h"
 
 /**
@@ -27,11 +27,14 @@
 
 @interface SonicConnection : NSObject
 
-/** Use this protocal to transfer data to sonic session. */
-@property (nonatomic,assign)id<SonicSessionProtocol> session;
-
 /** Current request. */
-@property (nonatomic,readonly)NSURLRequest *request;
+@property (nonatomic,retain)NSURLRequest *request;
+
+/** Use this protocal to transfer data to sonic session. */
+@property (nonatomic,assign)id<SonicConnectionDelegate> delegate;
+
+/** Queue for connection delegate operation. */
+@property (nonatomic,retain) NSOperationQueue* delegateQueue;
 
 /**
  * Check if this request class can use SonicConnection to load
@@ -44,8 +47,9 @@
  * SonicSession will pass the request to the connection
  
  * @param aRequest the request passed by the SonicSession
+* @param queue The queue which delegate operation will be called.
  */
-- (instancetype)initWithRequest:(NSURLRequest *)aRequest;
+- (instancetype)initWithRequest:(NSURLRequest *)aRequest delegate:(id<SonicConnectionDelegate>)delegate delegateQueue:(NSOperationQueue *)queue;
 
 /**
  * Start request

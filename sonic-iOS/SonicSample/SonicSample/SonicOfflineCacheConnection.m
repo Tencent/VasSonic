@@ -36,9 +36,9 @@
     
     NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc]initWithURL:self.request.URL MIMEType:@"text/html" expectedContentLength:htmlData.length textEncodingName:@"utf8"];
     
-    [self.session session:self.session didRecieveResponse:response];
-    [self.session session:self.session didLoadData:htmlData];
-    [self.session sessionDidFinish:self.session];
+    [self.delegate connection:self didReceiveResponse:response];
+    [self.delegate connection:self didReceiveData:htmlData];
+    [self.delegate connectionDidCompleteWithoutError:self];
 }
 
 - (void)stopLoading

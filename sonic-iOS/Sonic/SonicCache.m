@@ -22,7 +22,7 @@
 #endif
 
 #import "SonicCache.h"
-#import "SonicClient.h"
+#import "SonicEngine.h"
 #import "SonicUitil.h"
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
@@ -115,7 +115,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 - (void)setupInit
 {
-    self.maxCacheCount = [SonicClient sharedClient].configuration.maxMemroyCacheItemCount;
+    self.maxCacheCount = [SonicEngine sharedEngine].configuration.maxMemroyCacheItemCount;
     self.lock = [NSRecursiveLock new];
     self.memoryCache = [NSMutableDictionary dictionaryWithCapacity:self.maxCacheCount];
     self.recentlyUsedKey = [NSMutableArray arrayWithCapacity:self.maxCacheCount];
@@ -195,7 +195,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSTimeInterval lastTime = [disableStartTime doubleValue];
     NSTimeInterval timeNow = [[NSDate date] timeIntervalSince1970];
     
-    return timeNow - lastTime < [SonicClient sharedClient].configuration.cacheOfflineDisableTime;
+    return timeNow - lastTime < [SonicEngine sharedEngine].configuration.cacheOfflineDisableTime;
 }
 
 - (void)setupCacheOfflineTimeCfgDict
@@ -424,7 +424,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     
     unsigned long long now =  (unsigned long long)[[NSDate date] timeIntervalSince1970];
     
-    unsigned long long configMaxCacheTime = [SonicClient sharedClient].configuration.maxUnStrictModeCacheSeconds;
+    unsigned long long configMaxCacheTime = [SonicEngine sharedEngine].configuration.maxUnStrictModeCacheSeconds;
     
     if(maxAge.length == 0 && expire.length == 0){
         return now + configMaxCacheTime;
@@ -462,7 +462,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         return MIN(expireTime, configCacheTime);
     }
     
-    return now + [SonicClient sharedClient].configuration.maxUnStrictModeCacheSeconds;
+    return now + [SonicEngine sharedEngine].configuration.maxUnStrictModeCacheSeconds;
 }
 
 - (void)updateCacheExpireTimeWithResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID
@@ -843,9 +843,9 @@ void dealInFileQueue(dispatch_block_t block)
 
     unsigned long long cacheSize = [self folderSize:_rootCachePath];
     
-    CGFloat percent = cacheSize/[SonicClient sharedClient].configuration.cacheMaxDirectorySize;
+    CGFloat percent = cacheSize/[SonicEngine sharedEngine].configuration.cacheMaxDirectorySize;
     
-    if ( percent < [SonicClient sharedClient].configuration.cacheDirectorySizeWarningPercent ) {
+    if ( percent < [SonicEngine sharedEngine].configuration.cacheDirectorySizeWarningPercent ) {
         
         return ;
         
@@ -885,7 +885,7 @@ void dealInFileQueue(dispatch_block_t block)
             totalReadSize = totalReadSize + fileSize;
             [willClearSubDirs addObject:fileItem];
             
-            if ((cacheSize - totalReadSize)/[SonicClient sharedClient].configuration.cacheMaxDirectorySize < [SonicClient sharedClient].configuration.cacheDirectorySizeSafePercent ) {
+            if ((cacheSize - totalReadSize)/[SonicEngine sharedEngine].configuration.cacheMaxDirectorySize < [SonicEngine sharedEngine].configuration.cacheDirectorySizeSafePercent ) {
                 break;
             }
         }

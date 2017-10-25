@@ -41,9 +41,9 @@
                 SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
                 configuration.customResponseHeaders = @{SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
                 configuration.supportNoEtag = YES;
-                [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
+                [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
             }else{
-                [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self];
+                [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self];
             }
         }
     }
@@ -55,7 +55,7 @@
     self.sonicContext.owner = nil;
     self.sonicContext = nil;
     self.jscontext = nil;
-    [[SonicClient sharedClient] removeSessionWithWebDelegate:self];
+    [[SonicEngine sharedEngine] removeSessionWithWebDelegate:self];
 }
 
 - (void)loadView
@@ -69,8 +69,9 @@
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.url]];
     
-    if ([[SonicClient sharedClient] sessionWithWebDelegate:self]) {
-        [self.webView loadRequest:sonicWebRequest(request)];
+    SonicSession* session = [[SonicEngine sharedEngine] sessionWithWebDelegate:self];
+    if (session) {
+        [self.webView loadRequest:sonicWebRequest(session, request)];
     }else{
         [self.webView loadRequest:request];
     }

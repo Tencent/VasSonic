@@ -56,7 +56,7 @@ typedef NS_ENUM(NSUInteger, SonicURLProtocolAction) {
     
     SonicURLProtocolActionRecvResponse,
     
-    SonicURLProtocolActionDidFinish,
+    SonicURLProtocolActionDidSuccess,
     
     SonicURLProtocolActionDidFaild,
 };
@@ -105,6 +105,11 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  * The request is started by webview.
  */
 #define SonicHeaderValueWebviewLoad   @"__SONIC_HEADER_VALUE_WEBVIEW_LOAD__"
+
+/**
+ * The hash of Delegate which uses to identify wether it's owner of a SonicSession.
+ */
+#define SonicHeaderKeyDelegateId    @"sonic-delegate-id"
 
 /**
  * The request is started by SonicSession.

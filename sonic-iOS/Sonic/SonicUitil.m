@@ -173,34 +173,28 @@ NSURLRequest *sonicWebRequest(SonicSession *session, NSURLRequest *originRequest
     //using sonicdiff tag to split the HTML to template and dynamic data.
     NSError *error = nil;
     NSRegularExpression *reg = [NSRegularExpression regularExpressionWithPattern:@"<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->" options:NSRegularExpressionCaseInsensitive error:&error];
-    if (error) {
-        return nil;
+    if (!error) {
+        NSMutableString *templateString = nil;
+        NSMutableDictionary *data = [NSMutableDictionary dictionary];
+        //create dynamic data
+        NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
+        [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSString *matchStr = [html substringWithRange:obj.range];
+            NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
+            NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
+            NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
+            [data setObject:matchStr forKey:formatKey];
+        }];
+        
+        //create template
+        templateString = [NSMutableString stringWithString:html];
+        [data enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
+            [templateString replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, templateString.length)];
+        }];
+        
+       return @{kSonicDataFieldName:data,kSonicTemplateFieldName:templateString};
     }
-    
-    //create dynamic data
-    NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
-    
-    NSMutableDictionary *dataDict = [NSMutableDictionary dictionary];
-    [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSString *matchStr = [html substringWithRange:obj.range];
-        NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
-        NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
-        NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
-        [dataDict setObject:matchStr forKey:formatKey];
-    }];
-    
-    //create template
-    NSMutableString *mResult = [NSMutableString stringWithString:html];
-    [dataDict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
-        [mResult replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, mResult.length)];
-    }];
-    
-    //if split HTML faild , we can return nothing ,it is not a validat sonic request.
-    if (dataDict.count == 0 || mResult.length == 0) {
-        return nil;
-    }
-    
-    return @{@"data":dataDict,@"temp":mResult};
+    return @{kSonicDataFieldName:[[NSDictionary alloc]init],kSonicTemplateFieldName:html};
 }
 
 @end

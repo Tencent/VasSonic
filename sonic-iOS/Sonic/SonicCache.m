@@ -304,8 +304,8 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         return nil;
     }
     
-    cacheItem.templateString = splitResult[@"temp"];
-    cacheItem.dynamicData = splitResult[@"data"];
+    cacheItem.templateString = splitResult[kSonicTemplateFieldName];
+    cacheItem.dynamicData = splitResult[kSonicDataFieldName];
     NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
     NSString *sha1 = getDataSha1(htmlData);
     [config setObject:sha1 forKey:kSonicSha1];
@@ -314,7 +314,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
     dealInFileQueue(^{
-        [self saveHtmlData:htmlData withConfig:config withTemplate:splitResult[@"temp"] dynamicData:splitResult[@"data"]  withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
+        [self saveHtmlData:htmlData withConfig:config withTemplate:splitResult[kSonicTemplateFieldName] dynamicData:splitResult[kSonicDataFieldName]  withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
     });
     
     return cacheItem;
@@ -343,7 +343,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
     
     NSMutableDictionary *dynamicData = [NSMutableDictionary dictionaryWithDictionary:cacheItem.dynamicData];
-    NSDictionary *mergeResult = [self mergeDynamicData:dataDict[@"data"] withOriginData:dynamicData withTemplate:cacheItem.templateString];
+    NSDictionary *mergeResult = [self mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData withTemplate:cacheItem.templateString];
     if (!mergeResult) {
         return nil;
     }
@@ -534,7 +534,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         return nil;
     }
     
-    return @{@"data":dataDict,@"temp":mResult};
+    return @{kSonicDataFieldName:dataDict,kSonicTemplateFieldName:mResult};
 }
 
 - (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData withTemplate:(NSString *)templateString
@@ -691,9 +691,9 @@ void dealInFileQueue(dispatch_block_t block)
     }
     NSDictionary *extMap = @{
                              @(SonicCacheTypeConfig):@"cfg",
-                             @(SonicCacheTypeTemplate):@"temp",
+                             @(SonicCacheTypeTemplate):kSonicTemplateFieldName,
                              @(SonicCacheTypeHtml):@"html",
-                             @(SonicCacheTypeData):@"data",
+                             @(SonicCacheTypeData):kSonicDataFieldName,
                              @(SonicCacheTypeResponseHeader):@"rsp",
                              };
     NSString *cacheFileName = [sessionID stringByAppendingPathExtension:extMap[@(cacheType)]];

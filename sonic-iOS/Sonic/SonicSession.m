@@ -89,6 +89,7 @@
         _configuration = [aConfiguration retain];
         _sessionID = [sonicSessionID(aUrl) copy];
         self.sonicServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
+        [self.sonicServer enableLocalServer:TRUE/*_configuration.enableLocalServer*/];
         [self setupData];
     }
     return self;
@@ -149,6 +150,7 @@
     if (self.configuration.supportCacheControl) {
         SonicCacheItem *cacheItem = [[SonicCache shareCache] cacheForSession:self.sessionID];
         if (![cacheItem isCacheExpired]) {
+            NSLog(@"SonicSession.start finish:session(%@) is under cache expired.", self.sessionID);
             return;
         }
     }
@@ -160,7 +162,7 @@
         [self syncCookies];
     });
 
-    [self requestStartInOperation];
+    [self.sonicServer start];
 }
 
 - (void)cancel
@@ -181,11 +183,6 @@
     }
 }
 
-- (void)requestStartInOperation
-{
-    [self.sonicServer start];
-}
-
 - (NSDictionary *)buildRequestHeaderFields
 {
     NSDictionary *cacheHeaders = self.cacheConfigHeaders;
@@ -194,25 +191,25 @@
     if (cacheHeaders) {
         NSString *eTag = cacheHeaders[SonicHeaderKeyETag];
         if (eTag.length > 0) {
-            [requestHeaders setObject:eTag forKey:@"If-None-Match"];
+            [requestHeaders setObject:eTag forKey:HTTPHeaderKeyIfNoneMatch];
         }
         NSString *tempTag = cacheHeaders[SonicHeaderKeyTemplate];
         if (tempTag.length > 0 ) {
             [requestHeaders setObject:tempTag forKey:SonicHeaderKeyTemplate];
         }
     }else{
-        [requestHeaders setObject:@"" forKey:@"If-None-Match"];
+        [requestHeaders setObject:@"" forKey:HTTPHeaderKeyIfNoneMatch];
         [requestHeaders setObject:@"" forKey:SonicHeaderKeyTemplate];
     }
     
-    [requestHeaders setObject:[[SonicEngine sharedEngine] getGlobalUserAgent] forKey:@"User-Agent"];
+    [requestHeaders setObject:[[SonicEngine sharedEngine] getGlobalUserAgent] forKey:HTTPHeaderKeyUserAgent];
     
     NSURL *cUrl = [NSURL URLWithString:self.url];
     if (self.serverIP.length > 0) {
         NSString *host = [cUrl.scheme isEqualToString:@"https"]? [NSString stringWithFormat:@"%@:443",self.serverIP]:[NSString stringWithFormat:@"%@:80",self.serverIP];
         NSString *newUrl = [self.url stringByReplacingOccurrencesOfString:cUrl.host withString:host];
         cUrl = [NSURL URLWithString:newUrl];
-        [requestHeaders setObject:cUrl.host forKey:@"Host"];
+        [requestHeaders setObject:cUrl.host forKey:HTTPHeaderKeyHost];
     }
     
     [requestHeaders addEntriesFromDictionary:self.configuration.customRequestHeaders];
@@ -362,6 +359,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineStore] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {
             
             SonicCacheItem *cacheItem = nil;
+            
             
             if ([self isStrictMode]) {
                 cacheItem =  [[SonicCache shareCache] saveFirstWithHtmlData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];

@@ -32,7 +32,7 @@
 
 @property (nonatomic,readonly)NSMutableData *responseData;
 
-@property (nonatomic,retain)NSError *error;
+@property (nonatomic,readonly)NSError *error;
 
 /**
  * Register a SonicConnection Class to provide network data.
@@ -65,5 +65,7 @@
 - (void)start;
 
 - (void)stop;
+
+- (NSDictionary *)sonicItemForCache;
 
 @end

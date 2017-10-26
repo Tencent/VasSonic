@@ -37,7 +37,7 @@
         
         self.title = @"Sonic";
         
-        self.url = @"http://mc.vip.qq.com/demo/indexv3";
+        self.url = @"https://www.baidu.com";
 
     }
     return self;

@@ -228,3 +228,31 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  * Quick way to get file manager.
  */
 #define SonicFileManager    [NSFileManager defaultManager]
+
+/**
+ * Sonic item field name
+ */
+#define kSonicHtmlFieldName                 @"_html_"
+#define kSonicTemplateFieldName             @"_template_"
+#define kSonicDataFieldName                 @"_data_"
+
+/**
+ * HTTP Header:If-None-Match
+ */
+#define HTTPHeaderKeyIfNoneMatch @"If-None-Match"
+
+/**
+ * HTTP Header:User-Agent
+ */
+#define HTTPHeaderKeyUserAgent @"User-Agent"
+
+/**
+ * HTTP Header:Host
+ */
+#define HTTPHeaderKeyHost @"Host"
+
+/**
+ * HTTP Header:Content-Type
+ */
+#define HTTPHeaderKeyContentType @"Content-Type"
+

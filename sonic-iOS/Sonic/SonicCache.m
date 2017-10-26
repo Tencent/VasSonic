@@ -393,11 +393,42 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     return cacheItem;
 }
 
+- (SonicCacheItem *)saveHtmlString:(NSString *)htmlString
+                    templateString:(NSString *)templateString
+                       dynamicData:(NSDictionary *)dataDict
+                   responseHeaders:(NSDictionary *)headers
+                           withUrl:(NSString *)url
+{
+    NSString *sessionID = sonicSessionID(url);
+    
+    if (!htmlString || !templateString || headers.count == 0 || sessionID.length == 0) {
+        return nil;
+    }
+    
+    NSData *htmlData = [htmlString dataUsingEncoding:NSUTF8StringEncoding];
+    SonicCacheItem *cacheItem = [self cacheForSession:sessionID];
+    cacheItem.htmlData = htmlData;
+    cacheItem.dynamicData = dataDict;
+    cacheItem.templateString = templateString;
+    NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
+    NSString *sha1 = getDataSha1(cacheItem.htmlData);
+    [config setObject:sha1 forKey:kSonicSha1];
+    cacheItem.config = config;
+    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
+    cacheItem.cacheResponseHeaders = filterResponseHeaders;
+    
+    dealInFileQueue(^{
+        [self saveHtmlData:htmlData withConfig:config withTemplate:templateString dynamicData:dataDict withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
+    });
+    
+    return cacheItem;
+}
+
 - (NSDictionary *)createConfigFromResponseHeaders:(NSDictionary *)headers
 {
     //Etag,template-tag
-    NSString *eTag = headers[@"Etag"];
-    NSString *templateTag = headers[@"template-tag"];
+    NSString *eTag = headers[SonicHeaderKeyETag];
+    NSString *templateTag = headers[SonicHeaderKeyTemplate];
     NSTimeInterval timeNow = (long)[[NSDate date ]timeIntervalSince1970]*1000;
     NSString *localRefresh = [@(timeNow) stringValue];
     

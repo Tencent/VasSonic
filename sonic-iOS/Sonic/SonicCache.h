@@ -152,6 +152,15 @@
                                          withUrl:(NSString *)url;
 
 /**
+ * Save all relation datas
+ */
+- (SonicCacheItem *)saveHtmlString:(NSString *)htmlString
+                    templateString:(NSString *)templateString
+                       dynamicData:(NSDictionary *)dataDict
+                   responseHeaders:(NSDictionary *)headers
+                           withUrl:(NSString *)url;
+
+/**
  * Update cache expire time from response headers with session id
  */
 - (void)updateCacheExpireTimeWithResponseHeaders:(NSDictionary *)headers withSessionID:(NSString *)sessionID;

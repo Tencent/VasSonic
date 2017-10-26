@@ -144,12 +144,12 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * Pass Etag through this field.
  */
-#define SonicHeaderKeyETag     @"Etag"
+#define SonicHeaderKeyETag     @"etag"
 
 /**
  * Content-Security-Policy key for header.
  */
-#define SonicHeaderKeyCSPHeader       @"Content-Security-Policy"
+#define SonicHeaderKeyCSPHeader       @"content-security-policy"
 
 /**
  * Pass cache policy through this field: SonicHeaderValueCacheOfflineStore, SonicHeaderValueCacheOfflineStoreRefresh, SonicHeaderValueCacheOfflineRefresh, SonicHeaderValueCacheOfflineDisable.
@@ -195,12 +195,12 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * The http response header key Max-Age
  */
-#define SonicHeaderMaxAge @"Max-Age"
+#define SonicHeaderMaxAge @"max-age"
 
 /**
  * The http response header key Expires
  */
-#define SonicHeaderExpire @"Expires"
+#define SonicHeaderExpire @"expires"
 
 /**
  * Html-SHA1

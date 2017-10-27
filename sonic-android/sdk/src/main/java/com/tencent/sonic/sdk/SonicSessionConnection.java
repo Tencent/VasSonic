@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,6 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,11 +56,12 @@ public abstract class SonicSessionConnection {
      */
     public final static String CUSTOM_HEAD_FILED_ETAG = "eTag";
 
+
     /**
      * HTTP header:accept-diff. <br>
      * This header represents that client accepts data incremental scene updates or not.
      */
-    private final static String CUSTOM_HEAD_FILED_ACCEPT_DIFF = "accept-diff";
+    public final static String CUSTOM_HEAD_FILED_ACCEPT_DIFF = "accept-diff";
 
     /**
      * HTTP header:template_tag. <br>
@@ -91,13 +92,19 @@ public abstract class SonicSessionConnection {
      * HTTP Header:sdk_version. <br>
      * This header represents the version of SDK.
      */
-    private final static String CUSTOM_HEAD_FILED_SDK_VERSION = "sonic-sdk-version";
+    public final static String CUSTOM_HEAD_FILED_SDK_VERSION = "sonic-sdk-version";
 
     /**
      * HTTP Header:dns-prefetch. <br>
      * This header indicates that Sonic connection has used the ip represented by {@link #DNS_PREFETCH_ADDRESS}
      */
     public final static String CUSTOM_HEAD_FILED_DNS_PREFETCH = "sonic-dns-prefetch";
+
+    /**
+     * HTTP header: . <br>
+     *
+     */
+    public final static String CUSTOM_HEAD_FILED_HTML_SHA1 = "sonic-html-sha1";
 
     /**
      * HTTP Header：Content-Security-Policy. <br>
@@ -210,6 +217,7 @@ public abstract class SonicSessionConnection {
         if (responseStream == null) {
             responseStream = internalGetResponseStream();
         }
+
         return responseStream;
     }
 
@@ -241,9 +249,11 @@ public abstract class SonicSessionConnection {
      * A holder caches information about the input and output stream . Meanwhile this holder indicates the end of
      *   the input stream has been reached or not.
      */
-    public class ResponseDataTuple {
+    public static class ResponseDataTuple {
 
         boolean isComplete;
+
+        String htmlString;
 
         BufferedInputStream responseStream;
 
@@ -535,14 +545,11 @@ public abstract class SonicSessionConnection {
             }
 
             if (null == cachedResponseHeaders) {
-                // condition branch:more like to [null == session.config.customResponseHeaders]
-                if (null == session.config.customResponseHeaders || 0 == session.config.customResponseHeaders.size()) {
-                    cachedResponseHeaders = connectionImpl.getHeaderFields();
-                } else {
-                    // new cachedResponseHeaders
-                    cachedResponseHeaders = new HashMap<String, List<String>>();
-                    // fill custom headers
-                    List<String> tmpHeaderList;
+                // new cachedResponseHeaders
+                cachedResponseHeaders = new HashMap<String, List<String>>();
+                // fill custom headers
+                List<String> tmpHeaderList;
+                if (session.config.customResponseHeaders != null && session.config.customResponseHeaders.size() > 0) {
                     for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
                         String key = entry.getKey();
                         if (!TextUtils.isEmpty(key)) {
@@ -554,20 +561,22 @@ public abstract class SonicSessionConnection {
                             tmpHeaderList.add(entry.getValue());
                         }
                     }
-                    // fill real response headers
-                    Map<String,List<String>> headersFromServer = connectionImpl.getHeaderFields();
-                    Set<Map.Entry<String,List<String>>> entrySet = headersFromServer.entrySet();
-                    for(Map.Entry<String,List<String>> entry : entrySet) {
-                        String key = entry.getKey();
-                        if (!TextUtils.isEmpty(key)) {
-                            cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
-                        } else {
-                            cachedResponseHeaders.put(key, entry.getValue());
-                        }
-                    }
-
                 }
+
+                // fill real response headers
+                Map<String, List<String>> headersFromServer = connectionImpl.getHeaderFields();
+                Set<Map.Entry<String, List<String>>> entrySet = headersFromServer.entrySet();
+                for (Map.Entry<String, List<String>> entry : entrySet) {
+                    String key = entry.getKey();
+                    if (!TextUtils.isEmpty(key)) {
+                        cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
+                    } else {
+                        cachedResponseHeaders.put(key, entry.getValue());
+                    }
+                }
+
             }
+
             return cachedResponseHeaders;
         }
 

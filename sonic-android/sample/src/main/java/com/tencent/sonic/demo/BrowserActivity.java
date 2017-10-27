@@ -86,14 +86,7 @@ public class BrowserActivity extends Activity {
         // if it's sonic mode , startup sonic session at first time
         if (MainActivity.MODE_DEFAULT != mode) { // sonic mode
             SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-            // set setSupportNoEtag true to support un-sonic server
-            sessionConfigBuilder.setSupportNoEtag(true);
-
-            // setup CUSTOM_HEAD_FILED_CACHE_OFFLINE mode
-            // Tips: You can setup CUSTOM_HEAD_FILED_CACHE_OFFLINE = OFFLINE_MODE_STORE for better user experience
-            HashMap<String, String> customResponseHeaders = new HashMap<>();
-            customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_TRUE);
-            sessionConfigBuilder.setCustomResponseHeaders(customResponseHeaders);
+            sessionConfigBuilder.setSupportSonicServer(true);
 
             // if it's offline pkg mode, we need to intercept the session connection
             if (MainActivity.MODE_SONIC_WITH_OFFLINE_CACHE == mode) {

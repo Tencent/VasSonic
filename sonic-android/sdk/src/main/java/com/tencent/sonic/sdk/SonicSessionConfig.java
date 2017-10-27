@@ -72,9 +72,10 @@ public class SonicSessionConfig {
     boolean SUPPORT_CACHE_CONTROL = false;
 
     /**
-     * Support noETag or not
+     * Use local Sonic Server or not. If SUPPORT_SONIC_SERVER is true, Sonic will treat normal request as sonic request
+     * to separate html into template and data file.
      */
-    boolean SUPPORT_NO_ETAG = false;
+    boolean SUPPORT_SONIC_SERVER = false;
 
     /**
      * The toast when network unavailable
@@ -196,13 +197,13 @@ public class SonicSessionConfig {
             return this;
         }
 
-        public Builder setSupportNoEtag(boolean supportNoETag) {
-            target.SUPPORT_NO_ETAG = supportNoETag;
+        public Builder setSupportCacheControl(boolean supportCacheControl) {
+            target.SUPPORT_CACHE_CONTROL = supportCacheControl;
             return this;
         }
 
-        public Builder setSupportCacheControl(boolean supportCacheControl) {
-            target.SUPPORT_CACHE_CONTROL = supportCacheControl;
+        public Builder setSupportSonicServer(boolean enable) {
+            target.SUPPORT_SONIC_SERVER = enable;
             return this;
         }
 

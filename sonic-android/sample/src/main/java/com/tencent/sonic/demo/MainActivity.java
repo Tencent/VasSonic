@@ -88,15 +88,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-
-                // set setSupportNoEtag true to support un-sonic server
-                sessionConfigBuilder.setSupportNoEtag(true);
-
-                // setup CUSTOM_HEAD_FILED_CACHE_OFFLINE mode
-                // Tips: You can setup CUSTOM_HEAD_FILED_CACHE_OFFLINE = OFFLINE_MODE_STORE for better user experience
-                HashMap<String, String> customResponseHeaders = new HashMap<>();
-                customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_TRUE);
-                sessionConfigBuilder.setCustomResponseHeaders(customResponseHeaders);
+                sessionConfigBuilder.setSupportSonicServer(true);
 
                 // preload session
                 boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfigBuilder.build());

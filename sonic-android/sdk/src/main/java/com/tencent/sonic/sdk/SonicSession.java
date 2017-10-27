@@ -28,10 +28,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,7 +297,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
     /**
      * Session Connection impl var
      */
-    protected volatile SonicSessionConnection sessionConnection;
+    protected volatile SonicServer sessionConnection;
 
     /**
      * The response for client interception.
@@ -538,7 +536,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             sessionData = SonicDataHelper.getSessionData(id);
         }
 
-        sessionConnection = SonicSessionConnectionInterceptor.getSonicSessionConnection(this, createConnectionIntent(sessionData));
+        sessionConnection = new SonicServer(this, sessionData);
 
         // Connect to web server
         long startTime = System.currentTimeMillis();
@@ -597,12 +595,6 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
         String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: cacheOffline is " + cacheOffline + ".");
 
-        // When offline is null: which means hit an error branch
-        if (null == cacheOffline) {
-            SonicUtils.removeSessionCache(id);
-            return;
-        }
-
         // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
         if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
             handleFlow_ServiceUnavailable();
@@ -611,73 +603,21 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
             return;
         }
 
-        String newHtml = null;
-        String newHtmlSha1 = null;
-
         String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         String templateChange = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
         // When eTag is empty, run fix logic
-        if (TextUtils.isEmpty(eTag)) {
-            if (!config.SUPPORT_NO_ETAG) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error: eTag is empty and not support no eTag!");
-                SonicUtils.removeSessionCache(id);
-                return;
-            }
-
-            // Fix template-change if need
-            if (null == templateChange) {
-                templateChange = "true";
-            } else if ("false".equalsIgnoreCase(templateChange) || "0".equalsIgnoreCase(templateChange)) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error: not support data update when no eTag!");
-                SonicUtils.removeSessionCache(id);
-                return;
-            }
-
-            // Try fix eTag
-            ByteArrayOutputStream byteArrayOutputStream = sessionConnection.getResponseData();
-            if (null == byteArrayOutputStream) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error: getResponseData is null!");
-                SonicUtils.removeSessionCache(id);
-                return;
-            }
-
-            try {
-                newHtml = byteArrayOutputStream.toString(getCharsetFromHeaders());
-            } catch (UnsupportedEncodingException e) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error:" + e.getMessage() + ".");
-                SonicUtils.removeSessionCache(id);
-                return;
-            }
-
-            // Add Client eTag to headers
-            eTag = newHtmlSha1 = SonicUtils.getSHA1(newHtml);
-            ArrayList<String> eTagFields = new ArrayList<>(1);
-            eTagFields.add(newHtmlSha1);
-            sessionConnection.getResponseHeaderFields().put(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTagFields);
-        }
-
-        // After fix eTag, which may hit 304
-        if (sessionData.eTag.equals(eTag)) {
-            handleFlow_NotModified();
+        if (TextUtils.isEmpty(eTag) || TextUtils.isEmpty(templateChange)) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error: eTag is ( " + eTag + " ) , templateChange is ( " + templateChange + " )!");
+            SonicUtils.removeSessionCache(id);
             return;
-        }
-
-        // When template-change is null: which means server is not support sonic or in bad logic, try fixed
-        if (null == templateChange) {
-            String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-            if (!TextUtils.isEmpty(templateTag) && templateTag.equals(sessionData.templateTag)) {
-                templateChange = "false";
-            } else {
-                templateChange = "true";
-            }
         }
 
         // When templateChange is false : means data update
         if ("false".equals(templateChange) || "0".equals(templateChange)) {
-            handleFlow_DataUpdate();
+            handleFlow_DataUpdate(sessionConnection.getUpdatedData());
         } else {
-            handleFlow_TemplateChange(newHtml, newHtmlSha1);
+            handleFlow_TemplateChange(sessionConnection.getServerRsp());
         }
     }
 
@@ -692,13 +632,14 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
 
     /**
      * Handle data update {@link SonicSession#SONIC_RESULT_CODE_DATA_UPDATE} logic.
+     * @param serverRsp Server response data.
      */
-    protected abstract void handleFlow_DataUpdate();
+    protected abstract void handleFlow_DataUpdate(String serverRsp);
 
     /**
      * Handle template update {@link SonicSession#SONIC_RESULT_CODE_TEMPLATE_CHANGE} logic.
      */
-    protected abstract void handleFlow_TemplateChange(String newHtml, String newHtmlSha1);
+    protected abstract void handleFlow_TemplateChange(String newHtml);
 
     protected abstract void handleFlow_HttpError(int responseCode);
 
@@ -828,7 +769,7 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
 
                         if (!TextUtils.isEmpty(htmlString)) {
                             long startTime = System.currentTimeMillis();
-                            separateAndSaveCache(htmlString, null);
+                            saveSonicCache(htmlString);
                             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") onClose:separate And save ache finish, cost " + (System.currentTimeMillis() - startTime) + " ms.");
                         }
 
@@ -857,45 +798,38 @@ public abstract class SonicSession implements SonicSessionStream.Callback, Handl
         }
     }
 
-    protected void separateAndSaveCache(String htmlString, String htmlSha1) {
-        if (TextUtils.isEmpty(htmlString) || null == sessionConnection) {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache error:htmlString is null or sessionConnection is null.");
-            return;
-        }
-
-        if (TextUtils.isEmpty(htmlSha1)) {
-            htmlSha1 = SonicUtils.getSHA1(htmlString);
+    protected void saveSonicCache(String htmlString) {
+        if (TextUtils.isEmpty(sessionConnection.getServerRsp())) {
+            sessionConnection.setServerRsp(htmlString);
         }
 
         long startTime = System.currentTimeMillis();
-        String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-        if (TextUtils.isEmpty(eTag) && config.SUPPORT_NO_ETAG) {
-            eTag = htmlSha1;
-        }
+        String template = sessionConnection.getTemplate();
+        String updatedData = sessionConnection.getUpdatedData();
 
-        String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-        if (null == templateTag) {
-            templateTag = "";
-        }
+        if (!TextUtils.isEmpty(htmlString) && !TextUtils.isEmpty(template)) {
+            String newHtmlSha1 = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1);
+            if (TextUtils.isEmpty(newHtmlSha1)) {
+                newHtmlSha1 = SonicUtils.getSHA1(htmlString);
+            }
 
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: start separate, eTag = " + eTag + ", templateTag = " + templateTag);
+            String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
-        StringBuilder templateStringBuilder = new StringBuilder();
-        StringBuilder dataStringBuilder = new StringBuilder();
-        if (SonicUtils.separateTemplateAndData(id, htmlString, templateStringBuilder, dataStringBuilder)) {
             Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
-            if (SonicUtils.saveSessionFiles(id, htmlString, templateStringBuilder.toString(), dataStringBuilder.toString(), headers)) {
+            if (SonicUtils.saveSessionFiles(id, htmlString, template, updatedData, headers)) {
                 long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);
+                SonicUtils.saveSonicData(id, eTag, templateTag, newHtmlSha1, htmlSize, headers);
             } else {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save session files fail.");
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") saveSonicCache: save session files fail.");
                 SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
             }
         } else {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") separateAndSaveCache: save separate template and data files fail.");
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") saveSonicCache: save separate template and data files fail.");
             SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_SPLIT_HTML_FAIL);
         }
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") separateAndSaveCache: finish separate, cost " + (System.currentTimeMillis() - startTime) + "ms.");
+
+        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") saveSonicCache: finish, cost " + (System.currentTimeMillis() - startTime) + "ms.");
     }
 
     /**

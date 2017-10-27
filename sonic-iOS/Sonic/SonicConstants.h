@@ -136,6 +136,8 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  */
 #define SonicHeaderKeyTemplate @"template-tag"
 
+#define SonicHeaderKeyHtmlSha1 @"html-sha1"
+
 /**
  * Pass true/false to decide if template-change
  */
@@ -235,6 +237,7 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define kSonicHtmlFieldName                 @"_html_"
 #define kSonicTemplateFieldName             @"_template_"
 #define kSonicDataFieldName                 @"_data_"
+#define kSonicDiffFieldName                 @"_diff_"
 
 /**
  * HTTP Header:If-None-Match

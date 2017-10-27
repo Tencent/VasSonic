@@ -34,6 +34,9 @@
 
 @property (nonatomic,readonly)NSError *error;
 
+@property (nonatomic,readonly)BOOL isInLocalServerMode;
+
+
 /**
  * Register a SonicConnection Class to provide network data.
  */
@@ -60,7 +63,7 @@
 
 - (NSString *)responseHeaderForKey:(NSString *)aKey;
 
-- (void)enableLocalServer:(Boolean )enable;
+- (void)enableLocalServer:(BOOL)enable;
 
 - (void)start;
 

@@ -24,7 +24,7 @@
  *  create a config table to save data;important: all column used text type,because of that is easy to access and update
  */
 
-#define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template_tag' text,'Etag' text,'sha1' text,'cache_expire_time' text)"
+#define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template_tag' text,'etag' text,'sha1' text,'cache_expire_time' text)"
 
 @interface SonicDatabase()
 {

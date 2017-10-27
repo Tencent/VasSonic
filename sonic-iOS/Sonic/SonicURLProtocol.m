@@ -111,11 +111,6 @@
             [self.client URLProtocol:self didFailWithError:err];
         }
             break;
-        default:
-        {
-            NSLog(@"callClientActionWithParams warning:Some case is missing!");
-        }
-            break;
     }
 }
 

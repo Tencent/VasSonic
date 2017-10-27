@@ -41,8 +41,9 @@ NSString *sonicUrl(NSString *url);
 
 /**
  * Dispatch block to main thread.
+ * Return block operation hash string
  */
-void dispatchToMain (dispatch_block_t block);
+NSString * dispatchToMain (dispatch_block_t block);
 
 /**
  * Get SHA1 value from data.
@@ -50,5 +51,7 @@ void dispatchToMain (dispatch_block_t block);
 NSString * getDataSha1(NSData *data);
 
 +(NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html;
+
++ (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData;
 
 @end

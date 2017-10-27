@@ -34,12 +34,12 @@
 /**
  * Clean up the cache if the current cache reaches the maximum cache of 0.8
  */
-@property (nonatomic,assign)unsigned long long cacheDirectorySizeWarningPercent;
+@property (nonatomic,assign)float cacheDirectorySizeWarningPercent;
 
 /**
  * Clean up the cache to the maximum cache of 0.2
  */
-@property (nonatomic,assign)unsigned long long cacheDirectorySizeSafePercent;
+@property (nonatomic,assign)float cacheDirectorySizeSafePercent;
 
 /**
  * The memory cache maximum count

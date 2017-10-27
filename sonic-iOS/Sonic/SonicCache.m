@@ -182,7 +182,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     
     SonicCacheItem *session = [self cacheForSession:sessionID];
     
-    return session.hasLocalCache;
+    return session.hasLocalCache? NO:YES;
 }
 
 - (BOOL)isServerDisableSonic:(NSString *)sessionID
@@ -283,44 +283,8 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 #pragma mark - 接口
 
-- (SonicCacheItem *)  saveFirstWithHtmlData:(NSData *)htmlData
-        withResponseHeaders:(NSDictionary *)headers
-            withUrl:(NSString *)url
-{
-    NSString *sessionID = sonicSessionID(url);
-    
-    if (!htmlData || headers.count == 0 || sessionID.length == 0) {
-        return nil;
-    }
-    
-    SonicCacheItem *cacheItem = [self cacheForSession:sessionID];
-    
-    cacheItem.htmlData = htmlData;
-    
-    NSString *htmlString = [[[NSString alloc]initWithData:htmlData encoding:NSUTF8StringEncoding] autorelease];
-    NSDictionary *splitResult = [self splitTemplateAndDataFromHtmlData:htmlString];
-    
-    if (!splitResult) {
-        return nil;
-    }
-    
-    cacheItem.templateString = splitResult[kSonicTemplateFieldName];
-    cacheItem.dynamicData = splitResult[kSonicDataFieldName];
-    NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
-    NSString *sha1 = getDataSha1(htmlData);
-    [config setObject:sha1 forKey:kSonicSha1];
-    cacheItem.config = config;
-    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
-    cacheItem.cacheResponseHeaders = filterResponseHeaders;
-    
-    dealInFileQueue(^{
-        [self saveHtmlData:htmlData withConfig:config withTemplate:splitResult[kSonicTemplateFieldName] dynamicData:splitResult[kSonicDataFieldName]  withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
-    });
-    
-    return cacheItem;
-}
-
 - (SonicCacheItem *)updateWithJsonData:(NSData *)jsonData
+                        withHtmlString:(NSString *)htmlString
                    withResponseHeaders:(NSDictionary *)headers
                          withUrl:(NSString *)url
 {
@@ -343,13 +307,21 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
     
     NSMutableDictionary *dynamicData = [NSMutableDictionary dictionaryWithDictionary:cacheItem.dynamicData];
-    NSDictionary *mergeResult = [self mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData withTemplate:cacheItem.templateString];
-    if (!mergeResult) {
-        return nil;
+    NSDictionary *mergeResult = [SonicUitil mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData];
+    
+    NSData *htmlData = nil;
+    if (htmlString.length > 0) {
+        htmlData = [htmlString dataUsingEncoding:NSUTF8StringEncoding];
+    }else{
+        //merge new dynamic data with template string to create new HTML cache
+        NSMutableString *html = [NSMutableString stringWithString:cacheItem.templateString];
+        for (NSString *key in dynamicData.allKeys) {
+            [html replaceOccurrencesOfString:key withString:dynamicData[key] options:NSCaseInsensitiveSearch range:NSMakeRange(0, html.length)];
+        }
+        htmlData = [html dataUsingEncoding:NSUTF8StringEncoding];
     }
     
     cacheItem.dynamicData = dynamicData;
-    NSData *htmlData =  [mergeResult[@"html"] dataUsingEncoding:NSUTF8StringEncoding];
     cacheItem.htmlData = htmlData;
     cacheItem.diffData = mergeResult[@"diff"];
     NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
@@ -360,34 +332,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
     dealInFileQueue(^{
-        [self saveHtmlData:htmlData withConfig:config withTemplate:nil dynamicData:dynamicData withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:YES];
-    });
-    
-    return cacheItem;
-}
-
-- (SonicCacheItem *)saveUnStrictModeWithHtmlData:(NSData *)htmlData
-                           withResponseHeaders:(NSDictionary *)headers
-                                       withUrl:(NSString *)url
-{
-    NSString *sessionID = sonicSessionID(url);
-    
-    if (!htmlData || headers.count == 0 || sessionID.length == 0) {
-        return nil;
-    }
-    
-    SonicCacheItem *cacheItem = [self cacheForSession:sessionID];
-    
-    cacheItem.htmlData = htmlData;
-    NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
-    NSString *sha1 = getDataSha1(htmlData);
-    [config setObject:sha1 forKey:kSonicSha1];
-    cacheItem.config = config;
-    NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
-    cacheItem.cacheResponseHeaders = filterResponseHeaders;
-    
-    dealInFileQueue(^{
-        [self unStrictModeSaveHtmlData:htmlData withConfig:config withResponseHeaders:filterResponseHeaders withSessionID:cacheItem.sessionID];
+        [self saveHtmlData:htmlData withConfig:config withTemplate:cacheItem.templateString dynamicData:dynamicData withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:YES];
     });
     
     return cacheItem;
@@ -533,71 +478,6 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
 }
 
-- (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html
-{
-    //using sonicdiff tag to split the HTML to template and dynamic data.
-    NSError *error = nil;
-    NSRegularExpression *reg = [NSRegularExpression regularExpressionWithPattern:@"<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->" options:NSRegularExpressionCaseInsensitive error:&error];
-    if (error) {
-        return nil;
-    }
-    
-    //create dynamic data
-    NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
-    
-    NSMutableDictionary *dataDict = [NSMutableDictionary dictionary];
-    [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSString *matchStr = [html substringWithRange:obj.range];
-        NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
-        NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
-        NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
-        [dataDict setObject:matchStr forKey:formatKey];
-    }];
-    
-    //create template
-    NSMutableString *mResult = [NSMutableString stringWithString:html];
-    [dataDict enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
-        [mResult replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, mResult.length)];
-    }];
-    
-    //if split HTML faild , we can return nothing ,it is not a validat sonic request.
-    if (dataDict.count == 0 || mResult.length == 0) {
-        return nil;
-    }
-    
-    return @{kSonicDataFieldName:dataDict,kSonicTemplateFieldName:mResult};
-}
-
-- (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData withTemplate:(NSString *)templateString
-{
-    NSMutableDictionary *diffData = [NSMutableDictionary dictionary];
-    
-    //get the diff data between server updateDict and local existData
-    for (NSString *key in updateDict.allKeys) {
-        NSString *updateValue = [updateDict objectForKey:key];
-        if ([existData.allKeys containsObject:key]) {
-            NSString *existValue = [existData objectForKey:key];
-            
-            if (![updateValue isEqualToString:existValue]) {
-                [diffData setObject:updateValue forKey:key];
-                [existData setObject:updateValue forKey:key];
-            }
-        }
-    }
-    
-    //merge new dynamic data with template string to create new HTML cache
-    NSMutableString *html = [NSMutableString stringWithString:templateString];
-    for (NSString *key in existData.allKeys) {
-        [html replaceOccurrencesOfString:key withString:existData[key] options:NSCaseInsensitiveSearch range:NSMakeRange(0, html.length)];
-    }
-    
-    if (html.length == 0) {
-        return nil;
-    }
-
-    return @{@"html":html,@"diff":diffData};
-}
-
 #pragma mark File Operation
 
 void dealInFileQueue(dispatch_block_t block)
@@ -691,7 +571,6 @@ void dealInFileQueue(dispatch_block_t block)
     NSUInteger checkList[4] = {
         SonicCacheTypeHtml,
         SonicCacheTypeTemplate,
-        SonicCacheTypeData,
         SonicCacheTypeResponseHeader
     };
     
@@ -722,9 +601,9 @@ void dealInFileQueue(dispatch_block_t block)
     }
     NSDictionary *extMap = @{
                              @(SonicCacheTypeConfig):@"cfg",
-                             @(SonicCacheTypeTemplate):kSonicTemplateFieldName,
+                             @(SonicCacheTypeTemplate):@"temp",
                              @(SonicCacheTypeHtml):@"html",
-                             @(SonicCacheTypeData):kSonicDataFieldName,
+                             @(SonicCacheTypeData):@"data",
                              @(SonicCacheTypeResponseHeader):@"rsp",
                              };
     NSString *cacheFileName = [sessionID stringByAppendingPathExtension:extMap[@(cacheType)]];
@@ -739,50 +618,9 @@ void dealInFileQueue(dispatch_block_t block)
     });
 }
 
-- (void)unStrictModeSaveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID
-{
-    if (!htmlData || config.count == 0) {
-        return;
-    }
-    
-    //remove template if exist
-    NSString *tempPath = [self filePathWithType:SonicCacheTypeTemplate sessionID:sessionID];
-    if ([SonicFileManager fileExistsAtPath:tempPath]) {
-        [SonicFileManager removeItemAtPath:tempPath error:nil];
-    }
-    
-    //remove dynamic data if exist
-    NSString *dynamicDataPath = [self filePathWithType:SonicCacheTypeData sessionID:sessionID];
-    if ([SonicFileManager fileExistsAtPath:dynamicDataPath]) {
-        [SonicFileManager removeItemAtPath:dynamicDataPath error:nil];
-    }
-    
-    //save HTML data
-    if (htmlData) {
-        NSString *htmlPath = [self filePathWithType:SonicCacheTypeHtml sessionID:sessionID];
-        BOOL isSuccess = [htmlData writeToFile:htmlPath atomically:YES];
-        if (!isSuccess) {
-            return;
-        }
-    }
-    
-    //save the response headers
-    if (responseHeaders.count > 0) {
-        NSString *rspHeaderPath = [self filePathWithType:SonicCacheTypeResponseHeader sessionID:sessionID];
-        BOOL isSuccess = [responseHeaders writeToFile:rspHeaderPath atomically:YES];
-        if (!isSuccess) {
-            [self removeFileCacheOnly:sessionID];
-            return;
-        }
-    }
-    
-    //save the config data
-    [self.database insertWithKeyAndValue:config withSessionID:sessionID];
-}
-
 - (void)saveHtmlData:(NSData *)htmlData withConfig:(NSDictionary *)config withTemplate:(NSString *)templateString dynamicData:(NSDictionary *)dynamicData withResponseHeaders:(NSDictionary *)responseHeaders withSessionID:(NSString *)sessionID isUpdate:(BOOL)isUpdate
 {
-    if (!htmlData || config.count == 0 || dynamicData.count == 0) {
+    if (!htmlData || config.count == 0) {
         return;
     }
     
@@ -878,7 +716,7 @@ void dealInFileQueue(dispatch_block_t block)
     
     if ( percent < [SonicEngine sharedEngine].configuration.cacheDirectorySizeWarningPercent ) {
         
-        return ;
+        return;
         
     }
     

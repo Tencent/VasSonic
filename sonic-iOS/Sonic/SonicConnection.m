@@ -116,6 +116,7 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
     NSMutableArray *policies = [NSMutableArray array];
     [policies addObject:(__bridge id)policyOverride];
     SecTrustSetPolicies(trust, (__bridge CFArrayRef)policies);
+    CFRelease(policyOverride);
     
     OSStatus status = SecTrustEvaluate(trust, &result);
     

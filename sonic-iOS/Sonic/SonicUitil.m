@@ -130,13 +130,11 @@ NSMutableDictionary * queryComponents(NSString *aUrlStr)
     return results;
 }
 
-void dispatchToMain (dispatch_block_t block)
+NSString * dispatchToMain (dispatch_block_t block)
 {
-    if ([NSThread isMainThread]) {
-        block();
-    }else{
-        dispatch_async(dispatch_get_main_queue(), block);
-    }
+    NSBlockOperation *blockOp = [NSBlockOperation blockOperationWithBlock:block];
+    [[NSOperationQueue mainQueue] addOperation:blockOp];
+    return [NSString stringWithFormat:@"%ld",(unsigned long)blockOp.hash];
 }
 
 NSString * getDataSha1(NSData *data)
@@ -170,6 +168,10 @@ NSURLRequest *sonicWebRequest(SonicSession *session, NSURLRequest *originRequest
 
 + (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html
 {
+    if (html.length == 0) {
+        return [NSDictionary dictionary];
+    }
+    
     //using sonicdiff tag to split the HTML to template and dynamic data.
     NSError *error = nil;
     NSRegularExpression *reg = [NSRegularExpression regularExpressionWithPattern:@"<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->" options:NSRegularExpressionCaseInsensitive error:&error];
@@ -194,7 +196,27 @@ NSURLRequest *sonicWebRequest(SonicSession *session, NSURLRequest *originRequest
         
        return @{kSonicDataFieldName:data,kSonicTemplateFieldName:templateString};
     }
-    return @{kSonicDataFieldName:[[NSDictionary alloc]init],kSonicTemplateFieldName:html};
+    return @{kSonicDataFieldName:[NSDictionary dictionary],kSonicTemplateFieldName:html};
+}
+
++ (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData
+{
+    NSMutableDictionary *diffData = [NSMutableDictionary dictionary];
+    
+    //get the diff data between server updateDict and local existData
+    for (NSString *key in updateDict.allKeys) {
+        NSString *updateValue = [updateDict objectForKey:key];
+        if ([existData.allKeys containsObject:key]) {
+            NSString *existValue = [existData objectForKey:key];
+            
+            if (![updateValue isEqualToString:existValue]) {
+                [diffData setObject:updateValue forKey:key];
+                [existData setObject:updateValue forKey:key];
+            }
+        }
+    }
+    
+    return @{kSonicDiffFieldName:diffData};
 }
 
 @end

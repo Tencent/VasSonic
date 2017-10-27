@@ -37,7 +37,7 @@
         
         self.title = @"Sonic";
         
-        self.url = @"https://www.baidu.com";
+        self.url = @"http://mc.vip.qq.com/demo/indexv3";
 
     }
     return self;
@@ -150,7 +150,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 - (void)unstrictModeSonicRequestAction
 {
 //    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://mc.vip.qq.com/demo/indexv2" useSonicMode:YES unStrictMode:YES];
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://www.hupu.com" useSonicMode:YES unStrictMode:YES];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://localhost/b.html" useSonicMode:YES unStrictMode:YES];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 

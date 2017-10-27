@@ -110,8 +110,9 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /**
  * Execute block in sonic session queue.
+ * Return block operation hash string
  */
-void dispatchToSonicSessionQueue(dispatch_block_t block);
+NSString * dispatchToSonicSessionQueue(dispatch_block_t block);
 
 /**
  * Use an url and webDelegate to create an session

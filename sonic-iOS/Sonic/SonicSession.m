@@ -43,6 +43,18 @@
 @property (nonatomic,retain)NSDictionary  *cacheResponseHeaders;
 @property (nonatomic,assign)BOOL didFinishCacheRead;
 
+/**
+ * Use to hold all block operation in sonic session queue
+ * We need to cancel before the SonicSession dealloc
+ */
+@property (nonatomic,retain)NSMutableArray *sonicQueueOperationIdentifiers;
+
+/**
+ * Use to hold all block operation in main queue
+ * We need to cancel before the SonicSession dealloc
+ */
+@property (nonatomic,retain)NSMutableArray *mainQueueOperationIdentifiers;
+
 @end
 
 @implementation SonicSession
@@ -89,7 +101,7 @@
         _configuration = [aConfiguration retain];
         _sessionID = [sonicSessionID(aUrl) copy];
         self.sonicServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
-        [self.sonicServer enableLocalServer:TRUE/*_configuration.enableLocalServer*/];
+        [self.sonicServer enableLocalServer:_configuration.enableLocalServer];
         [self setupData];
     }
     return self;
@@ -98,9 +110,9 @@
 - (void)setupData
 {
     SonicCacheItem *cacheItem = [[SonicCache shareCache] cacheForSession:_sessionID];
-    self.isFirstLoad = cacheItem.hasLocalCache;
+    self.isFirstLoad = cacheItem.hasLocalCache? NO:YES;
     
-    if (!cacheItem.hasLocalCache) {
+    if (cacheItem.hasLocalCache) {
         self.cacheFileData = cacheItem.htmlData;
         self.cacheConfigHeaders = cacheItem.config;
         self.cacheResponseHeaders = cacheItem.cacheResponseHeaders;
@@ -167,6 +179,32 @@
 
 - (void)cancel
 {
+    self.delegate = nil;
+    
+    //remove operation relation this session in SonicSessionQueue and mainQueue
+    NSMutableArray *opNeedCancel = [NSMutableArray array];
+    for (NSString *opIdentifier in self.mainQueueOperationIdentifiers) {
+        for (NSOperation *op in [NSOperationQueue mainQueue].operations) {
+            if (op.hash == [opIdentifier integerValue]) {
+                [opNeedCancel addObject:op];
+            }
+        }
+    }
+    
+    //cancel operation from sonic session queue
+    for (NSString *opIdentifier in self.sonicQueueOperationIdentifiers) {
+        for (NSOperation *op in [SonicSession sonicSessionQueue].operations) {
+            if (op.hash == [opIdentifier integerValue]) {
+                [opNeedCancel addObject:op];
+            }
+        }
+    }
+    
+    //cancel op now
+    [opNeedCancel enumerateObjectsUsingBlock:^(NSOperation *op, NSUInteger idx, BOOL * _Nonnull stop) {
+        [op cancel];
+    }];
+    
     if (self.sonicServer) {
         [self.sonicServer stop];
     }
@@ -217,21 +255,17 @@
     return requestHeaders;
 }
 
-void dispatchToSonicSessionQueue(dispatch_block_t block)
+NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 {
-    NSThread *currentThread = [NSThread currentThread];
-    if([currentThread.name isEqualToString:[SonicSession sonicSessionQueue].name]){
-        block();
-    }else{
-        NSBlockOperation *blkOp = [NSBlockOperation blockOperationWithBlock:block];
-        [[SonicSession sonicSessionQueue] addOperation:blkOp];
-    }
+    NSBlockOperation *blkOp = [NSBlockOperation blockOperationWithBlock:block];
+    [[SonicSession sonicSessionQueue] addOperation:blkOp];
+    return [NSString stringWithFormat:@"%ld",(unsigned long)blkOp.hash];
 }
 
 #pragma mark - SonicServerDelegate
 - (void)server:(SonicServer *)server didRecieveResponse:(NSHTTPURLResponse *)response
 {
-    dispatch_block_t opBlock = ^{
+  dispatch_block_t opBlock = ^{
         
         //sync cookie to NSHTTPCookieStorage
         dispatchToMain(^{
@@ -243,7 +277,9 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             [self firstLoadRecieveResponse:response];
         }
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
+   
 }
 
 - (void)server:(SonicServer *)server didReceiveData:(NSData *)data
@@ -253,7 +289,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             [self firstLoadDidLoadData:data];
         }
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (void)server:(SonicServer *)server didCompleteWithError:(NSError *)error
@@ -266,7 +303,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             [self updateDidFaild];
         }
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (void)serverDidCompleteWithoutError:(SonicServer *)server
@@ -282,7 +320,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         }
         
         //update cache expire time
-        if (![self isStrictMode]) {
+        if (self.configuration.supportCacheControl) {
             
             BOOL canUpdateCacheExpire = NO;
             
@@ -304,7 +342,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         }
         
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 #pragma mark - 首次加载
@@ -358,14 +397,13 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineStore] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {
             
-            SonicCacheItem *cacheItem = nil;
-            
-            
-            if ([self isStrictMode]) {
-                cacheItem =  [[SonicCache shareCache] saveFirstWithHtmlData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
-            }else{
-                cacheItem =  [[SonicCache shareCache] saveUnStrictModeWithHtmlData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
+            NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
+            if (!serverResult) {
+                NSLog(@"Sonic first load item for cache nil");
+                return;
             }
+            
+            SonicCacheItem *cacheItem = [[SonicCache shareCache] saveHtmlString:serverResult[kSonicHtmlFieldName] templateString:serverResult[kSonicTemplateFieldName] dynamicData:serverResult[kSonicDataFieldName] responseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
             
             if (cacheItem) {
                 
@@ -425,6 +463,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         
         if (self.isDataFetchFinished || !self.isFirstLoad) {
             
+            NSLog(@"isDataFetchFinished :%ld isFirstLoad:%ld",self.isDataFetchFinished,self.isFirstLoad);
+            
             if (protocolCallBack) {
                 [self dispatchProtocolActions:[self cacheFileActions]];
             }
@@ -438,7 +478,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         }
         
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (NSArray *)preloadRequestActions
@@ -486,6 +527,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
     }
     
     NSMutableData *cacheData = [[self.cacheFileData mutableCopy] autorelease];
+    NSLog(@"%@",[[NSString alloc]initWithData:cacheData encoding:NSUTF8StringEncoding]);
     NSDictionary *respItem = [self protocolActionItem:SonicURLProtocolActionRecvResponse param:response];
     NSDictionary *dataItem = [self protocolActionItem:SonicURLProtocolActionLoadData param:cacheData];
     NSDictionary *finishItem = [self protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
@@ -511,7 +553,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
         }
         
     };
-    dispatchToSonicSessionQueue(opBlock);
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (NSDictionary *)sonicDiffResult
@@ -566,51 +609,13 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
                 break;
             }
             
-            if ([self isTemplateChange] || ![self isStrictMode]) {
+            if ([self isTemplateChange]) {
                 
-                /* strict mode should check Etag */
-                if(![self isStrictMode]){
-                    
-                    NSString *etag = [self.sonicServer.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
-                    
-                    //If not support no Etag mode, this is error
-                    if(!self.configuration.supportNoEtag && (etag.length == 0 || [etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
-                    {
-                        NSLog(@"require Etag but etag.length=0 or etag isEqual to response.etag");
-                        break;
-                    }
-                    
-                    //If support no Etag mode , check sha1 to decide is html content changed
-                    NSString *sha1 = getDataSha1(self.sonicServer.responseData);
-                    NSString *existSha1 = self.cacheConfigHeaders[kSonicSha1];
-                    
-                    //304 if html content not changed
-                    if(![sha1 isEqualToString:existSha1])
-                    {
-                        [self dealWithTemplateChange];
-                        
-                    }else{
-                        
-                        self.sonicStatusCode = SonicStatusCodeAllCached;
-                        self.sonicStatusFinalCode = SonicStatusCodeAllCached;
-                        
-                        //update headers
-                        [[SonicCache shareCache] saveResponseHeaders:self.sonicServer.response.allHeaderFields withSessionID:self.sessionID];
-                    }
-                    
-                }else{
-                    
-                    [self dealWithTemplateChange];
-                }
+                [self dealWithTemplateChange];
                 
             }else{
                 
-                if ([self isStrictMode]) {
-                    [self dealWithDataUpdate];
-                }else{
-                    //this is exception!!!
-                    [self webViewRequireloadNormalRequest];
-                }
+                [self dealWithDataUpdate];
             }
             
             NSString *policy = [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline];
@@ -652,12 +657,8 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)dealWithTemplateChange
 {
-    SonicCacheItem *cacheItem = nil;
-    if ([self isStrictMode]) {
-        cacheItem = [[SonicCache shareCache] saveFirstWithHtmlData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
-    }else{
-        cacheItem = [[SonicCache shareCache] saveUnStrictModeWithHtmlData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
-    }
+    NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
+    SonicCacheItem *cacheItem = [[SonicCache shareCache] saveHtmlString:serverResult[kSonicHtmlFieldName] templateString:serverResult[kSonicTemplateFieldName] dynamicData:serverResult[kSonicDataFieldName] responseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
     
     if (cacheItem) {
         
@@ -673,7 +674,7 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
             return;
         }
         
-        dispatchToMain(^{
+        NSString *opIdentifier  =  dispatchToMain(^{
             NSString *policy = [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline];
             if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {
                 if (self.delegate && [self.delegate respondsToSelector:@selector(session:requireWebViewReload:)]) {
@@ -682,12 +683,19 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
                 }
             }
         });
+        [self.mainQueueOperationIdentifiers addObject:opIdentifier];
     }
 }
 
 - (void)dealWithDataUpdate
 {
-    SonicCacheItem *cacheItem = [[SonicCache shareCache] updateWithJsonData:self.sonicServer.responseData withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
+    NSString *htmlString = nil;
+    if (self.sonicServer.isInLocalServerMode) {
+        NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
+        htmlString = serverResult[kSonicHtmlFieldName];
+    }
+    
+    SonicCacheItem *cacheItem = [[SonicCache shareCache] updateWithJsonData:self.sonicServer.responseData withHtmlString:htmlString withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
     
     if (cacheItem) {
         
@@ -716,28 +724,30 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)checkAutoCompletionAction
 {
-    dispatchToMain(^{
+    NSString *opIdentifier = dispatchToMain(^{
         if (!self.delegate) {
             if (self.completionCallback) {
                 self.completionCallback(self.sessionID);
             }
         }
     });
+    [self.mainQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (void)webViewRequireloadNormalRequest
 {
-    dispatchToMain(^{
+    NSString *opIdentifier = dispatchToMain(^{
         if (self.delegate || [self.delegate respondsToSelector:@selector(session:requireWebViewReload:)]) {
             NSURLRequest *normalRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:self.url]];
             [self.delegate session:self requireWebViewReload:normalRequest];
         }
     });
+    [self.mainQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 - (BOOL)isSonicResponse
 {
-    return [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline];
+    return [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline].length > 0;
 }
 
 - (BOOL)isTemplateChange
@@ -748,15 +758,5 @@ void dispatchToSonicSessionQueue(dispatch_block_t block)
     NSString *tempChangeTag = [self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplateChange];
     return [tempChangeTag boolValue];
 }
-
-- (BOOL)isStrictMode
-{
-    if ([self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplateChange].length > 0 &&
-        [self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplate].length > 0) {
-        return YES;
-    }
-    return NO;
-}
-
 
 @end

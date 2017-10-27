@@ -74,7 +74,7 @@
 
 - (BOOL)hasLocalCache
 {
-    return self.htmlData.length > 0? NO:YES;
+    return self.htmlData.length > 0? YES:NO;
 }
 
 - (NSString *)lastRefreshTime

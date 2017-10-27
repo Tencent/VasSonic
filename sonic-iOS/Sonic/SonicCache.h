@@ -102,36 +102,6 @@
 - (BOOL)isFirstLoad:(NSString *)sessionID;
 
 /**
- * @brief Split the HTML to dynamic data and template string.
- 
- * @param html the HTML document downloaded by sonic session.
- */
-- (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html;
-
-/**
- * @brief Merge the server data and local dynamic data to create new HTML and the difference data.
- * Step1. Get the difference between the "updateDict" and "existData",
-           Step2. Update "existData" with the "updateDict",then merge with the "templateString",
-           to build the new HTML cache.
- * @result Return the difference data and new HTML string.
- */
-- (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData withTemplate:(NSString *)templateString;
-
-/**
- * @brief First time to save htmlData
- 
- * First time we need split the HTML in two parts: template and dynamic data
- * by the "<sonic-diff" tags.
- * @param htmlData the data download by sonic session,it is the whole HTML document.
- * @param headers the response headers from sonic session.
- * @param url the sonic URL which use to create sessionID for cache item name.
- * @result An cache item which has finish setup template string and dynamic data.
- */
-- (SonicCacheItem *)saveFirstWithHtmlData:(NSData *)htmlData
-            withResponseHeaders:(NSDictionary *)headers
-                  withUrl:(NSString *)url;
-
-/**
  * @brief Generate the new HTML cache with server upate "jsonData".
  
  * @param jsonData The server update data.
@@ -140,16 +110,9 @@
  * @result An cache item which has finish update dynamic data and HTML document cache.
  */
 - (SonicCacheItem *)updateWithJsonData:(NSData *)jsonData
+                        withHtmlString:(NSString *)htmlString
                    withResponseHeaders:(NSDictionary *)headers
                                withUrl:(NSString *)url;
-
-
-/**
- * Save the HTML without split template and dynamic data
- */
-- (SonicCacheItem *)saveUnStrictModeWithHtmlData:(NSData *)htmlData
-                             withResponseHeaders:(NSDictionary *)headers
-                                         withUrl:(NSString *)url;
 
 /**
  * Save all relation datas
@@ -184,7 +147,6 @@
  * Get the file cache update timestamp.
  */
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
-
 
 /**
  * Check file cache size, we keep max cache size 30MB

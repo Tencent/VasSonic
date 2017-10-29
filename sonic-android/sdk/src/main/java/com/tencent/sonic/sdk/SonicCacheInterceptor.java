@@ -22,7 +22,7 @@ import java.io.File;
 /**
  * <code>SonicCacheInterceptor</code> provide local data.
  * if a {@link SonicSessionConfig} does not set a sonicCacheInterceptor
- * sonic will use {@link SonicCacheInterceptorDefaultImpl} as default.
+ * sonic will use {@link SonicSessionConnection.SessionConnectionDefaultImpl} as default.
  *
  */
 public abstract class SonicCacheInterceptor {

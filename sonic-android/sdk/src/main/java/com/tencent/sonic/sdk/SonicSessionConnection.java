@@ -19,20 +19,14 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -221,79 +215,6 @@ public abstract class SonicSessionConnection {
         return responseStream;
     }
 
-    /**
-     * Reads all of data from {@link #getResponseStream()} into byte array output stream. <br>
-     * <p><b>Note: This method blocks until the end of the input stream has been reached</b></p>
-     *
-     * @return Returns a ByteArrayOutputStream that reads from {@link #getResponseStream()}
-     */
-    public synchronized ByteArrayOutputStream getResponseData() {
-        BufferedInputStream responseStream = getResponseStream();
-        if (null != responseStream) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[session.config.READ_BUF_SIZE];
-            try {
-                int n;
-                while (-1 != (n = responseStream.read(buffer))) {
-                    outputStream.write(buffer, 0, n);
-                }
-                return outputStream;
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "getResponseData error:" + e.getMessage() + ".");
-            }
-        }
-        return null;
-    }
-
-    /**
-     * A holder caches information about the input and output stream . Meanwhile this holder indicates the end of
-     *   the input stream has been reached or not.
-     */
-    public static class ResponseDataTuple {
-
-        boolean isComplete;
-
-        String htmlString;
-
-        BufferedInputStream responseStream;
-
-        ByteArrayOutputStream outputStream;
-    }
-
-    /**
-     *  Reads all of data from {@link #getResponseStream()} into byte array output stream {@code outputStream}.
-     *  And then this method returns {@link ResponseDataTuple} object which holds the input and output stream. <br>
-     * <p><b>Note: This method blocks until the end of the input stream has been reached or {@code breakCondition} has been reset to true.</b></p>
-     *
-     * @param breakCondition This method won't read any data from {@link #getResponseStream()} if {@code breakCondition} is false.
-     * @param outputStream   This method will reuse this byte array output stream instead of creating new output stream.
-     * @return
-     *      Returns {@link ResponseDataTuple} caches information about the all of the stream and the state which indicates there is no more data.
-     */
-    public synchronized ResponseDataTuple getResponseData(AtomicBoolean breakCondition, ByteArrayOutputStream outputStream) {
-        BufferedInputStream responseStream = getResponseStream();
-        if (null != responseStream) {
-            if (null == outputStream) {
-                outputStream = new ByteArrayOutputStream();
-            }
-            byte[] buffer = new byte[session.config.READ_BUF_SIZE];
-            try {
-                int n = 0;
-                while (!breakCondition.get() && -1 != (n = responseStream.read(buffer))) {
-                    outputStream.write(buffer, 0, n);
-                }
-                ResponseDataTuple responseDataTuple = new ResponseDataTuple();
-                responseDataTuple.responseStream = responseStream;
-                responseDataTuple.outputStream = outputStream;
-                responseDataTuple.isComplete = -1 == n;
-                return responseDataTuple;
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "getResponseData error:" + e.getMessage() + ".");
-            }
-        }
-        return null;
-    }
-
     protected abstract int internalConnect();
 
     protected abstract BufferedInputStream internalGetResponseStream();
@@ -306,11 +227,7 @@ public abstract class SonicSessionConnection {
          */
         protected final URLConnection connectionImpl;
 
-        /**
-         *  Cached response headers which contains response headers from server and custom response headers from
-         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
-         */
-        protected Map<String, List<String>> cachedResponseHeaders;
+
 
         public SessionConnectionDefaultImpl(SonicSession session, Intent intent) {
             super(session, intent);
@@ -533,51 +450,13 @@ public abstract class SonicSessionConnection {
             return SonicConstants.ERROR_CODE_UNKNOWN;
         }
 
-        /**
-         *  return response headers which contains response headers from server and custom response headers from
-         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
-         *  note: server response headers have high priority than custom headers!
-         */
         @Override
         public Map<String, List<String>> getResponseHeaderFields() {
             if (null == connectionImpl) {
                 return null;
             }
 
-            if (null == cachedResponseHeaders) {
-                // new cachedResponseHeaders
-                cachedResponseHeaders = new HashMap<String, List<String>>();
-                // fill custom headers
-                List<String> tmpHeaderList;
-                if (session.config.customResponseHeaders != null && session.config.customResponseHeaders.size() > 0) {
-                    for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
-                        String key = entry.getKey();
-                        if (!TextUtils.isEmpty(key)) {
-                            tmpHeaderList = cachedResponseHeaders.get(key.toLowerCase());
-                            if (null == tmpHeaderList) {
-                                tmpHeaderList = new ArrayList<String>(1);
-                                cachedResponseHeaders.put(key.toLowerCase(), tmpHeaderList);
-                            }
-                            tmpHeaderList.add(entry.getValue());
-                        }
-                    }
-                }
-
-                // fill real response headers
-                Map<String, List<String>> headersFromServer = connectionImpl.getHeaderFields();
-                Set<Map.Entry<String, List<String>>> entrySet = headersFromServer.entrySet();
-                for (Map.Entry<String, List<String>> entry : entrySet) {
-                    String key = entry.getKey();
-                    if (!TextUtils.isEmpty(key)) {
-                        cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
-                    } else {
-                        cachedResponseHeaders.put(key, entry.getValue());
-                    }
-                }
-
-            }
-
-            return cachedResponseHeaders;
+            return connectionImpl.getHeaderFields();
         }
 
         @Override

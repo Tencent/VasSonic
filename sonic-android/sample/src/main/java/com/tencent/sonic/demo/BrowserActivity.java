@@ -97,7 +97,7 @@ public class BrowserActivity extends Activity {
                     }
                 });
 
-                sessionConfigBuilder.setConnectionIntercepter(new SonicSessionConnectionInterceptor() {
+                sessionConfigBuilder.setConnectionInterceptor(new SonicSessionConnectionInterceptor() {
                     @Override
                     public SonicSessionConnection getConnection(SonicSession session, Intent intent) {
                         return new OfflinePkgSessionConnection(BrowserActivity.this, session, intent);

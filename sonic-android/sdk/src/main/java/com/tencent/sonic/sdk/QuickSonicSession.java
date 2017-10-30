@@ -608,19 +608,19 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         String htmlString = server.getResponseData(false);
 
 
-        boolean hasCacheData = !TextUtils.isEmpty(htmlString);
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:hasCacheData=" + hasCacheData + ".");
+        boolean hasCompletionData = !TextUtils.isEmpty(htmlString);
+        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:hasCompletionData=" + hasCompletionData + ".");
 
         mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_FIRST_LOAD);
         msg.obj = htmlString;
-        msg.arg1 = hasCacheData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
+        msg.arg1 = hasCompletionData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
         mainHandler.sendMessage(msg);
 
         String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
         if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
             try {
-                if (hasCacheData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) {
+                if (hasCompletionData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) { // Otherwise will save cache in com.tencent.sonic.sdk.SonicSession.onServerClosed
                     switchState(STATE_RUNNING, STATE_READY, true);
                     //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
                     Thread.sleep(1500);

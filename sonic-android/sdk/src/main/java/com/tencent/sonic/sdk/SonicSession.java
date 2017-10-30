@@ -538,28 +538,21 @@ public abstract class SonicSession implements Handler.Callback {
         server = new SonicServer(this, sessionData);
 
         // Connect to web server
-        long startTime = System.currentTimeMillis();
         int responseCode = server.connect();
         if (SonicConstants.ERROR_CODE_SUCCESS == responseCode) {
-            statistics.connectionConnectTime = System.currentTimeMillis();
-            if (SonicUtils.shouldLog(Log.DEBUG)) {
-                SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") connection connect cost = " + (System.currentTimeMillis() - startTime) + " ms.");
-            }
-
-            startTime = System.currentTimeMillis();
             responseCode = server.getResponseCode();
-            statistics.connectionRespondTime = System.currentTimeMillis();
-            if (SonicUtils.shouldLog(Log.DEBUG)) {
-                SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") connection response cost = " + (System.currentTimeMillis() - startTime) + " ms.");
-            }
-
             // If the page has set cookie, sonic will set the cookie to kernel.
-            startTime = System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
             Map<String, List<String>> headerFieldsMap = server.getResponseHeaderFields();
             if (SonicUtils.shouldLog(Log.DEBUG)) {
                 SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") connection get header fields cost = " + (System.currentTimeMillis() - startTime) + " ms.");
             }
+
+            startTime = System.currentTimeMillis();
             setCookiesFromHeaders(headerFieldsMap, shouldSetCookieAsynchronous());
+            if (SonicUtils.shouldLog(Log.DEBUG)) {
+                SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") connection set cookies cost = " + (System.currentTimeMillis() - startTime) + " ms.");
+            }
         }
 
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: respCode = " + responseCode + ", cost " + (System.currentTimeMillis() - statistics.connectionFlowStartTime) + " ms.");
@@ -571,7 +564,7 @@ public abstract class SonicSession implements Handler.Callback {
         }
 
         // When response code is 304
-        if (server.isHttpNotModified()) {
+        if (HttpURLConnection.HTTP_NOT_MODIFIED == responseCode) {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: Server response is not modified.");
             handleFlow_NotModified();
             return;
@@ -754,7 +747,7 @@ public abstract class SonicSession implements Handler.Callback {
                     public void run() {
                         String htmlString = server.getResponseData(false);
                         if (SonicUtils.shouldLog(Log.DEBUG)) {
-                            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") onClose:cachedStream size:"
+                            SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") onClose:htmlString size:"
                                     + (!TextUtils.isEmpty(htmlString) ? htmlString.length() : 0));
                         }
 

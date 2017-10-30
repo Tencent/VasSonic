@@ -33,7 +33,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_HTTP;
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_TRUE;
+import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE;
+import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1;
+import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG;
 
 /**
@@ -81,9 +84,33 @@ public class SonicServer implements SonicSessionStream.Callback {
      * @return Returns the response code of connection
      */
     protected int connect() {
-        responseCode = connectionImpl.connect();
+        long startTime = System.currentTimeMillis();
+        int resultCode = connectionImpl.connect();
+        session.statistics.connectionConnectTime = System.currentTimeMillis();
+        if (SonicUtils.shouldLog(Log.DEBUG)) {
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + session.id + ") server connect cost = " + (System.currentTimeMillis() - startTime) + " ms.");
+        }
 
-        //Handle weak ETag
+        if (SonicConstants.ERROR_CODE_SUCCESS != resultCode) {
+            return resultCode; // error case
+        }
+
+        startTime = System.currentTimeMillis();
+        responseCode = connectionImpl.getResponseCode(); // update response code
+        session.statistics.connectionRespondTime = System.currentTimeMillis();
+        if (SonicUtils.shouldLog(Log.DEBUG)) {
+            SonicUtils.log(TAG, Log.DEBUG, "session(" + session.id + ") server response cost = " + (System.currentTimeMillis() - startTime) + " ms.");
+        }
+
+        if (HttpURLConnection.HTTP_NOT_MODIFIED == responseCode) { // nothing needs to do
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+
+        if (HttpURLConnection.HTTP_OK != responseCode) { // error case
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+
+        // fix issue for Weak ETag case [https://github.com/Tencent/VasSonic/issues/128]
         String eTag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         if (!TextUtils.isEmpty(eTag) && eTag.toLowerCase().startsWith("w/")) {
             eTag = eTag.toLowerCase().replace("w/", "");
@@ -91,102 +118,102 @@ public class SonicServer implements SonicSessionStream.Callback {
             addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
         }
 
-        if (responseCode == SonicConstants.ERROR_CODE_SUCCESS && session.config.SUPPORT_SONIC_SERVER) {
-            String cacheOffline = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-            if (TextUtils.isEmpty(cacheOffline)) {
-                cacheOffline = OFFLINE_MODE_TRUE;
-                addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, cacheOffline);
-            } else if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
-                // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
+        String requestETag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String responseETag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        if (!TextUtils.isEmpty(requestETag) && requestETag.equals(responseETag)) {
+            responseCode = HttpURLConnection.HTTP_NOT_MODIFIED; // fix 304 case
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+
+        if (isSonicResponse() || !session.config.SUPPORT_LOCAL_SERVER) {
+            return SonicConstants.ERROR_CODE_SUCCESS; // real sonic response or not support local server
+        }
+
+        String cacheOffline = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+        if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
+            // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+        addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, OFFLINE_MODE_TRUE);
+
+        if (isFirstLoadRequest()) { // first load case
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+
+        // When eTag is empty
+        if (TextUtils.isEmpty(eTag)) {
+            readServerResponse(null);
+            if (!TextUtils.isEmpty(serverRsp)) {
+                eTag = SonicUtils.getSHA1(serverRsp);
+                addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
+            } else {
+                return SonicConstants.ERROR_CODE_CONNECT_IOE;
+            }
+
+            if (requestETag.equals(eTag)) { // 304 case
+                responseCode = HttpURLConnection.HTTP_NOT_MODIFIED;
                 return SonicConstants.ERROR_CODE_SUCCESS;
             }
+        }
 
-            String requestETag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-            if (!TextUtils.isEmpty(requestETag)) {
-                if (HttpURLConnection.HTTP_OK == getResponseCode()) {
-                    String templateChange = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
-
-                    //standard sonic response.
-                    if (!TextUtils.isEmpty(eTag) && !TextUtils.isEmpty(templateChange)) {
-                        return SonicConstants.ERROR_CODE_SUCCESS;
-                    }
-
-                    SonicDataHelper.SessionData sessionData = SonicDataHelper.getSessionData(session.id);
-                    String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-
-                    // When eTag is empty, run fix logic
-                    if (TextUtils.isEmpty(eTag)) {
-                        // Try fix eTag
-                        readServerResponse(null);
-
-                        if (!TextUtils.isEmpty(serverRsp)) {
-                            eTag = SonicUtils.getSHA1(serverRsp);
-                            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
-                            addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
-                        } else {
-                            return SonicConstants.ERROR_CODE_CONNECT_IOE;
-                        }
-                    }
-
-                    // After fix eTag, which may hit 304
-                    if (!TextUtils.isEmpty(eTag) && eTag.equals(sessionData.eTag)) {
-                        responseCode = HttpURLConnection.HTTP_NOT_MODIFIED;
-                        return SonicConstants.ERROR_CODE_SUCCESS;
-                    }
-
-                    //fix templateTag
-                    if (TextUtils.isEmpty(templateChange) && TextUtils.isEmpty(templateTag)) {
-                        if (TextUtils.isEmpty(serverRsp)) {
-                            readServerResponse(null);
-                        }
-
-                        if (!TextUtils.isEmpty(serverRsp)) {
-                            separateTemplateAndData();
-                            templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-                        } else {
-                            return SonicConstants.ERROR_CODE_CONNECT_IOE;
-                        }
-                    }
-
-                    //check If it changes template or update data.
-                    if (!TextUtils.isEmpty(templateTag) && templateTag.equals(sessionData.templateTag)) {
-                        addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE, "false");
-                    } else {
-                        addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE, "true");
-                    }
-                }
+        // When templateTag is empty
+        String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+        if (TextUtils.isEmpty(templateTag)) {
+            if (TextUtils.isEmpty(serverRsp)) {
+                readServerResponse(null);
             }
+            if (!TextUtils.isEmpty(serverRsp)) {
+                separateTemplateAndData();
+                templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+            } else {
+                return SonicConstants.ERROR_CODE_CONNECT_IOE;
+            }
+        }
+
+        //check If it changes template or update data.
+        String requestTemplateTag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        if (requestTemplateTag.equals(templateTag)) {
+            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE, "false");
+        } else {
+            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE, "true");
         }
 
         return SonicConstants.ERROR_CODE_SUCCESS;
     }
 
-    public boolean isHttpNotModified() {
-        if (HttpURLConnection.HTTP_NOT_MODIFIED == responseCode) {
-            return true;
-        } else {
-            String requestETag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-            String responseETag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-            if (!TextUtils.isEmpty(requestETag) && requestETag.equalsIgnoreCase(responseETag)) {
-                return true;
+    private boolean isSonicResponse() {
+        Map<String, List<String>> headersFromServer = connectionImpl.getResponseHeaderFields();
+        if (null != headersFromServer && !headersFromServer.isEmpty()) {
+            Set<Map.Entry<String, List<String>>> entrySet = headersFromServer.entrySet();
+            String KeyInLowercase;
+            for (Map.Entry<String, List<String>> entry : entrySet) {
+                if (!TextUtils.isEmpty(entry.getKey())) {
+                    KeyInLowercase = entry.getKey().toLowerCase();
+                    if (KeyInLowercase.equals(CUSTOM_HEAD_FILED_CACHE_OFFLINE) ||
+                            KeyInLowercase.equals(CUSTOM_HEAD_FILED_TEMPLATE_CHANGE) ||
+                            KeyInLowercase.equals(CUSTOM_HEAD_FILED_TEMPLATE_TAG)) {
+                        return true;
+                    }
+                }
             }
         }
-
         return false;
     }
 
+    private boolean isFirstLoadRequest() {
+        return TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG)) ||
+                TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG));
+    }
+
     public int getResponseCode() {
-        if (responseCode != 0) {
-            return responseCode;
-        } else {
-            return connectionImpl.getResponseCode();
-        }
+        return responseCode;
     }
 
     /**
      * Disconnect the communications link to the resource referenced by Sonic session
      */
-    public  void disconnect() {
+    public void disconnect() {
         connectionImpl.disconnect();
     }
 
@@ -218,13 +245,15 @@ public class SonicServer implements SonicSessionStream.Callback {
 
             // fill real response headers
             Map<String, List<String>> headersFromServer = connectionImpl.getResponseHeaderFields();
-            Set<Map.Entry<String, List<String>>> entrySet = headersFromServer.entrySet();
-            for (Map.Entry<String, List<String>> entry : entrySet) {
-                String key = entry.getKey();
-                if (!TextUtils.isEmpty(key)) {
-                    cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
-                } else {
-                    cachedResponseHeaders.put(key, entry.getValue());
+            if (null != headersFromServer && !headersFromServer.isEmpty()) {
+                Set<Map.Entry<String, List<String>>> entrySet = headersFromServer.entrySet();
+                for (Map.Entry<String, List<String>> entry : entrySet) {
+                    String key = entry.getKey();
+                    if (!TextUtils.isEmpty(key)) {
+                        cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
+                    } else {
+                        cachedResponseHeaders.put(key, entry.getValue());
+                    }
                 }
             }
 
@@ -365,28 +394,31 @@ public class SonicServer implements SonicSessionStream.Callback {
             StringBuilder templateStringBuilder = new StringBuilder();
             StringBuilder dataStringBuilder = new StringBuilder();
             String data = null;
-            String templateTag ;
             if (SonicUtils.separateTemplateAndData(session.id, serverRsp, templateStringBuilder, dataStringBuilder)) {
                 templateString = templateStringBuilder.toString();
                 data = dataStringBuilder.toString();
             }
 
-            if (TextUtils.isEmpty(templateString)) {
-                templateString = serverRsp;
-                templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_HTML_SHA1);
-            } else {
-                templateTag = SonicUtils.getSHA1(templateString);
+            String eTag = getResponseHeaderField(CUSTOM_HEAD_FILED_ETAG);
+            if (TextUtils.isEmpty(eTag)) { // When eTag is empty, fill eTag with Sha1
+                eTag = SonicUtils.getSHA1(serverRsp);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_ETAG, eTag);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
             }
-            addResponseHeaderFields(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
+            if (TextUtils.isEmpty(templateString)) { // The same with htmlString
+                templateString = serverRsp;
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_TEMPLATE_TAG, eTag);
+            } else {
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_TEMPLATE_TAG, SonicUtils.getSHA1(templateString));
+            }
 
             if (!TextUtils.isEmpty(data)) {
                 try {
                     JSONObject object = new JSONObject();
                     object.put("data", new JSONObject(data));
                     object.put("html-sha1", getResponseHeaderField(CUSTOM_HEAD_FILED_HTML_SHA1));
-                    object.put("template-tag", templateTag);
-
+                    object.put("template-tag", getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG));
                     dataString = object.toString();
                 } catch (Exception e) {
                     SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + ") parse server response data error:" + e.getMessage() + ".");
@@ -400,12 +432,6 @@ public class SonicServer implements SonicSessionStream.Callback {
         if (TextUtils.isEmpty(serverRsp) && readComplete) {
             try {
                 serverRsp = outputStream.toString(session.getCharsetFromHeaders());
-                String eTag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-                if (!TextUtils.isEmpty(serverRsp) && TextUtils.isEmpty(eTag)) {
-                    eTag = SonicUtils.getSHA1(serverRsp);
-                    addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
-                    addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
-                }
             } catch (Exception e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + "), onClose error:" + e.getMessage() + ".");
             }

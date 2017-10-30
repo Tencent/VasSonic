@@ -72,10 +72,10 @@ public class SonicSessionConfig {
     boolean SUPPORT_CACHE_CONTROL = false;
 
     /**
-     * Use local Sonic Server or not. If SUPPORT_SONIC_SERVER is true, Sonic will treat normal request as sonic request
+     * Use local Sonic Server or not. If SUPPORT_LOCAL_SERVER is true, Sonic will treat normal request as sonic request
      * to separate html into template and data file.
      */
-    boolean SUPPORT_SONIC_SERVER = false;
+    boolean SUPPORT_LOCAL_SERVER = false;
 
     /**
      * The toast when network unavailable
@@ -202,8 +202,8 @@ public class SonicSessionConfig {
             return this;
         }
 
-        public Builder setSupportSonicServer(boolean enable) {
-            target.SUPPORT_SONIC_SERVER = enable;
+        public Builder setSupportLocalServer(boolean enable) {
+            target.SUPPORT_LOCAL_SERVER = enable;
             return this;
         }
 

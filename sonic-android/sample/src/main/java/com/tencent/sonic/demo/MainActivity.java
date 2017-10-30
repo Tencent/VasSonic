@@ -30,12 +30,7 @@ import android.widget.Toast;
 import com.tencent.sonic.R;
 import com.tencent.sonic.sdk.SonicConfig;
 import com.tencent.sonic.sdk.SonicEngine;
-import com.tencent.sonic.sdk.SonicSession;
 import com.tencent.sonic.sdk.SonicSessionConfig;
-import com.tencent.sonic.sdk.SonicSessionConnection;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -88,7 +83,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-                sessionConfigBuilder.setSupportSonicServer(true);
+                sessionConfigBuilder.setSupportLocalServer(true);
 
                 // preload session
                 boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfigBuilder.build());

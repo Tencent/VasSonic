@@ -23,7 +23,6 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -241,23 +240,18 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             long startTime = System.currentTimeMillis();
 
             String htmlString = newHtml;
-            ByteArrayOutputStream output;
-            SonicSessionConnection.ResponseDataTuple responseDataTuple = null;
+            // When serverRsp is empty
             if (TextUtils.isEmpty(htmlString)) {
-                output = new ByteArrayOutputStream();
-                responseDataTuple = sessionConnection.getResponseData(wasOnPageFinishInvoked, output);
-                if (responseDataTuple == null) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple = null!");
+                pendingWebResourceStream = server.getResponseStream(wasOnPageFinishInvoked);
+                if (pendingWebResourceStream == null) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:server.getResponseStream = null!");
                     return;
                 }
-                htmlString = responseDataTuple.htmlString;
+
+                htmlString = server.getResponseData(false);
             }
 
-            String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-
-            if (null != responseDataTuple && responseDataTuple.isComplete && TextUtils.isEmpty(htmlString)) {
-                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
-            }
+            String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
             Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
             msg.arg1 = msg.arg2 = SONIC_RESULT_CODE_TEMPLATE_CHANGE;
@@ -265,7 +259,6 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             synchronized (webResponseLock) {
                 if (!wasInterceptInvoked.get()) {
                     if (!TextUtils.isEmpty(htmlString)) {
-                        pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
                         msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
                         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_TemplateChange:oh yeah, templateChange load hit 304.");
                     } else {
@@ -276,16 +269,6 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                     if (SonicUtils.needRefreshPage(cacheOffline)) {
                         Bundle data = new Bundle();
                         data.putBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, true);
-                        if (null != responseDataTuple) {
-                            if (responseDataTuple.isComplete) {
-                                pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
-                            } else {
-                                pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
-                            }
-                        } else {
-                            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple is null!");
-                            return;
-                        }
                     }
                 }
                 isCachePendingStream.set(false);
@@ -298,7 +281,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             }
 
             //save and separate data
-            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
                 switchState(STATE_RUNNING, STATE_READY, true);
                 if (!TextUtils.isEmpty(htmlString)) {
                     try {
@@ -345,21 +328,21 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
      *
      */
     protected void handleFlow_FirstLoad() {
-        SonicSessionConnection.ResponseDataTuple responseDataTuple = sessionConnection.getResponseData(wasInterceptInvoked, null);
-        if (null == responseDataTuple) {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:responseDataTuple is null!");
+        synchronized (webResponseLock) {
+            pendingWebResourceStream = server.getResponseStream(wasInterceptInvoked);
+        }
+
+        if (null == pendingWebResourceStream) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:server.getResponseStream is null!");
             return;
         }
 
         Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
         msg.arg1 = msg.arg2 = SONIC_RESULT_CODE_FIRST_LOAD;
-        String htmlString = responseDataTuple.htmlString;
-        if (responseDataTuple.isComplete && TextUtils.isEmpty(htmlString)) {
+        String htmlString = server.getResponseData(false);
+
+        if (!TextUtils.isEmpty(htmlString)) {
             try {
-                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
-                synchronized (webResponseLock) {
-                    pendingWebResourceStream = new ByteArrayInputStream(htmlString.getBytes());
-                }
                 msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
                 SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:oh yeah, first load hit 304.");
             } catch (Throwable e) {
@@ -368,11 +351,8 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                 }
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:" + e.getMessage() + ".");
             }
-        } else {
-            synchronized (webResponseLock) {
-                pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
-            }
         }
+
         isCachePendingStream.set(false);
 
         mainHandler.sendMessage(msg);
@@ -380,8 +360,8 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
         boolean hasCacheData = !TextUtils.isEmpty(htmlString);
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:hasCacheData=" + hasCacheData + ".");
 
-        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-        if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+        String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+        if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
             try {
                 if (hasCacheData) {
                     switchState(STATE_RUNNING, STATE_READY, true);
@@ -411,24 +391,26 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
      */
     protected void handleFlow_DataUpdate(String serverRsp) {
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: start.");
-        ByteArrayOutputStream output = null;
 
         try {
+            String htmlSha1 = null;
+            String htmlString = null;
+
             if (TextUtils.isEmpty(serverRsp)) {
-                output = sessionConnection.getResponseData();
-                if (output != null) {
-                    serverRsp = output.toString(getCharsetFromHeaders());
-                }
+                serverRsp = server.getResponseData(true);
+            } else {
+                htmlString = server.getResponseData(false);
+                htmlSha1 = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1);
             }
 
             if (TextUtils.isEmpty(serverRsp)) {
                 return;
             }
 
-            final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-            final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+            final String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            final String templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
-            String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+            String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
             long startTime = System.currentTimeMillis();
             JSONObject serverRspJson = new JSONObject(serverRsp);
@@ -457,12 +439,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
 
             startTime = System.currentTimeMillis();
 
-            final String htmlSha1 ;
-            final String htmlString;
-            if (!TextUtils.isEmpty(sessionConnection.getServerRsp())) {
-                htmlString = sessionConnection.getServerRsp();
-                htmlSha1 = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1);
-            } else {
+            if (TextUtils.isEmpty(htmlString)) {
                 htmlSha1 = serverRspJson.optString("html-sha1");
                 htmlString = SonicUtils.buildHtml(id, serverDataJson, htmlSha1, serverRsp.length());
             }
@@ -489,7 +466,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             }
 
             if (null == diffDataJson || null == htmlString
-                    || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+                    || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
                 SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
                 SonicUtils.removeSessionCache(id);
             }
@@ -499,7 +476,7 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
             Thread.yield();
 
             startTime = System.currentTimeMillis();
-            Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
+            Map<String, List<String>> headers = server.getResponseHeaderFields();
             if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString(), headers)) {
                 long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
                 SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);
@@ -511,14 +488,6 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
 
         } catch (Throwable e) {
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate error:" + e.getMessage());
-        } finally {
-            try {
-                if (output != null) {
-                    output.close();
-                }
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate close output stream error:" + e.getMessage());
-            }
         }
 
     }

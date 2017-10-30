@@ -182,8 +182,8 @@ public class SonicSessionConfig {
             return this;
         }
 
-        public Builder setConnectionIntercepter(SonicSessionConnectionInterceptor intercepter) {
-            target.connectionInterceptor = intercepter;
+        public Builder setConnectionInterceptor(SonicSessionConnectionInterceptor interceptor) {
+            target.connectionInterceptor = interceptor;
             return this;
         }
 

@@ -71,8 +71,8 @@
 
 - (BOOL)execSql:(NSString *)sql
 {
+    
     int ret = sqlite3_exec(_db, sql.UTF8String, NULL, NULL, NULL);
-    NSLog(@"execSql:%@ result:%d",sql,ret);
     
     return ret == SQLITE_OK;
 }
@@ -125,6 +125,7 @@
                 v = [NSString stringWithUTF8String:value];
             }
             NSString *keyStr = [NSString stringWithUTF8String:key];
+            //database not support -
             keyStr = [keyStr stringByReplacingOccurrencesOfString:@"_" withString:@"-"];
             [resultDict setObject:v forKey:keyStr];
         }
@@ -132,13 +133,15 @@
     
     sqlite3_finalize(stmt);
     
-    NSLog(@"querySql:%@ result:%@",sql,resultDict);
-    
     return resultDict;
 }
 
 - (BOOL)insertWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID
 {
+    if (keyValues.count == 0) {
+        return NO;
+    }
+    
     //clear if exist
     NSString *isExistSql = [NSString stringWithFormat:@"select 'sessionID' from config where sessionID = '%@'",sessionID];
     BOOL isExist = [self execSql:isExistSql];

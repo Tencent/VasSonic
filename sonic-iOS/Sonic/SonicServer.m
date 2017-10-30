@@ -26,19 +26,29 @@ static NSMutableArray *sonicRequestClassArray = nil;
 static NSLock *sonicRequestClassLock;
 
 @interface SonicServer()<SonicConnectionDelegate>
+
 /** Connection instance which uses to connect web-server. */
 @property (nonatomic,retain)SonicConnection *connection;
+
 /** Use this delegate to communicate with sonic session. */
 @property (nonatomic,assign)id<SonicServerDelegate> delegate;
+
 /** Queue for connection delegate operation. */
 @property (nonatomic,retain)NSOperationQueue* delegateQueue;
+
 @property (nonatomic,assign)BOOL enableLocalSever;
-@property (nonatomic,copy)NSDictionary *customResponseHeaders;
+
+@property (nonatomic,retain)NSDictionary *customResponseHeaders;
+
 @property (nonatomic,assign)BOOL isCompletion;
+
 /** htmlString -> templateString + data. */
-@property (nonatomic,copy)NSString *htmlString;
-@property (nonatomic,copy)NSString *templateString;
-@property (nonatomic,copy)NSDictionary *data;
+@property (nonatomic,retain)NSString *htmlString;
+
+@property (nonatomic,retain)NSString *templateString;
+
+@property (nonatomic,retain)NSDictionary *data;
+
 @end
 
 @implementation SonicServer
@@ -117,10 +127,11 @@ static NSLock *sonicRequestClassLock;
 {
     if (nil == self.connection) {
         Class customRequest = [self canCustomRequest];
-        if (!customRequest) { // If there no custom request ,then use the default
+        if (!customRequest) {
+            // If there no custom request ,then use the default
             customRequest = [SonicConnection class];
         }
-        self.connection = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
+        self.connection = [[[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue] autorelease];
         [self.connection startLoading];
     }
 }
@@ -344,7 +355,7 @@ static NSLock *sonicRequestClassLock;
             _responseData = [[NSMutableData data] retain];
         }
         NSData *copyData = [data copy];
-        [_responseData appendData:data];
+        [_responseData appendData:copyData];
         [copyData release];
     }
     
@@ -416,7 +427,9 @@ static NSLock *sonicRequestClassLock;
                     _response = [newResponse retain];
                     [_responseData release];
                     _responseData = nil;
-                    _responseData = [[jsonData mutableCopy] retain];
+                    NSMutableData *mJsonData = [jsonData mutableCopy];
+                    _responseData = [mJsonData retain];
+                    [mJsonData release];
                     break;
                 }
             }

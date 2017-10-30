@@ -27,7 +27,7 @@
 
 @interface SonicEngine ()
 
-@property (nonatomic,retain)NSRecursiveLock *lock;
+@property (nonatomic,retain)NSLock *lock;
 @property (nonatomic,retain)NSMutableDictionary *tasks;
 @property (nonatomic,retain)NSMutableDictionary *ipDomains;
 @property (nonatomic,copy)NSString *userAgent;
@@ -107,7 +107,7 @@
 - (void)setupEngine
 {
     _configuration = [[SonicConfiguration defaultConfiguration] retain];
-    self.lock = [NSRecursiveLock new];
+    self.lock = [NSLock new];
     self.tasks = [NSMutableDictionary dictionary];
     self.ipDomains = [NSMutableDictionary dictionary];
 }
@@ -183,6 +183,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration
 {
+    //If there is preload Sonic, the aWebDelegate may be nil, so we need't checkup aWebDelegate
     if (url.length == 0 || ![NSURL URLWithString:url]) {
         return;
     }

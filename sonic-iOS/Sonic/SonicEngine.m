@@ -1,5 +1,5 @@
 //
-//  SonicClient.m
+//  SonicEngine.m
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -21,35 +21,35 @@
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
 #endif
 
-#import "SonicClient.h"
+#import "SonicEngine.h"
 #import "SonicCache.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 
-@interface SonicClient ()
+@interface SonicEngine ()
 
-@property (nonatomic,retain)NSRecursiveLock *lock;
+@property (nonatomic,retain)NSLock *lock;
 @property (nonatomic,retain)NSMutableDictionary *tasks;
 @property (nonatomic,retain)NSMutableDictionary *ipDomains;
 @property (nonatomic,copy)NSString *userAgent;
 
 @end
 
-@implementation SonicClient
+@implementation SonicEngine
 
-+ (SonicClient *)sharedClient
++ (SonicEngine *)sharedEngine
 {
-    static SonicClient *_client = nil;
+    static SonicEngine *_engine = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _client = [[self alloc]init];
+        _engine = [[self alloc]init];
     });
-    return _client;
+    return _engine;
 }
 
 - (instancetype)init
 {
     if (self = [super init]) {
-        [self setupClient];
+        [self setupEngine];
     }
     return self;
 }
@@ -66,6 +66,14 @@
     _userAgent = [aUserAgent copy];
 }
 
+- (NSString *)getGlobalUserAgent
+{
+    if (_userAgent.length > 0) {
+        return _userAgent;
+    }
+    return SonicDefaultUserAgent;
+}
+
 - (void)runWithConfiguration:(SonicConfiguration *)aConfiguration
 {
     [_configuration release];
@@ -73,24 +81,19 @@
     _configuration = [aConfiguration retain];
 }
 
-- (void)setCurrentUserUniqIdentifier:(NSString *)userIdentifier
+- (void)setCurrentUserAccount:(NSString *)userAccount
 {
-    if (userIdentifier.length == 0 || [_currentUserUniq isEqualToString:userIdentifier]) {
+    if (userAccount.length == 0 || [_currentUserAccount isEqualToString:userAccount]) {
         return;
     }
-    if (_currentUserUniq) {
-        [_currentUserUniq release];
-        _currentUserUniq = nil;
+    if (_currentUserAccount) {
+        [_currentUserAccount release];
+        _currentUserAccount = nil;
     }
-    _currentUserUniq = [userIdentifier copy];
+    _currentUserAccount = [userAccount copy];
     
     //create root cache path by user id
     [[SonicCache shareCache] setupCacheDirectory];
-}
-
-- (NSString *)sonicDefaultUserAgent
-{
-    return SonicDefaultUserAgent;
 }
 
 - (void)addDomain:(NSString *)domain withIpAddress:(NSString *)ipAddress
@@ -101,10 +104,10 @@
     [self.ipDomains setObject:ipAddress forKey:domain];
 }
 
-- (void)setupClient
+- (void)setupEngine
 {
     _configuration = [[SonicConfiguration defaultConfiguration] retain];
-    self.lock = [NSRecursiveLock new];
+    self.lock = [NSLock new];
     self.tasks = [NSMutableDictionary dictionary];
     self.ipDomains = [NSMutableDictionary dictionary];
 }
@@ -180,6 +183,11 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 
 - (void)createSessionWithUrl:(NSString *)url withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate withConfiguration:(SonicSessionConfiguration *)configuration
 {
+    //If there is preload Sonic, the aWebDelegate may be nil, so we need't checkup aWebDelegate
+    if (url.length == 0 || ![NSURL URLWithString:url]) {
+        return;
+    }
+    
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
         return;
     }
@@ -193,14 +201,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     
     if (!existSession) {
-        
-        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate];
-        if (configuration.customResponseHeaders.count > 0) {
-            [existSession addCustomResponseHeaders:configuration.customResponseHeaders];
-        }
-        if (configuration.customRequestHeaders.count > 0) {
-            [existSession addCustomRequestHeaders:configuration.customRequestHeaders];
-        }
+        existSession = [[SonicSession alloc] initWithUrl:url withWebDelegate:aWebDelegate Configuration:configuration];
         
         NSURL *cUrl = [NSURL URLWithString:url];
         existSession.serverIP = [self.ipDomains objectForKey:cUrl.host];
@@ -216,7 +217,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
         [existSession start];
         [existSession release];
 
-    }else{
+    } else {
         
         if (existSession.delegate == nil) {
             existSession.delegate = aWebDelegate;
@@ -244,6 +245,22 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     [self.lock unlock];
     
+    return findSession;
+}
+
+- (SonicSession *)sessionWithDelegateId:(NSString *)delegateId
+{
+    SonicSession *findSession = nil;
+    if (delegateId.length != 0) {
+        [self.lock lock];
+        for (SonicSession *session in self.tasks.allValues) {
+            if ([delegateId isEqualToString:session.delegateId]) {
+                findSession = session;
+                break;
+            }
+        }
+        [self.lock unlock];
+    }
     return findSession;
 }
 

@@ -23,7 +23,7 @@
 
 #import "SonicConnection.h"
 
-@interface SonicConnection ()<NSURLSessionDelegate,NSURLSessionDataDelegate>
+@interface SonicConnection ()<NSURLSessionDelegate, NSURLSessionDataDelegate>
 
 @property (nonatomic,retain)NSURLSession *dataSession;
 @property (nonatomic,retain)NSURLSessionDataTask *dataTask;
@@ -37,19 +37,20 @@
     return YES;
 }
 
-- (instancetype)initWithRequest:(NSURLRequest *)aRequest
+- (instancetype)initWithRequest:(NSURLRequest *)aRequest delegate:(id<SonicConnectionDelegate>)delegate delegateQueue:(NSOperationQueue *)queue
 {
-    if (self = [super init]) {
-        _request = [aRequest retain];
+    if (self == [super init]) {
+        self.request = aRequest;
+        self.delegate = delegate;
+        self.delegateQueue = queue;
     }
     return self;
 }
 
 - (void)dealloc
 {
-    if (self.session) {
-        self.session = nil;
-    }
+    self.delegate = nil;
+    self.delegateQueue = nil;
     
     [self stopLoading];
     
@@ -69,7 +70,7 @@
     /**
      * NSURLSession will retain it's delegate,so you must remember do cancel action to avoid memory leak
      */
-    self.dataSession = [NSURLSession sessionWithConfiguration:sessionCfg delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
+    self.dataSession = [NSURLSession sessionWithConfiguration:sessionCfg delegate:self delegateQueue:self.delegateQueue];
     self.dataTask = [self.dataSession dataTaskWithRequest:self.request];
     [self.dataTask resume];
 }
@@ -88,10 +89,18 @@
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error
 {
+    // Fix case:statusCode is 304 but [error] is not nil.
     if (error) {
-        [self.session session:self.session didFaild:error];
-    }else{
-        [self.session sessionDidFinish:self.session];
+        NSHTTPURLResponse *tmpResponse = (NSHTTPURLResponse *)task.response;
+        if (304 == tmpResponse.statusCode) {
+            error = nil;
+        }
+    }
+    
+    if (error) {
+        [self.delegate connection:self didCompleteWithError:error];
+    } else {
+        [self.delegate connectionDidCompleteWithoutError:self];
     }
 }
 
@@ -107,18 +116,15 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
     NSMutableArray *policies = [NSMutableArray array];
     [policies addObject:(__bridge id)policyOverride];
     SecTrustSetPolicies(trust, (__bridge CFArrayRef)policies);
+    CFRelease(policyOverride);
     
     OSStatus status = SecTrustEvaluate(trust, &result);
     
     if (status == errSecSuccess && (result == kSecTrustResultProceed || result == kSecTrustResultUnspecified)) {
-        
         NSURLCredential *cred = [NSURLCredential credentialForTrust:trust];
         completionHandler(NSURLSessionAuthChallengeUseCredential, cred);
-        
     } else {
-        
         completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
-        
     }
 }
 
@@ -127,24 +133,27 @@ didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
 {
     completionHandler(NSURLSessionResponseAllow);
-    [self.session session:self.session didRecieveResponse:(NSHTTPURLResponse *)response];
+    [self.delegate connection:self didReceiveResponse:(NSHTTPURLResponse *)response];
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
 {
-    completionHandler(request);
+    completionHandler(nil);
+    // Since HTTPRedirection may preform middle-page, HTTPRedirection is not support in Sonic now.
+    NSError *redirectErr = [NSError errorWithDomain:@"com.sonic.connection" code:302 userInfo:@{@"msg":@"sonic is not support HTTPRedirection!"}];
+    [self.delegate connection:self didCompleteWithError:redirectErr];
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
     didReceiveData:(NSData *)data
 {
-    [self.session session:self.session didLoadData:data];
+    [self.delegate connection:self didReceiveData:data];
 }
 
 - (void)URLSession:(NSURLSession *)session didBecomeInvalidWithError:(nullable NSError *)error
 {
     if (error) {
-        [self.session session:self.session didFaild:error];
+        [self.delegate connection:self didCompleteWithError:error];
     }
 }
 

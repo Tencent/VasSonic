@@ -34,17 +34,22 @@
 /**
  * Clean up the cache if the current cache reaches the maximum cache of 0.8
  */
-@property (nonatomic,assign)unsigned long long cacheDirectorySizeWarningPercent;
+@property (nonatomic,assign)float cacheDirectorySizeWarningPercent;
 
 /**
  * Clean up the cache to the maximum cache of 0.2
  */
-@property (nonatomic,assign)unsigned long long cacheDirectorySizeSafePercent;
+@property (nonatomic,assign)float cacheDirectorySizeSafePercent;
 
 /**
  * The memory cache maximum count
  */
 @property (nonatomic,assign)unsigned long long maxMemroyCacheItemCount;
+
+/**
+ * The max cache time under strict-mode:false,default is 5 min
+ */
+@property (nonatomic,assign)unsigned long long maxUnStrictModeCacheSeconds;
 
 /**
  * Return default configuration

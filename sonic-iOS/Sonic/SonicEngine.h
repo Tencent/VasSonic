@@ -1,5 +1,5 @@
 //
-//  SonicClient.h
+//  SonicEngine.h
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -26,10 +26,10 @@
 /**
  * Manage all sonic sessions.
  */
-@interface SonicClient : NSObject
+@interface SonicEngine : NSObject
 
 /* Return the unique identifier for current user */
-@property (nonatomic,readonly)NSString *currentUserUniq;
+@property (nonatomic,readonly)NSString *currentUserAccount;
 
 /* Return the global custom User-Agent */
 @property (nonatomic,readonly)NSString *userAgent;
@@ -38,7 +38,7 @@
 @property (nonatomic,readonly)SonicConfiguration *configuration;
 
 /* Share the instance */
-+ (SonicClient *)sharedClient;
++ (SonicEngine *)sharedEngine;
 
 /**
  * Client must run with the configuration,default use [SonicConfiguration defaultConfiguration]
@@ -49,9 +49,9 @@
  * Set an unique identifier for the user.
  * We can use the identifier to create different cache dir for different users.
  
- * @param userIdentifier the unique identifier for the special user
+ * @param userAccount the unique identifier for the special user
  */
-- (void)setCurrentUserUniqIdentifier:(NSString *)userIdentifier;
+- (void)setCurrentUserAccount:(NSString *)userAccount;
 
 /**
  * @brief Clear all session memory and file caches.
@@ -77,16 +77,18 @@
 - (void)addDomain:(NSString *)domain withIpAddress:(NSString *)ipAddress;
 
 /**
- * Return the default user-agent used by sonic.
- */
-- (NSString *)sonicDefaultUserAgent;
-
-/**
  * Set global custom User-Agent.
  
  * @param aUserAgent the custom User-Agent
  */
 - (void)setGlobalUserAgent:(NSString *)aUserAgent;
+
+/**
+ * Get global custom User-Agent.
+ 
+ * return the custom User-Agent
+ */
+- (NSString *)getGlobalUserAgent;
 
 /**
  * Get the last update timestamp of this URL.
@@ -120,6 +122,11 @@
  * Find the session with webDelegate.
  */
 - (SonicSession *)sessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
+
+/**
+ * Find the session with webDelegateId.
+ */
+- (SonicSession *)sessionWithDelegateId:(NSString *)delegateId;
 
 /**
  * Get the patch between local data and server data.

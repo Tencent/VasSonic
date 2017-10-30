@@ -86,7 +86,7 @@ public class BrowserActivity extends Activity {
         // if it's sonic mode , startup sonic session at first time
         if (MainActivity.MODE_DEFAULT != mode) { // sonic mode
             SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-            sessionConfigBuilder.setSupportSonicServer(true);
+            sessionConfigBuilder.setSupportLocalServer(true);
 
             // if it's offline pkg mode, we need to intercept the session connection
             if (MainActivity.MODE_SONIC_WITH_OFFLINE_CACHE == mode) {

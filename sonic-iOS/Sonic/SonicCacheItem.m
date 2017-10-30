@@ -24,7 +24,7 @@
 #import "SonicCacheItem.h"
 #import "SonicCache.h"
 #import "SonicConstants.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 
 
 @implementation SonicCacheItem

@@ -1,5 +1,5 @@
 //
-//  SonicUitil.h
+//  SonicUtil.h
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -22,7 +22,7 @@
 #import "SonicConstants.h"
 #import "SonicSession.h"
 
-@interface SonicUitil : NSObject
+@interface SonicUtil : NSObject
 
 /**
  * Set sonic tag header into originRequest headers

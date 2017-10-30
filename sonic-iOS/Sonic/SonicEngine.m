@@ -23,7 +23,7 @@
 
 #import "SonicEngine.h"
 #import "SonicCache.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 
 @interface SonicEngine ()
 

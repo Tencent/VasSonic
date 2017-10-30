@@ -27,7 +27,7 @@
 #import "SonicServer.h"
 #import "SonicConnection.h"
 #import "SonicCache.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 #import "SonicEngine.h"
 
 @interface SonicSession ()

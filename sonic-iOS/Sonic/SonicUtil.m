@@ -1,5 +1,5 @@
 //
-//  SonicUitil.m
+//  SonicUtil.m
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -21,12 +21,12 @@
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
 #endif
 
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 #import "SonicEngine.h"
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 
-@implementation SonicUitil
+@implementation SonicUtil
 
 NSString *sonicSessionID(NSString *url)
 {

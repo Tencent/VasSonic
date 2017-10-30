@@ -23,7 +23,7 @@
 
 #import "SonicCache.h"
 #import "SonicEngine.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
 #import "SonicDatabase.h"
@@ -307,7 +307,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     }
     
     NSMutableDictionary *dynamicData = [NSMutableDictionary dictionaryWithDictionary:cacheItem.dynamicData];
-    NSDictionary *mergeResult = [SonicUitil mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData];
+    NSDictionary *mergeResult = [SonicUtil mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData];
     
     NSData *htmlData = nil;
     if (htmlString.length > 0) {

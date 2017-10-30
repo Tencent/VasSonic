@@ -32,8 +32,8 @@
 		546B782B1F0105F6003F08AE /* SonicConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B781B1F0105F6003F08AE /* SonicConstants.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B782C1F0105F6003F08AE /* SonicProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B781C1F0105F6003F08AE /* SonicProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B782D1F0105F6003F08AE /* SonicSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B781D1F0105F6003F08AE /* SonicSession.m */; };
-		546B782E1F0105F6003F08AE /* SonicUitil.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B781E1F0105F6003F08AE /* SonicUitil.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		546B782F1F0105F6003F08AE /* SonicUitil.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B781F1F0105F6003F08AE /* SonicUitil.m */; };
+		546B782E1F0105F6003F08AE /* SonicUtil.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B781E1F0105F6003F08AE /* SonicUtil.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		546B782F1F0105F6003F08AE /* SonicUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B781F1F0105F6003F08AE /* SonicUtil.m */; };
 		546B78301F0105F6003F08AE /* SonicURLProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B78201F0105F6003F08AE /* SonicURLProtocol.m */; };
 		546B78311F0105F6003F08AE /* SonicCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78211F0105F6003F08AE /* SonicCache.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78321F0105F6003F08AE /* SonicCacheItem.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78221F0105F6003F08AE /* SonicCacheItem.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -73,8 +73,8 @@
 		546B781B1F0105F6003F08AE /* SonicConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicConstants.h; sourceTree = "<group>"; };
 		546B781C1F0105F6003F08AE /* SonicProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicProtocol.h; sourceTree = "<group>"; };
 		546B781D1F0105F6003F08AE /* SonicSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicSession.m; sourceTree = "<group>"; };
-		546B781E1F0105F6003F08AE /* SonicUitil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicUitil.h; sourceTree = "<group>"; };
-		546B781F1F0105F6003F08AE /* SonicUitil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicUitil.m; sourceTree = "<group>"; };
+		546B781E1F0105F6003F08AE /* SonicUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicUtil.h; sourceTree = "<group>"; };
+		546B781F1F0105F6003F08AE /* SonicUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicUtil.m; sourceTree = "<group>"; };
 		546B78201F0105F6003F08AE /* SonicURLProtocol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicURLProtocol.m; sourceTree = "<group>"; };
 		546B78211F0105F6003F08AE /* SonicCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicCache.h; sourceTree = "<group>"; };
 		546B78221F0105F6003F08AE /* SonicCacheItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicCacheItem.h; sourceTree = "<group>"; };
@@ -146,8 +146,8 @@
 				546B78271F0105F6003F08AE /* SonicURLProtocol.h */,
 				546B781D1F0105F6003F08AE /* SonicSession.m */,
 				546B78261F0105F6003F08AE /* SonicSession.h */,
-				546B781E1F0105F6003F08AE /* SonicUitil.h */,
-				546B781F1F0105F6003F08AE /* SonicUitil.m */,
+				546B781E1F0105F6003F08AE /* SonicUtil.h */,
+				546B781F1F0105F6003F08AE /* SonicUtil.m */,
 				546B78241F0105F6003F08AE /* SonicConnection.h */,
 				546B78251F0105F6003F08AE /* SonicConnection.m */,
 				E43E03441F618182000F30ED /* SonicSessionConfiguration.h */,
@@ -181,7 +181,7 @@
 				546B782B1F0105F6003F08AE /* SonicConstants.h in Headers */,
 				546B78341F0105F6003F08AE /* SonicConnection.h in Headers */,
 				546B78371F0105F6003F08AE /* SonicURLProtocol.h in Headers */,
-				546B782E1F0105F6003F08AE /* SonicUitil.h in Headers */,
+				546B782E1F0105F6003F08AE /* SonicUtil.h in Headers */,
 				546B78361F0105F6003F08AE /* SonicSession.h in Headers */,
 				546B782C1F0105F6003F08AE /* SonicProtocol.h in Headers */,
 				546B78331F0105F6003F08AE /* SonicEngine.h in Headers */,
@@ -314,7 +314,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				546B782F1F0105F6003F08AE /* SonicUitil.m in Sources */,
+				546B782F1F0105F6003F08AE /* SonicUtil.m in Sources */,
 				54C2E2D31F6B79CF003EC647 /* SonicDatabase.m in Sources */,
 				545D61C71F623BED00DA8F3A /* SonicConfiguration.m in Sources */,
 				546B782A1F0105F6003F08AE /* SonicEngine.m in Sources */,

@@ -24,7 +24,7 @@
 #import "SonicURLProtocol.h"
 #import "SonicConstants.h"
 #import "SonicEngine.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 
 @interface SonicURLProtocol ()
 

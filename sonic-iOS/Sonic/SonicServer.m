@@ -20,7 +20,7 @@
 #import "SonicServer.h"
 #import "SonicProtocol.h"
 #import "SonicSession.h"
-#import "SonicUitil.h"
+#import "SonicUtil.h"
 
 static NSMutableArray *sonicRequestClassArray = nil;
 static NSLock *sonicRequestClassLock;
@@ -249,7 +249,7 @@ static NSLock *sonicRequestClassLock;
             NSMutableDictionary *sonicItemDict = [[[NSMutableDictionary alloc]init]autorelease];
             if (0 == self.htmlString.length) { // not split yet
                 self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
-                NSDictionary *splitResult = [SonicUitil splitTemplateAndDataFromHtmlData:self.htmlString];
+                NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
                 self.templateString = splitResult[kSonicTemplateFieldName];
                 self.data = splitResult[kSonicDataFieldName];
                 
@@ -372,7 +372,7 @@ static NSLock *sonicRequestClassLock;
     self.isCompletion = YES;
     if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
         self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
-        NSDictionary *splitResult = [SonicUitil splitTemplateAndDataFromHtmlData:self.htmlString];
+        NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
         if (splitResult) {
             self.templateString = splitResult[kSonicTemplateFieldName];
             self.data = splitResult[kSonicDataFieldName];

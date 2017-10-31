@@ -70,8 +70,6 @@ static NSLock *sonicRequestClassLock;
         self.connection = nil;
     }
     
-    self.delegate = nil;
-    
     if (nil != _request) {
         [_request release];
         _request = nil;
@@ -131,13 +129,18 @@ static NSLock *sonicRequestClassLock;
             // If there no custom request ,then use the default
             customRequest = [SonicConnection class];
         }
-        self.connection = [[[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue] autorelease];
+        SonicConnection *tConnect = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
+        self.connection = tConnect;
+        [tConnect release];
         [self.connection startLoading];
     }
 }
 
 - (void)stop
 {
+    self.delegateQueue = nil;
+    self.delegate = nil;
+    
     if (self.connection) {
        [self.connection stopLoading];
     } else {
@@ -224,13 +227,9 @@ static NSLock *sonicRequestClassLock;
 
 - (void)addRequestHeaderFields:(NSDictionary *)headers
 {
-    if (nil == self.connection) {
-        NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
-        [requestHeaderFileds addEntriesFromDictionary:headers];
-        [self.request setAllHTTPHeaderFields:requestHeaderFileds];
-    } else {
-        NSLog(@"addRequestHeaderFields warning:Request headers should be added only before server start!");
-    }
+    NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
+    [requestHeaderFileds addEntriesFromDictionary:headers];
+    [self.request setAllHTTPHeaderFields:requestHeaderFileds];
 }
 
 - (NSString *)responseHeaderForKey:(NSString *)aKey
@@ -351,16 +350,17 @@ static NSLock *sonicRequestClassLock;
 - (void)connection:(SonicConnection *)connection didReceiveData:(NSData *)data
 {
     if (data) {
+        
         if (nil == _responseData) {
             _responseData = [[NSMutableData data] retain];
         }
         NSData *copyData = [data copy];
         [_responseData appendData:copyData];
         [copyData release];
-    }
-    
-    if ([self isFirstLoadRequest] || !self.isInLocalServerMode) {
-        [self.delegate server:self didReceiveData:data];
+        
+        if ([self isFirstLoadRequest] || !self.isInLocalServerMode) {
+            [self.delegate server:self didReceiveData:data];
+        }
     }
 }
 
@@ -461,7 +461,6 @@ static NSLock *sonicRequestClassLock;
         [self.delegate server:self didReceiveData:self.responseData];
     }
     [self.delegate server:self didCompleteWithError:error];
-    NSLog(@"didCompleteWithError:%@", error);
 }
 
 @end

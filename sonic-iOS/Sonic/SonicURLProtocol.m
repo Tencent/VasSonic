@@ -26,12 +26,6 @@
 #import "SonicEngine.h"
 #import "SonicUtil.h"
 
-@interface SonicURLProtocol ()
-
-@property (nonatomic,assign)long long recvDataLength;
-
-@end
-
 @implementation SonicURLProtocol
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request
@@ -96,7 +90,6 @@
             NSData *recvData = params[kSonicProtocolData];
             if (recvData.length > 0) {
                 [self.client URLProtocol:self didLoadData:recvData];
-                self.recvDataLength += recvData.length;
             }
         }
             break;

@@ -49,9 +49,6 @@
 
 - (void)dealloc
 {
-    self.delegate = nil;
-    self.delegateQueue = nil;
-    
     [self stopLoading];
     
     [_request release];
@@ -77,6 +74,9 @@
 
 - (void)stopLoading
 {
+    self.delegate = nil;
+    self.delegateQueue = nil;
+    
     if (self.dataTask && self.dataTask.state == NSURLSessionTaskStateRunning) {
         [self.dataTask cancel];
         [self.dataSession finishTasksAndInvalidate];

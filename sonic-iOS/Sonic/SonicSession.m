@@ -101,7 +101,9 @@
         self.url = aUrl;
         _configuration = [aConfiguration retain];
         _sessionID = [sonicSessionID(aUrl) copy];
-        self.sonicServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
+        SonicServer *tServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
+        self.sonicServer = tServer;
+        [tServer release];
         [self.sonicServer enableLocalServer:_configuration.enableLocalServer];
         [self setupData];
     }
@@ -132,6 +134,15 @@
         [self.sonicServer stop];
         self.sonicServer = nil;
     }
+    
+    if (_configuration) {
+        [_configuration release];
+        _configuration = nil;
+    }
+    
+    self.cacheConfigHeaders = nil;
+    self.cacheResponseHeaders = nil;
+    self.cacheFileData = nil;
     
     if (self.delegate) {
         self.delegate = nil;
@@ -338,7 +349,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             if (canUpdateCacheExpire) {
                 [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.sonicServer.response.allHeaderFields withSessionID:self.sessionID];
             }else{
-                NSLog(@"unstrict-mode can't update cache expire time");
+                NSLog(@"No Etag can't update cache expire time");
             }
         }
         
@@ -463,9 +474,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         self.protocolCallBack = protocolCallBack;
         
         if (self.isDataFetchFinished || !self.isFirstLoad) {
-            
-            NSLog(@"isDataFetchFinished :%ld isFirstLoad:%ld",self.isDataFetchFinished,self.isFirstLoad);
-            
+                        
             if (protocolCallBack) {
                 [self dispatchProtocolActions:[self cacheFileActions]];
             }
@@ -528,7 +537,6 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     }
     
     NSMutableData *cacheData = [[self.cacheFileData mutableCopy] autorelease];
-    NSLog(@"%@",[[NSString alloc]initWithData:cacheData encoding:NSUTF8StringEncoding]);
     NSDictionary *respItem = [self protocolActionItem:SonicURLProtocolActionRecvResponse param:response];
     NSDictionary *dataItem = [self protocolActionItem:SonicURLProtocolActionLoadData param:cacheData];
     NSDictionary *finishItem = [self protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];

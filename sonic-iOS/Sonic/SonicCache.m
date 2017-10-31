@@ -537,9 +537,7 @@ void dealInFileQueue(dispatch_block_t block)
     NSString *subDir = @"SonicCache";
     
     _rootCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:subDir] copy];
-    
-    NSLog(@"rootCachePath:%@",_rootCachePath);
-    
+        
     return _rootCachePath.length > 0;
 }
 

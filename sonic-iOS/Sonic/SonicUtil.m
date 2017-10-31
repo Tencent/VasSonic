@@ -32,9 +32,9 @@ NSString *sonicSessionID(NSString *url)
 {
     NSString* userAccount = [SonicEngine sharedEngine].currentUserAccount;
     if ([userAccount length] > 0) {
-        return stringFromMD5([NSString stringWithFormat:@"%@_%@",userAccount,sonicUrl(url)]);
+        return stringFromMD5([NSString stringWithFormat:@"%@_%@",userAccount,[SonicUtil sonicUrl:url]]);
     }else{
-        return stringFromMD5([NSString stringWithFormat:@"%@",sonicUrl(url)]);
+        return stringFromMD5([NSString stringWithFormat:@"%@",[SonicUtil sonicUrl:url]]);
     }
 }
 
@@ -57,7 +57,7 @@ NSString *stringFromMD5(NSString *url)
     return [outputString autorelease];
 }
 
-NSString *sonicUrl(NSString *aUrlStr)
++ (NSString *)sonicUrl:(NSString *)aUrlStr
 {
     NSURL *url = [NSURL URLWithString:aUrlStr];
     if (!url) {
@@ -153,7 +153,7 @@ NSString * getDataSha1(NSData *data)
     return output;
 }
 
-NSURLRequest *sonicWebRequest(SonicSession *session, NSURLRequest *originRequest)
++ (NSURLRequest *)sonicWebRequestWithSession:(SonicSession* )session withOrigin:(NSURLRequest *)originRequest
 {
     NSMutableURLRequest *request = [[originRequest mutableCopy]autorelease];
     [request setValue:SonicHeaderValueWebviewLoad forHTTPHeaderField:SonicHeaderKeyLoadType];

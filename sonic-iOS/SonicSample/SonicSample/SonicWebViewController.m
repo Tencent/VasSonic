@@ -72,7 +72,7 @@
     
     SonicSession* session = [[SonicEngine sharedEngine] sessionWithWebDelegate:self];
     if (session) {
-        [self.webView loadRequest:sonicWebRequest(session, request)];
+        [self.webView loadRequest:[SonicUtil sonicWebRequestWithSession:session withOrigin:request]];
     }else{
         [self.webView loadRequest:request];
     }

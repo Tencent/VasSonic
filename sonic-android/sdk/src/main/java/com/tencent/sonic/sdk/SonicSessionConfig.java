@@ -109,7 +109,13 @@ public class SonicSessionConfig {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof SonicSessionConfig && sessionMode == ((SonicSessionConfig) other).sessionMode;
+        if (other instanceof SonicSessionConfig) {
+            SonicSessionConfig config = (SonicSessionConfig)other;
+            return sessionMode == config.sessionMode && SUPPORT_LOCAL_SERVER == config.SUPPORT_LOCAL_SERVER;
+        }
+
+        return false;
+
     }
 
     private SonicSessionConfig() {

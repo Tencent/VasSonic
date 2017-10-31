@@ -398,8 +398,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Ming Huang (RMP465DM7N)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Ming Huang (RMP465DM7N)";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = Q4ZJ4XF89A;
 				INFOPLIST_FILE = SonicSample/Info.plist;
@@ -408,7 +408,7 @@
 				OTHER_CODE_SIGN_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.SonicSample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "9f07cb6d-229d-4571-9238-adb5e90c890e";
+				PROVISIONING_PROFILE = "708a394e-c58f-44b5-af84-8daba31e4d18";
 				PROVISIONING_PROFILE_SPECIFIER = VasQQDev;
 			};
 			name = Debug;
@@ -427,6 +427,7 @@
 				OTHER_CODE_SIGN_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.tencent.SonicSample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Release;

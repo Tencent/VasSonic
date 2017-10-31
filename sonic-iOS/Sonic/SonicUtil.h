@@ -1,5 +1,5 @@
 //
-//  SonicUitil.h
+//  SonicUtil.h
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -20,13 +20,14 @@
 #import <Foundation/Foundation.h>
 #import "SonicConnection.h"
 #import "SonicConstants.h"
+#import "SonicSession.h"
 
-@interface SonicUitil : NSObject
+@interface SonicUtil : NSObject
 
 /**
  * Set sonic tag header into originRequest headers
  */
-NSURLRequest *sonicWebRequest(NSURLRequest *originRequest);
+NSURLRequest *sonicWebRequest(SonicSession* session, NSURLRequest *originRequest);
 
 /**
  * Using MD5 to encode the URL to session ID;
@@ -40,12 +41,17 @@ NSString *sonicUrl(NSString *url);
 
 /**
  * Dispatch block to main thread.
+ * Return block operation hash string
  */
-void dispatchToMain (dispatch_block_t block);
+NSString * dispatchToMain (dispatch_block_t block);
 
 /**
  * Get SHA1 value from data.
  */
 NSString * getDataSha1(NSData *data);
+
++(NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html;
+
++ (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData;
 
 @end

@@ -31,5 +31,19 @@
  */
 @property (nonatomic,retain)NSDictionary *customResponseHeaders;
 
+/**
+ * Support no Etag under unstrict mode
+ */
+@property (nonatomic,assign)BOOL supportNoEtag;
+
+/**
+ * Support Cache-Control or not
+ */
+@property (nonatomic,assign)BOOL supportCacheControl;
+
+/**
+ * Enable Local-Server mode which will simulate response as a standar sonic server.
+ */
+@property (nonatomic,assign)BOOL enableLocalServer;
 
 @end

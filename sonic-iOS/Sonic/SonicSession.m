@@ -336,13 +336,13 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             
             BOOL canUpdateCacheExpire = NO;
             
-            NSString *etag = [self.sonicServer.response.allHeaderFields objectForKey:SonicHeaderKeyETag];
-            if(!self.configuration.supportNoEtag && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
+            NSString *etag = [self.sonicServer responseHeaderForKey:SonicHeaderKeyETag];
+            if(!self.configuration.enableLocalServer && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
             {
                 canUpdateCacheExpire = YES;
             }
             
-            if (self.configuration.supportNoEtag) {
+            if (self.configuration.enableLocalServer) {
                 canUpdateCacheExpire = YES;
             }
             

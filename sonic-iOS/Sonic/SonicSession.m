@@ -688,7 +688,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {
                 if (self.delegate && [self.delegate respondsToSelector:@selector(session:requireWebViewReload:)]) {
                     NSURLRequest *sonicRequest = [NSURLRequest requestWithURL:[NSURL URLWithString:self.url]];
-                    [self.delegate session:self requireWebViewReload:sonicWebRequest(self, sonicRequest)];
+                    [self.delegate session:self requireWebViewReload:[SonicUtil sonicWebRequestWithSession:self withOrigin:sonicRequest]];
                 }
             }
         });

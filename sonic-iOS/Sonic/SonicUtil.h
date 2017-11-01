@@ -27,7 +27,7 @@
 /**
  * Set sonic tag header into originRequest headers
  */
-NSURLRequest *sonicWebRequest(SonicSession* session, NSURLRequest *originRequest);
++ (NSURLRequest *)sonicWebRequestWithSession:(SonicSession* )session withOrigin:(NSURLRequest *)originRequest;
 
 /**
  * Using MD5 to encode the URL to session ID;
@@ -37,7 +37,7 @@ NSString *sonicSessionID(NSString *url);
 /**
  * Create sonic path with URL
  */
-NSString *sonicUrl(NSString *url);
++ (NSString *)sonicUrl:(NSString *)url;
 
 /**
  * Dispatch block to main thread.
@@ -50,8 +50,19 @@ NSString * dispatchToMain (dispatch_block_t block);
  */
 NSString * getDataSha1(NSData *data);
 
+/**
+ * @brief Split the HTML to dynamic data and template string.
+ 
+ * @param html the HTML document downloaded by sonic session.
+ */
 +(NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html;
 
+/**
+ * @brief Merge the server data and local dynamic data to create new HTML and the difference data.
+ * Get the difference between the "updateDict" and "existData"
+
+ * @result Return the difference data
+ */
 + (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData;
 
 @end

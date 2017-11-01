@@ -614,7 +614,8 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             break;
         case 200:
         {
-            if (![self isSonicResponse]) {
+            if (![self isSonicResponse] || [self.sonicServer responseHeaderForKey:SonicHeaderKeyETag].length == 0) {
+                [[SonicCache shareCache] removeCacheBySessionID:self.sessionID];
                 break;
             }
             

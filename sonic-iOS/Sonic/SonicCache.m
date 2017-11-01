@@ -742,7 +742,7 @@ void dealInFileQueue(dispatch_block_t block)
         }];
         
         NSMutableArray *willClearSubDirs = [NSMutableArray array];
-        NSInteger totalReadSize = 0;
+        unsigned long long totalReadSize = 0;
         
         for (NSString *fileItem in sortArray) {
             

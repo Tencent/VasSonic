@@ -40,7 +40,6 @@
             if (state) {
                 SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
                 configuration.customResponseHeaders = @{SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
-                configuration.supportNoEtag = YES;
                 configuration.enableLocalServer = YES;
                 [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
             }else{

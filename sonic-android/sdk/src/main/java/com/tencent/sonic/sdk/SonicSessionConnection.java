@@ -316,15 +316,15 @@ public abstract class SonicSessionConnection {
 
                 String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
                 if (null == eTag) eTag = "";
-                connection.setRequestProperty("if-none-match", eTag);
+                connection.setRequestProperty("If-None-Match", eTag);
 
                 String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                 if (null == templateTag) templateTag = "";
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
                 connection.setRequestProperty("method", "GET");
-                connection.setRequestProperty("accept-Encoding", "gzip");
-                connection.setRequestProperty("accept-Language", "zh-CN,zh;");
+                connection.setRequestProperty("Accept-Encoding", "gzip");
+                connection.setRequestProperty("Accept-Language", "zh-CN,zh;");
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
 
                 // set custom request headers

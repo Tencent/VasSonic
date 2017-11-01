@@ -44,7 +44,7 @@
 /**
  * The memory cache maximum count
  */
-@property (nonatomic,assign)unsigned long long maxMemroyCacheItemCount;
+@property (nonatomic,assign)NSInteger maxMemroyCacheItemCount;
 
 /**
  * The max cache time under strict-mode:false,default is 5 min

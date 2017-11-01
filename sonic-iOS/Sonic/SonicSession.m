@@ -334,23 +334,8 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         //update cache expire time
         if (self.configuration.supportCacheControl) {
             
-            BOOL canUpdateCacheExpire = NO;
-            
-            NSString *etag = [self.sonicServer responseHeaderForKey:SonicHeaderKeyETag];
-            if(!self.configuration.enableLocalServer && (etag.length > 0 && ![etag isEqualToString:self.cacheConfigHeaders[SonicHeaderKeyETag]]))
-            {
-                canUpdateCacheExpire = YES;
-            }
-            
-            if (self.configuration.enableLocalServer) {
-                canUpdateCacheExpire = YES;
-            }
-            
-            if (canUpdateCacheExpire) {
-                [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.sonicServer.response.allHeaderFields withSessionID:self.sessionID];
-            }else{
-                NSLog(@"No Etag can't update cache expire time");
-            }
+            [[SonicCache shareCache] updateCacheExpireTimeWithResponseHeaders:self.sonicServer.response.allHeaderFields withSessionID:self.sessionID];
+
         }
         
     };

@@ -184,9 +184,9 @@
             [self.delegate sessionWillRequest:self];
         }
         [self syncCookies];
+        [self.sonicServer start];
     });
 
-    [self.sonicServer start];
 }
 
 - (void)cancel

@@ -21,18 +21,39 @@
 
 @interface SonicDatabase : NSObject
 
+/**
+ * Init database with dbPath
+ */
 - (instancetype)initWithPath:(NSString *)dbPath;
 
+/**
+ * Insert validate key-value to configs for sessionID
+ */
 - (BOOL)insertWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID;
 
+/**
+ * Update key-value to configs for sessionID
+ */
 - (BOOL)updateWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID;
 
+/**
+ * Query all configs for sessionID
+ */
 - (NSDictionary *)queryAllKeysWithSessionID:(NSString *)sessionID;
 
+/**
+ * Query the key for sessionID
+ */
 - (NSString *)queryKey:(NSString *)key withSessionID:(NSString *)sessionID;
 
+/**
+ * Delete configs for sessionID
+ */
 - (BOOL)clearWithSessionID:(NSString *)sessionID;
 
+/**
+ * close database
+ */
 - (void)close;
 
 @end

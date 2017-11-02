@@ -172,7 +172,7 @@ public class SonicServer implements SonicSessionStream.Callback {
         }
 
         //check If it changes template or update data.
-        String requestTemplateTag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String requestTemplateTag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
         if (requestTemplateTag.equals(templateTag)) {
             addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE, "false");
         } else {
@@ -214,6 +214,21 @@ public class SonicServer implements SonicSessionStream.Callback {
      * Disconnect the communications link to the resource referenced by Sonic session
      */
     public void disconnect() {
+        // We need to close connectionImpl.getResponseStream() manually.
+        // ConnectionImpl.disconnect() doesn't close the stream because doing so would require all stream
+        // access to be synchronized. It's expected that the thread using the
+        // connection will close its streams directly. If it doesn't, the worst
+        // case is that the GzipSource's Inflater won't be released until it's
+        // finalized. (This logs a warning on Android.)
+        try {
+            BufferedInputStream bufferedInputStream = connectionImpl.getResponseStream();
+            if (bufferedInputStream != null) {
+                bufferedInputStream.close();
+            }
+        } catch (Throwable e) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + ") server disconnect error:" + e.getMessage() + ".");
+        }
+
         connectionImpl.disconnect();
     }
 
@@ -429,10 +444,11 @@ public class SonicServer implements SonicSessionStream.Callback {
 
     @Override
     public void onClose(boolean readComplete, ByteArrayOutputStream outputStream) {
-        if (TextUtils.isEmpty(serverRsp) && readComplete) {
+        if (TextUtils.isEmpty(serverRsp) && readComplete && outputStream != null) {
             try {
                 serverRsp = outputStream.toString(session.getCharsetFromHeaders());
-            } catch (Exception e) {
+                outputStream.close();
+            } catch (Throwable e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + "), onClose error:" + e.getMessage() + ".");
             }
         }

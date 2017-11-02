@@ -115,29 +115,41 @@ class SonicSessionStream extends InputStream {
             SonicUtils.log(TAG, Log.INFO, "close: memory stream and socket stream, netStreamReadComplete=" + netStreamReadComplete + ", memStreamReadComplete=" + memStreamReadComplete);
         }
 
+        Throwable error = null;
         try {
             if (null != memStream) {
                 memStream.close();
-                memStream = null;
             }
+        } catch (Throwable e) {
+            SonicUtils.log(TAG, Log.ERROR, "close memStream error:" + e.getMessage());
+            error = e;
+        } finally {
+            memStream = null;
+        }
 
+        try {
             if (null != netStream) {
                 netStream.close();
-                netStream = null;
             }
-
-            Callback callback = callbackWeakReference.get();
-            if (null != callback) {
-                callback.onClose(netStreamReadComplete && memStreamReadComplete, outputStream);
-            }
-            outputStream = null;
-
         } catch (Throwable e) {
-            SonicUtils.log(TAG, Log.ERROR, "close error:" + e.getMessage());
-            if (e instanceof IOException) {
-                throw e;
+            SonicUtils.log(TAG, Log.ERROR, "close netStream error:" + e.getMessage());
+            error = e;
+        } finally {
+            netStream = null;
+        }
+
+        Callback callback = callbackWeakReference.get();
+        if (null != callback) {
+            callback.onClose(netStreamReadComplete && memStreamReadComplete, outputStream);
+        }
+        outputStream = null;
+
+        if (error != null) {
+            SonicUtils.log(TAG, Log.ERROR, "throw error:" + error.getMessage());
+            if (error instanceof IOException) {
+                throw (IOException)error;
             } else { // Turn all exceptions to IO exceptions to prevent scenes that the kernel can not capture
-                throw new IOException(e);
+                throw new IOException(error);
             }
         }
     }

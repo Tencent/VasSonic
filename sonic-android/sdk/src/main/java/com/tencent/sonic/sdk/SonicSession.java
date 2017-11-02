@@ -1102,6 +1102,11 @@ public abstract class SonicSession implements Handler.Callback {
             }
 
             if (null != pendingWebResourceStream) {
+                try {
+                    pendingWebResourceStream.close();
+                } catch (Throwable e) {
+                    SonicUtils.log(TAG, Log.ERROR, "pendingWebResourceStream.close error:" + e.getMessage());
+                }
                 pendingWebResourceStream = null;
             }
 
@@ -1112,7 +1117,7 @@ public abstract class SonicSession implements Handler.Callback {
             clearSessionData();
 
             if (force || canDestroy()) {
-                if (null != server && !force) {
+                if (null != server) {
                     server.disconnect();
                     server = null;
                 }

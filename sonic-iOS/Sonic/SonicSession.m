@@ -179,12 +179,19 @@
         }
     }
     
-    dispatchToMain(^{
+    //dispatch to main , make sure syncCookies before start
+    dispatch_block_t blk = ^{
         if (self.delegate && [self.delegate respondsToSelector:@selector(sessionWillRequest:)]) {
             [self.delegate sessionWillRequest:self];
         }
         [self syncCookies];
-    });
+    };
+    
+    if ([NSThread mainThread]) {
+        blk();
+    }else{
+        dispatch_async(dispatch_get_main_queue(), blk);
+    }
 
     [self.sonicServer start];
 }

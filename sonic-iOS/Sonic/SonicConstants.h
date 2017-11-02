@@ -234,10 +234,10 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * Sonic item field name
  */
-#define kSonicHtmlFieldName                 @"_html_"
-#define kSonicTemplateFieldName             @"_template_"
-#define kSonicDataFieldName                 @"_data_"
-#define kSonicDiffFieldName                 @"_diff_"
+#define kSonicHtmlFieldName                 @"html"
+#define kSonicTemplateFieldName             @"template"
+#define kSonicDataFieldName                 @"data"
+#define kSonicDiffFieldName                 @"diff"
 
 /**
  * HTTP Header:If-None-Match

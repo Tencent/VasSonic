@@ -61,6 +61,8 @@ public class SonicServer implements SonicSessionStream.Callback {
 
     final protected SonicSession session;
 
+    final protected SonicDataHelper.SessionData sessionData;
+
     final protected Intent requestIntent;
 
     /**
@@ -72,6 +74,7 @@ public class SonicServer implements SonicSessionStream.Callback {
 
     public SonicServer(SonicSession session, SonicDataHelper.SessionData sessionData) {
         this.session = session;
+        this.sessionData = sessionData;
         this.requestIntent = session.createConnectionIntent(sessionData);
         connectionImpl = SonicSessionConnectionInterceptor.getSonicSessionConnection(session, requestIntent);
     }
@@ -85,6 +88,12 @@ public class SonicServer implements SonicSessionStream.Callback {
      */
     protected int connect() {
         long startTime = System.currentTimeMillis();
+        if (session.config.SUPPORT_CACHE_CONTROL && startTime < sessionData.expiredTime) {
+            responseCode = HttpURLConnection.HTTP_NOT_MODIFIED; // fix 304 case
+            return SonicConstants.ERROR_CODE_SUCCESS;
+        }
+
+
         int resultCode = connectionImpl.connect();
         session.statistics.connectionConnectTime = System.currentTimeMillis();
         if (SonicUtils.shouldLog(Log.DEBUG)) {

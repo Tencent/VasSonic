@@ -134,7 +134,10 @@ public class SonicServer implements SonicSessionStream.Callback {
             // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
             return SonicConstants.ERROR_CODE_SUCCESS;
         }
-        addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, OFFLINE_MODE_TRUE);
+
+        if (TextUtils.isEmpty(cacheOffline)) {
+            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, OFFLINE_MODE_TRUE);
+        }
 
         if (isFirstLoadRequest()) { // first load case
             return SonicConstants.ERROR_CODE_SUCCESS;

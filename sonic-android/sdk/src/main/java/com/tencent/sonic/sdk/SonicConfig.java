@@ -40,6 +40,11 @@ public class SonicConfig {
     long SONIC_CACHE_CHECK_TIME_INTERVAL = 24 * 60 * 60 * 1000L;
 
     /**
+     * The max age of sonic cache before expired.
+     */
+    int SONIC_CACHE_MAX_AGE = 5 * 60 * 1000;
+
+    /**
      * Whether verify file by compare SHA1. If this value is false, sonic will verify file by file's size.
      * Verify the file size is less time consuming than checking SHA1.
      */
@@ -105,6 +110,11 @@ public class SonicConfig {
 
         public Builder setGetCookieWhenSessionCreate(boolean value) {
             target.GET_COOKIE_WHEN_SESSION_CREATE = value;
+            return this;
+        }
+
+        public Builder setSonicCacheMaxAge(int maxAge) {
+            target.SONIC_CACHE_MAX_AGE = maxAge;
             return this;
         }
 

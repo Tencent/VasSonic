@@ -249,6 +249,7 @@ public class SonicServer implements SonicSessionStream.Callback {
      *  return response headers which contains response headers from server and custom response headers from
      *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
      *  note: server response headers have high priority than custom headers!
+     *  @return a Map of header fields
      */
     public  Map<String, List<String>> getResponseHeaderFields() {
         if (null == cachedResponseHeaders) {

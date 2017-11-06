@@ -127,9 +127,9 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeySDKVersion @"sonic-sdk-version"
 
 /**
- * Current sonic version: Sonic/1.0.
+ * Current sonic version: Sonic/2.0.0
  */
-#define SonicHeaderValueSDKVersion @"Sonic/1.0"
+#define SonicHeaderValueSDKVersion @"Sonic/2.0.0"
 
 /**
  * Pass template tag through this field.
@@ -234,10 +234,10 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * Sonic item field name
  */
-#define kSonicHtmlFieldName                 @"_html_"
-#define kSonicTemplateFieldName             @"_template_"
-#define kSonicDataFieldName                 @"_data_"
-#define kSonicDiffFieldName                 @"_diff_"
+#define kSonicHtmlFieldName                 @"html"
+#define kSonicTemplateFieldName             @"template"
+#define kSonicDataFieldName                 @"data"
+#define kSonicDiffFieldName                 @"diff"
 
 /**
  * HTTP Header:If-None-Match

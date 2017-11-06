@@ -181,7 +181,7 @@ public abstract class SonicRuntime {
 
     /**
      * Get user agent of current runtime, this method will be called before sonic session make a
-     * session connection to request data.(sonic sdk info such like "sonic-sdk-version/1.1.1" will
+     * session connection to request data.(sonic sdk info such like "sonic-sdk-version/2.0.0" will
      * be added to this user agent.)
      * @return The user agent
      */

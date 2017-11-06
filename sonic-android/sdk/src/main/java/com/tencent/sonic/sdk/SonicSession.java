@@ -636,6 +636,7 @@ public abstract class SonicSession implements Handler.Callback {
 
     /**
      * Handle template update {@link SonicSession#SONIC_RESULT_CODE_TEMPLATE_CHANGE} logic.
+     * @param newHtml new Html string from web-server
      */
     protected abstract void handleFlow_TemplateChange(String newHtml);
 

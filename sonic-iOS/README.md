@@ -4,6 +4,18 @@
 [![wiki](https://img.shields.io/badge/Wiki-open-brightgreen.svg)](https://github.com/Tencent/VasSonic/wiki)
 ---
 
+### 2.0.0-alpha support! 
+To integrate VasSonic into your Xcode project using CocoaPods, specify it in your Podfile:
+
+```lua
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+target 'TargetName' do
+    pod 'VasSonic', '2.0.0-alpha'
+end
+```
+
 ### support cocoapods 
 To integrate VasSonic into your Xcode project using CocoaPods, specify it in your Podfile:
 

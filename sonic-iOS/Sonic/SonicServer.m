@@ -289,14 +289,25 @@ static NSLock *sonicRequestClassLock;
 
 #pragma Help functions
 
-- (Boolean)isSonicResponse:(NSHTTPURLResponse *)response
+- (BOOL)isSonicResponse:(NSHTTPURLResponse *)response
 {
-    if ([response.allHeaderFields objectForKey:SonicHeaderKeyCacheOffline] ||
-        [response.allHeaderFields objectForKey:SonicHeaderKeyTemplate] ||
-        [response.allHeaderFields objectForKey:SonicHeaderKeyTemplateChange]) {
-        return YES;
+    if ([response.allHeaderFields[SonicHeaderKeyCacheOffline] length] == 0) {
+        return NO;
     }
-    return NO;
+    
+    if ([response.allHeaderFields[SonicHeaderKeyETag] length] == 0) {
+        return NO;
+    }
+    
+    if ([response.allHeaderFields[SonicHeaderKeyTemplateChange] length] == 0) {
+        return NO;
+    }
+    
+    if ([response.allHeaderFields[SonicHeaderKeyTemplate] length] == 0) {
+        return NO;
+    }
+    
+    return YES;
 }
 
 - (BOOL)isFirstLoadRequest
@@ -334,7 +345,7 @@ static NSLock *sonicRequestClassLock;
     _response = [newResponse retain];
     
     // Not sonic response and enabel local-server
-    if (![self isSonicResponse:response] && self.enableLocalSever) {
+    if (![self isSonicResponse:response] && self.enableLocalSever && self.response.statusCode == 200) {
         _isInLocalServerMode = true;
         if (![self isFirstLoadRequest]) {
             return; // not first load request just return util all data are received.
@@ -371,6 +382,7 @@ static NSLock *sonicRequestClassLock;
 {
     self.isCompletion = YES;
     if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
+        
         self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
         NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
         if (splitResult) {

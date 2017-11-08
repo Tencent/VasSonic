@@ -59,8 +59,10 @@
 
 - (void)close
 {
+    if (!_db) {
+        return;
+    }
     sqlite3_close(_db);
-    sqlite3_free(_db);
     _db = nil;
 }
 

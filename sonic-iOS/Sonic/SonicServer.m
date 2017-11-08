@@ -289,6 +289,27 @@ static NSLock *sonicRequestClassLock;
 
 #pragma Help functions
 
+- (BOOL)isValidateSonicResponse:(NSHTTPURLResponse *)response
+{
+    if ([response.allHeaderFields[SonicHeaderKeyCacheOffline] length] == 0) {
+        return NO;
+    }
+    
+    if ([response.allHeaderFields[SonicHeaderKeyETag] length] == 0) {
+        return NO;
+    }
+    
+    if ([response.allHeaderFields[SonicHeaderKeyTemplateChange] length] == 0) {
+        return NO;
+    }
+    
+    if ([response.allHeaderFields[SonicHeaderKeyTemplate] length] == 0) {
+        return NO;
+    }
+    
+    return YES;
+}
+
 - (BOOL)isFirstLoadRequest
 {
     return [self.request.allHTTPHeaderFields objectForKey:@"If-None-Match"].length == 0;
@@ -296,23 +317,7 @@ static NSLock *sonicRequestClassLock;
 
 - (BOOL)isSonicResponse
 {
-    if ([self.response.allHeaderFields[SonicHeaderKeyCacheOffline] length] == 0) {
-        return NO;
-    }
-    
-    if ([self.response.allHeaderFields[SonicHeaderKeyETag] length] == 0) {
-        return NO;
-    }
-    
-    if ([self.response.allHeaderFields[SonicHeaderKeyTemplateChange] length] == 0) {
-        return NO;
-    }
-    
-    if ([self.response.allHeaderFields[SonicHeaderKeyTemplate] length] == 0) {
-        return NO;
-    }
-    
-    return YES;
+    return [self isValidateSonicResponse:self.response];
 }
 
 #pragma Sonic Connection Delegate
@@ -344,7 +349,7 @@ static NSLock *sonicRequestClassLock;
     _response = [newResponse retain];
     
     // Not sonic response and enabel local-server
-    if (![self isSonicResponse] && self.enableLocalSever && self.response.statusCode == 200) {
+    if (![self isValidateSonicResponse:response] && self.enableLocalSever && self.response.statusCode == 200) {
         _isInLocalServerMode = true;
         if (![self isFirstLoadRequest]) {
             return; // not first load request just return util all data are received.

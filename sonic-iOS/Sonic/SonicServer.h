@@ -63,6 +63,8 @@
 
 - (NSString *)responseHeaderForKey:(NSString *)aKey;
 
+- (BOOL)isSonicResponse;
+
 - (void)enableLocalServer:(BOOL)enable;
 
 - (void)start;

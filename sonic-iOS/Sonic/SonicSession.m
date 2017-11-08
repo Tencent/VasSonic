@@ -384,7 +384,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)dealWithFirstLoad
 {
-    if ([self isSonicResponse]) {
+    if ([self isCorrectSonicResponse]) {
         
         NSString *policy = [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline];
         
@@ -606,8 +606,9 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             break;
         case 200:
         {
-            if (![self isSonicResponse] || [self.sonicServer responseHeaderForKey:SonicHeaderKeyETag].length == 0) {
+            if (![self isCorrectSonicResponse]) {
                 [[SonicCache shareCache] removeCacheBySessionID:self.sessionID];
+                NSLog(@"Clear cache because while not sonic repsonse!");
                 break;
             }
             
@@ -747,14 +748,30 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     [self.mainQueueOperationIdentifiers addObject:opIdentifier];
 }
 
-- (BOOL)isSonicResponse
+- (BOOL)isCorrectSonicResponse
 {
-    return [self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline].length > 0;
+    if ([self.sonicServer responseHeaderForKey:SonicHeaderKeyCacheOffline].length == 0) {
+        return NO;
+    }
+    
+    if ([self.sonicServer responseHeaderForKey:SonicHeaderKeyETag].length == 0) {
+        return NO;
+    }
+    
+    if ([self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplate].length == 0) {
+        return NO;
+    }
+    
+    if ([self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplateChange].length == 0) {
+        return NO;
+    }
+    
+    return YES;
 }
 
 - (BOOL)isTemplateChange
 {
-    if (![self isSonicResponse]) {
+    if (![self isCorrectSonicResponse]) {
         return NO;
     }
     NSString *tempChangeTag = [self.sonicServer responseHeaderForKey:SonicHeaderKeyTemplateChange];

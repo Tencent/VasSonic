@@ -127,11 +127,18 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     [self setupCacheOfflineTimeCfgDict];
     
     //setup database
-    NSString *dbPath = [self.rootCachePath stringByAppendingPathComponent:SonicCacheDatabase];
-    self.database = [[SonicDatabase alloc]initWithPath:dbPath];
+    [self setupDatabase];
     
     //release the memory cache when did recieved memory warning
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(memoryWarningClearCache) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+}
+
+- (void)setupDatabase
+{
+    NSString *dbPath = [self.rootCachePath stringByAppendingPathComponent:SonicCacheDatabase];
+    SonicDatabase *tDatabase = [[SonicDatabase alloc]initWithPath:dbPath];
+    self.database = tDatabase;
+    [tDatabase release];
 }
 
 - (void)memoryWarningClearCache
@@ -143,8 +150,12 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 {
     //we need clear or setup file in file queue
     dealInFileQueue(^{
+        //close database
+        self.database = nil;
         [SonicFileManager removeItemAtPath:_rootCachePath error:nil];
         [self setupCacheDirectory];
+        //rebuild database
+        [self setupDatabase];
     });
     
     //we need clear or create memory cache in sonic queue

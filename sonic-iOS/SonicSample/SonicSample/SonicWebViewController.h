@@ -27,6 +27,6 @@
 @property (nonatomic,assign)long long clickTime;
 @property (nonatomic,strong)JSContext *jscontext;
 
-- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic;
+- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic unStrictMode:(BOOL)state;
 
 @end

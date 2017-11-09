@@ -28,7 +28,7 @@
 
 @implementation SonicWebViewController
 
-- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic
+- (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic unStrictMode:(BOOL)state
 {
     if (self = [super init]) {
         
@@ -37,7 +37,14 @@
         self.clickTime = (long long)([[NSDate date]timeIntervalSince1970]*1000);
         
         if (isSonic) {
-            [[SonicClient sharedClient] createSessionWithUrl:self.url withWebDelegate:self];
+            if (state) {
+                SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
+                configuration.customResponseHeaders = @{SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh};
+                configuration.enableLocalServer = YES;
+                [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
+            }else{
+                [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self];
+            }
         }
     }
     return self;
@@ -48,7 +55,7 @@
     self.sonicContext.owner = nil;
     self.sonicContext = nil;
     self.jscontext = nil;
-    [[SonicClient sharedClient] removeSessionWithWebDelegate:self];
+    [[SonicEngine sharedEngine] removeSessionWithWebDelegate:self];
 }
 
 - (void)loadView
@@ -62,8 +69,9 @@
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.url]];
     
-    if ([[SonicClient sharedClient] sessionWithWebDelegate:self]) {
-        [self.webView loadRequest:sonicWebRequest(request)];
+    SonicSession* session = [[SonicEngine sharedEngine] sessionWithWebDelegate:self];
+    if (session) {
+        [self.webView loadRequest:[SonicUtil sonicWebRequestWithSession:session withOrigin:request]];
     }else{
         [self.webView loadRequest:request];
     }

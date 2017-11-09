@@ -23,40 +23,25 @@
 
 #import "SonicURLProtocol.h"
 #import "SonicConstants.h"
-#import "SonicClient.h"
-#import "SonicUitil.h"
-
-@interface SonicURLProtocol ()
-
-@property (nonatomic,assign)BOOL didFinishRecvResponse;
-@property (nonatomic,assign)long long recvDataLength;
-
-@end
+#import "SonicEngine.h"
+#import "SonicUtil.h"
 
 @implementation SonicURLProtocol
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request
 {    
     NSString *value = [request.allHTTPHeaderFields objectForKey:SonicHeaderKeyLoadType];
-    
-    if (value.length == 0) {
-        return NO;
-    }
-    
-    if ([value isEqualToString:SonicHeaderValueSonicLoad]) {
-        return NO;
-        
-    }else if([value isEqualToString:SonicHeaderValueWebviewLoad]) {
-        
-        //check if session exist for request
-        SonicSession *session = [[SonicClient sharedClient] sessionById:sonicSessionID(request.URL.absoluteString)];
-        if (session) {
-            return YES;
+    if (value.length != 0 && [value isEqualToString:SonicHeaderValueWebviewLoad]) {
+        NSString * delegateId = [request.allHTTPHeaderFields objectForKey:SonicHeaderKeyDelegateId];
+        if (delegateId.length != 0) {
+            NSString * sessionID = sonicSessionID(request.URL.absoluteString);
+            SonicSession *session = [[SonicEngine sharedEngine] sessionWithDelegateId:delegateId];
+            if (session && [sessionID isEqualToString:session.sessionID]) {
+                return YES;
+            }
+            NSLog(@"SonicURLProtocol.canInitWithRequest error:Cannot find sonic session!");
         }
-        
-        return NO;
     }
-    
     return NO;
 }
 
@@ -73,7 +58,7 @@
     
     __weak typeof(self) weakSelf = self;
     
-    [[SonicClient sharedClient] registerURLProtocolCallBackWithSessionID:sessionID completion:^(NSDictionary *param) {
+    [[SonicEngine sharedEngine] registerURLProtocolCallBackWithSessionID:sessionID completion:^(NSDictionary *param) {
         
         [weakSelf performSelector:@selector(callClientActionWithParams:) onThread:currentThread withObject:param waitUntilDone:NO];
         
@@ -97,25 +82,19 @@
     switch (action) {
         case SonicURLProtocolActionRecvResponse:
         {
-            if (!self.didFinishRecvResponse) {
-                NSHTTPURLResponse *resp = params[kSonicProtocolData];
-                [self.client URLProtocol:self didReceiveResponse:resp cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-                self.didFinishRecvResponse = YES;
-            }
+            NSHTTPURLResponse *resp = params[kSonicProtocolData];
+            [self.client URLProtocol:self didReceiveResponse:resp cacheStoragePolicy:NSURLCacheStorageNotAllowed];
         }
             break;
         case SonicURLProtocolActionLoadData:
         {
-            if (self.didFinishRecvResponse) {
-                NSData *recvData = params[kSonicProtocolData];
-                if (recvData.length > 0) {
-                    [self.client URLProtocol:self didLoadData:recvData];
-                    self.recvDataLength = self.recvDataLength + recvData.length;
-                }
+            NSData *recvData = params[kSonicProtocolData];
+            if (recvData.length > 0) {
+                [self.client URLProtocol:self didLoadData:recvData];
             }
         }
             break;
-        case SonicURLProtocolActionDidFinish:
+        case SonicURLProtocolActionDidSuccess:
         {
             [self.client URLProtocolDidFinishLoading:self];
         }
@@ -125,8 +104,6 @@
             NSError *err = params[kSonicProtocolData];
             [self.client URLProtocol:self didFailWithError:err];
         }
-            break;
-        default:
             break;
     }
 }

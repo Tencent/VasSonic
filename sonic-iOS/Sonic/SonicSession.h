@@ -20,6 +20,7 @@
 #import <Foundation/Foundation.h>
 #import "SonicProtocol.h"
 #import "SonicConstants.h"
+#import "SonicSessionConfiguration.h"
 
 /**
  * SonicSession use this callback to transfer network data to SonicURLProtocol.
@@ -43,15 +44,15 @@ typedef void(^SonicURLProtocolCallBack) (NSDictionary *param);
 typedef void(^SonicWebviewCallBack)  (NSDictionary *result);
 
 /**
- * SonicSession use this callback to notify SonicClient when it finished.
+ * SonicSession use this callback to notify SonicEngine when it finished.
  */
 typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /**
- * SonicClient will create one SonicSession for each URL request.
+ * SonicEngine will create one SonicSession for each URL request.
  * SonicSession will get network data from SonicConnection and split HTML data to template and dynamic data.
  */
-@interface SonicSession : NSObject<SonicSessionProtocol>
+@interface SonicSession : NSObject<SonicServerDelegate>
 
 /** If there is no memory cache and file cache exist */
 @property (nonatomic,assign)BOOL isFirstLoad;
@@ -71,11 +72,14 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 /** Notify the webView holder what happened during the connection.*/
 @property (nonatomic,assign)id<SonicSessionDelegate> delegate;
 
-/** SonicSession use this callback to notify SonicClient when it finished. */
+/** A NSString value to identify SonicSessionDelegate*/
+@property (nonatomic,copy)NSString *delegateId;
+
+/** SonicSession use this callback to notify SonicEngine when it finished. */
 @property (nonatomic,copy)SonicSessionCompleteCallback completionCallback;
 
-/** Check if all data did finish updated */
-@property (nonatomic,assign)BOOL isDataUpdated;
+/** Check if all data did finish updated*/
+@property (nonatomic,assign)BOOL isDataFetchFinished;
 
 /** Sonic status code. */
 @property (nonatomic,assign)SonicStatusCode sonicStatusCode;
@@ -85,6 +89,9 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /** Set this property to connect server directly with ip. Without this property sonic will connect to server with domain normally. */
 @property (nonatomic,copy)NSString *serverIP;
+
+/** Return the session configuration */
+@property (nonatomic,readonly)SonicSessionConfiguration *configuration;
 
 /**
  * Register a SonicConnection Class to provide network data.
@@ -103,24 +110,15 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /**
  * Execute block in sonic session queue.
+ * Return block operation hash string
  */
-void dispatchToSonicSessionQueue(dispatch_block_t block);
+NSString * dispatchToSonicSessionQueue(dispatch_block_t block);
 
 /**
  * Use an url and webDelegate to create an session
  * The webDelegate can be nil value
  */
-- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
-
-/**
- * Add custom headers to request.
- */
-- (void)addCustomRequestHeaders:(NSDictionary *)requestHeaders;
-
-/**
- * Add custom headers to response.
- */
-- (void)addCustomResponseHeaders:(NSDictionary *)responseHeaders;
+- (instancetype)initWithUrl:(NSString *)aUrl withWebDelegate:(id<SonicSessionDelegate>)aWebDelegate Configuration:(SonicSessionConfiguration *)aConfiguration;
 
 /**
  * Start request.

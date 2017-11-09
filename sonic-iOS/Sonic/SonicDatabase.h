@@ -1,5 +1,5 @@
 //
-//  SonicUitil.h
+//  SonicDatabase.h
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -18,34 +18,42 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "SonicConnection.h"
-#import "SonicConstants.h"
 
-@interface SonicUitil : NSObject
+@interface SonicDatabase : NSObject
 
 /**
- * Set sonic tag header into originRequest headers
+ * Init database with dbPath
  */
-NSURLRequest *sonicWebRequest(NSURLRequest *originRequest);
+- (instancetype)initWithPath:(NSString *)dbPath;
 
 /**
- * Using MD5 to encode the URL to session ID;
+ * Insert validate key-value to configs for sessionID
  */
-NSString *sonicSessionID(NSString *url);
+- (BOOL)insertWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID;
 
 /**
- * Create sonic path with URL
+ * Update key-value to configs for sessionID
  */
-NSString *sonicUrl(NSString *url);
+- (BOOL)updateWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID;
 
 /**
- * Dispatch block to main thread.
+ * Query all configs for sessionID
  */
-void dispatchToMain (dispatch_block_t block);
+- (NSDictionary *)queryAllKeysWithSessionID:(NSString *)sessionID;
 
 /**
- * Get SHA1 value from data.
+ * Query the key for sessionID
  */
-NSString * getDataSha1(NSData *data);
+- (NSString *)queryKey:(NSString *)key withSessionID:(NSString *)sessionID;
+
+/**
+ * Delete configs for sessionID
+ */
+- (BOOL)clearWithSessionID:(NSString *)sessionID;
+
+/**
+ * close database
+ */
+- (void)close;
 
 @end

@@ -72,9 +72,10 @@ public class SonicSessionConfig {
     boolean SUPPORT_CACHE_CONTROL = false;
 
     /**
-     * Support noETag or not
+     * Use local Sonic Server or not. If SUPPORT_LOCAL_SERVER is true, Sonic will treat normal request as sonic request
+     * to separate html into template and data file.
      */
-    boolean SUPPORT_NO_ETAG = false;
+    boolean SUPPORT_LOCAL_SERVER = false;
 
     /**
      * The toast when network unavailable
@@ -108,7 +109,13 @@ public class SonicSessionConfig {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof SonicSessionConfig && sessionMode == ((SonicSessionConfig) other).sessionMode;
+        if (other instanceof SonicSessionConfig) {
+            SonicSessionConfig config = (SonicSessionConfig)other;
+            return sessionMode == config.sessionMode && SUPPORT_LOCAL_SERVER == config.SUPPORT_LOCAL_SERVER;
+        }
+
+        return false;
+
     }
 
     private SonicSessionConfig() {
@@ -181,8 +188,8 @@ public class SonicSessionConfig {
             return this;
         }
 
-        public Builder setConnectionIntercepter(SonicSessionConnectionInterceptor intercepter) {
-            target.connectionInterceptor = intercepter;
+        public Builder setConnectionInterceptor(SonicSessionConnectionInterceptor interceptor) {
+            target.connectionInterceptor = interceptor;
             return this;
         }
 
@@ -196,13 +203,13 @@ public class SonicSessionConfig {
             return this;
         }
 
-        public Builder setSupportNoEtag(boolean supportNoETag) {
-            target.SUPPORT_NO_ETAG = supportNoETag;
+        public Builder setSupportCacheControl(boolean supportCacheControl) {
+            target.SUPPORT_CACHE_CONTROL = supportCacheControl;
             return this;
         }
 
-        public Builder setSupportCacheControl(boolean supportCacheControl) {
-            target.SUPPORT_CACHE_CONTROL = supportCacheControl;
+        public Builder setSupportLocalServer(boolean enable) {
+            target.SUPPORT_LOCAL_SERVER = enable;
             return this;
         }
 

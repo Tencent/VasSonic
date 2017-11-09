@@ -26,7 +26,7 @@
 {
     JSValue *callback = self.owner.jscontext.globalObject;
     
-    [[SonicClient sharedClient] sonicUpdateDiffDataByWebDelegate:self.owner completion:^(NSDictionary *result) {
+    [[SonicEngine sharedEngine] sonicUpdateDiffDataByWebDelegate:self.owner completion:^(NSDictionary *result) {
        
         if (result) {
             

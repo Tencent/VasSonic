@@ -1,5 +1,5 @@
 //
-//  SonicUitil.m
+//  SonicUtil.m
 //  sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -21,19 +21,20 @@
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
 #endif
 
-#import "SonicUitil.h"
-#import "SonicClient.h"
+#import "SonicUtil.h"
+#import "SonicEngine.h"
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 
-@implementation SonicUitil
+@implementation SonicUtil
 
 NSString *sonicSessionID(NSString *url)
 {
-    if ([[SonicClient sharedClient].currentUserUniq length] > 0) {
-        return stringFromMD5([NSString stringWithFormat:@"%@_%@",[SonicClient sharedClient].currentUserUniq,sonicUrl(url)]);
+    NSString* userAccount = [SonicEngine sharedEngine].currentUserAccount;
+    if ([userAccount length] > 0) {
+        return stringFromMD5([NSString stringWithFormat:@"%@_%@",userAccount,[SonicUtil sonicUrl:url]]);
     }else{
-        return stringFromMD5([NSString stringWithFormat:@"%@",sonicUrl(url)]);
+        return stringFromMD5([NSString stringWithFormat:@"%@",[SonicUtil sonicUrl:url]]);
     }
 }
 
@@ -56,7 +57,7 @@ NSString *stringFromMD5(NSString *url)
     return [outputString autorelease];
 }
 
-NSString *sonicUrl(NSString *aUrlStr)
++ (NSString *)sonicUrl:(NSString *)aUrlStr
 {
     NSURL *url = [NSURL URLWithString:aUrlStr];
     if (!url) {
@@ -129,13 +130,11 @@ NSMutableDictionary * queryComponents(NSString *aUrlStr)
     return results;
 }
 
-void dispatchToMain (dispatch_block_t block)
+NSString * dispatchToMain (dispatch_block_t block)
 {
-    if ([NSThread isMainThread]) {
-        block();
-    }else{
-        dispatch_async(dispatch_get_main_queue(), block);
-    }
+    NSBlockOperation *blockOp = [NSBlockOperation blockOperationWithBlock:block];
+    [[NSOperationQueue mainQueue] addOperation:blockOp];
+    return [NSString stringWithFormat:@"%ld",(unsigned long)blockOp.hash];
 }
 
 NSString * getDataSha1(NSData *data)
@@ -154,12 +153,70 @@ NSString * getDataSha1(NSData *data)
     return output;
 }
 
-NSURLRequest *sonicWebRequest(NSURLRequest *originRequest)
++ (NSURLRequest *)sonicWebRequestWithSession:(SonicSession* )session withOrigin:(NSURLRequest *)originRequest
 {
     NSMutableURLRequest *request = [[originRequest mutableCopy]autorelease];
     [request setValue:SonicHeaderValueWebviewLoad forHTTPHeaderField:SonicHeaderKeyLoadType];
-    [request setValue:sonicSessionID(request.URL.absoluteString) forHTTPHeaderField:SonicHeaderKeySessionID];
+    if (session) {
+        [request setValue:session.sessionID forHTTPHeaderField:SonicHeaderKeySessionID];
+        if (session.delegateId.length != 0) {
+            [request setValue:session.delegateId forHTTPHeaderField:SonicHeaderKeyDelegateId];
+        }
+    }
     return request;
+}
+
++ (NSDictionary *)splitTemplateAndDataFromHtmlData:(NSString *)html
+{
+    if (html.length == 0) {
+        return [NSDictionary dictionary];
+    }
+    
+    //using sonicdiff tag to split the HTML to template and dynamic data.
+    NSError *error = nil;
+    NSRegularExpression *reg = [NSRegularExpression regularExpressionWithPattern:@"<!--sonicdiff-?(\\w*)-->([\\s\\S]+?)<!--sonicdiff-?(\\w*)-end-->" options:NSRegularExpressionCaseInsensitive error:&error];
+    if (!error) {
+        NSMutableString *templateString = nil;
+        NSMutableDictionary *data = [NSMutableDictionary dictionary];
+        //create dynamic data
+        NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
+        [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSString *matchStr = [html substringWithRange:obj.range];
+            NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
+            NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
+            NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
+            [data setObject:matchStr forKey:formatKey];
+        }];
+        
+        //create template
+        templateString = [NSMutableString stringWithString:html];
+        [data enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
+            [templateString replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, templateString.length)];
+        }];
+        
+       return @{kSonicDataFieldName:data,kSonicTemplateFieldName:templateString};
+    }
+    return @{kSonicDataFieldName:[NSDictionary dictionary],kSonicTemplateFieldName:html};
+}
+
++ (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData
+{
+    NSMutableDictionary *diffData = [NSMutableDictionary dictionary];
+    
+    //get the diff data between server updateDict and local existData
+    for (NSString *key in updateDict.allKeys) {
+        NSString *updateValue = [updateDict objectForKey:key];
+        if ([existData.allKeys containsObject:key]) {
+            NSString *existValue = [existData objectForKey:key];
+            
+            if (![updateValue isEqualToString:existValue]) {
+                [diffData setObject:updateValue forKey:key];
+                [existData setObject:updateValue forKey:key];
+            }
+        }
+    }
+    
+    return @{kSonicDiffFieldName:diffData};
 }
 
 @end

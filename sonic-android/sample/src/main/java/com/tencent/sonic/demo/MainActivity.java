@@ -30,12 +30,7 @@ import android.widget.Toast;
 import com.tencent.sonic.R;
 import com.tencent.sonic.sdk.SonicConfig;
 import com.tencent.sonic.sdk.SonicEngine;
-import com.tencent.sonic.sdk.SonicSession;
 import com.tencent.sonic.sdk.SonicSessionConfig;
-import com.tencent.sonic.sdk.SonicSessionConnection;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -88,15 +83,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
-
-                // set setSupportNoEtag true to support un-sonic server
-                sessionConfigBuilder.setSupportNoEtag(true);
-
-                // setup CUSTOM_HEAD_FILED_CACHE_OFFLINE mode
-                // Tips: You can setup CUSTOM_HEAD_FILED_CACHE_OFFLINE = OFFLINE_MODE_STORE for better user experience
-                HashMap<String, String> customResponseHeaders = new HashMap<>();
-                customResponseHeaders.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, SonicSession.OFFLINE_MODE_TRUE);
-                sessionConfigBuilder.setCustomResponseHeaders(customResponseHeaders);
+                sessionConfigBuilder.setSupportLocalServer(true);
 
                 // preload session
                 boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfigBuilder.build());

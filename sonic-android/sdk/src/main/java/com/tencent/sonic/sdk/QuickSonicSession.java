@@ -21,7 +21,6 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -520,33 +519,27 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
      *
      * <p>
      * If need save and separate data, sonic will save the server data and separate the server data to template and data.
+     *  @param newHtml html content from server
      *
-     * @param newHtml html content from server
-     * @param newHtmlSha1 sha1 of html content from server
      */
-    protected void handleFlow_TemplateChange(String newHtml, String newHtmlSha1) {
+    protected void handleFlow_TemplateChange(String newHtml) {
         try {
-            SonicUtils.log(TAG, Log.INFO, "handleFlow_TemplateChange : newHtmlSha1 = " + newHtmlSha1);
+            SonicUtils.log(TAG, Log.INFO, "handleFlow_TemplateChange.");
             String htmlString = newHtml;
             long startTime = System.currentTimeMillis();
-            SonicSessionConnection.ResponseDataTuple responseDataTuple;
-            ByteArrayOutputStream output = null;
 
-            // When newHtml is empty
+            // When serverRsp is empty
             if (TextUtils.isEmpty(htmlString)) {
-                output = new ByteArrayOutputStream();
-                responseDataTuple = sessionConnection.getResponseData(wasOnPageFinishInvoked, output);
-                if (responseDataTuple == null) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:responseDataTuple = null!");
+                pendingWebResourceStream = server.getResponseStream(wasOnPageFinishInvoked);
+                if (pendingWebResourceStream == null) {
+                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:server.getResponseStream = null!");
                     return;
                 }
 
-                if (responseDataTuple.isComplete) {
-                    htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
-                }
+                htmlString = server.getResponseData(false);
             }
 
-            String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+            String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
             // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
             mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
@@ -557,31 +550,20 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             }
             mainHandler.sendMessage(msg);
 
-
-            if (TextUtils.isEmpty(htmlString)) { // response data is not complete yet
-                responseDataTuple = sessionConnection.getResponseData(wasInterceptInvoked, output);
-                if (responseDataTuple != null) {
-                    pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
-                } else {
-                    pendingWebResourceStream = null;
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:resourceResponseTuple = null!");
-                    return;
-                }
-            }
-
             if (SonicUtils.shouldLog(Log.DEBUG)) {
                 SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") read byte stream cost " + (System.currentTimeMillis() - startTime) + " ms, wasInterceptInvoked: " + wasInterceptInvoked.get());
             }
 
             //save and separate data
-            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
                 switchState(STATE_RUNNING, STATE_READY, true);
                 if (!TextUtils.isEmpty(htmlString)) {
                     try {
                         //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
                         Thread.sleep(1500);
                         startTime = System.currentTimeMillis();
-                        separateAndSaveCache(htmlString, newHtmlSha1);
+                        saveSonicCache(htmlString);
+
                         SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleFlow_TemplateChange: read complete and finish separate and save cache cost " + (System.currentTimeMillis() - startTime) + " ms.");
                     } catch (Throwable e) {
                         SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:" + e.getMessage());
@@ -617,41 +599,32 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
      *
      */
     protected void handleFlow_FirstLoad() {
-        SonicSessionConnection.ResponseDataTuple responseDataTuple = sessionConnection.getResponseData(wasInterceptInvoked, null);
-        if (null == responseDataTuple) {
-            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:responseDataTuple is null!");
+        pendingWebResourceStream = server.getResponseStream(wasInterceptInvoked);
+        if (null == pendingWebResourceStream) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:server.getResponseStream is null!");
             return;
         }
 
-        pendingWebResourceStream = new SonicSessionStream(this, responseDataTuple.outputStream, responseDataTuple.responseStream);
+        String htmlString = server.getResponseData(false);
 
-        String htmlString = null;
-        if (responseDataTuple.isComplete) {
-            try {
-                htmlString = responseDataTuple.outputStream.toString(getCharsetFromHeaders());
-            } catch (Throwable e) {
-                pendingWebResourceStream = null;
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:" + e.getMessage() + ".");
-            }
-        }
 
-        boolean hasCacheData = !TextUtils.isEmpty(htmlString);
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:hasCacheData=" + hasCacheData + ".");
+        boolean hasCompletionData = !TextUtils.isEmpty(htmlString);
+        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:hasCompletionData=" + hasCompletionData + ".");
 
         mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_FIRST_LOAD);
         msg.obj = htmlString;
-        msg.arg1 = hasCacheData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
+        msg.arg1 = hasCompletionData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
         mainHandler.sendMessage(msg);
 
-        String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-        if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
+        String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+        if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
             try {
-                if (hasCacheData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) {
+                if (hasCompletionData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) { // Otherwise will save cache in com.tencent.sonic.sdk.SonicSession.onServerClosed
                     switchState(STATE_RUNNING, STATE_READY, true);
                     //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
                     Thread.sleep(1500);
-                    separateAndSaveCache(htmlString, null);
+                    saveSonicCache(htmlString);
                 }
             } catch (Throwable e) {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:  " + e.getMessage());
@@ -667,95 +640,106 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
      * data first,then sonic will build the template and server data into html,
      * then send a <code>CLIENT_CORE_MSG_DATA_UPDATE</code> message.
      *
+     * @param serverRsp Server response data
      */
-    protected void handleFlow_DataUpdate() {
+    protected void handleFlow_DataUpdate(String serverRsp) {
         SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: start.");
-        ByteArrayOutputStream output = sessionConnection.getResponseData();
-        if (output != null) {
-            try {
-                final String eTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-                final String templateTag = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
-                String cacheOffline = sessionConnection.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-                String serverRsp = output.toString(getCharsetFromHeaders());
+        try {
+            String htmlString = null;
 
-                long startTime = System.currentTimeMillis();
-                JSONObject serverRspJson = new JSONObject(serverRsp);
-                final JSONObject serverDataJson = serverRspJson.optJSONObject("data");
-                JSONObject diffDataJson = SonicUtils.getDiffData(id, serverDataJson);
-                Bundle diffDataBundle = new Bundle();
-                if (null != diffDataJson) {
-                    diffDataBundle.putString(DATA_UPDATE_BUNDLE_PARAMS_DIFF, diffDataJson.toString());
-                } else {
-                    SonicUtils.log(TAG, Log.ERROR, "handleFlow_DataUpdate:getDiffData error.");
-                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_MERGE_DIFF_DATA_FAIL);
-                }
-                if (SonicUtils.shouldLog(Log.DEBUG)) {
-                    SonicUtils.log(TAG, Log.DEBUG, "handleFlow_DataUpdate:getDiffData cost " + (System.currentTimeMillis() - startTime) + " ms.");
-                }
-
-                boolean hasSentDataUpdateMessage = false;
-                if (wasLoadDataInvoked.get()) {
-                    if (SonicUtils.shouldLog(Log.INFO)) {
-                        SonicUtils.log(TAG, Log.INFO, "handleFlow_DataUpdate:loadData was invoked, quick notify web data update.");
-                    }
-                    Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_DATA_UPDATE);
-                    if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
-                        msg.setData(diffDataBundle);
-                    }
-                    mainHandler.sendMessage(msg);
-                    hasSentDataUpdateMessage = true;
-                }
-
-                startTime = System.currentTimeMillis();
-                final String htmlSha1 = serverRspJson.optString("html-sha1");
-                final String htmlString = SonicUtils.buildHtml(id, serverDataJson, htmlSha1, serverRsp.length());
-                if (SonicUtils.shouldLog(Log.DEBUG)) {
-                    SonicUtils.log(TAG, Log.DEBUG, "handleFlow_DataUpdate:buildHtml cost " + (System.currentTimeMillis() - startTime) + " ms.");
-                }
-
-                if (TextUtils.isEmpty(htmlString)) {
-                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_BUILD_HTML_ERROR);
-                }
-
-                if (!hasSentDataUpdateMessage) {
-                    mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
-                    Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_DATA_UPDATE);
-                    msg.obj = htmlString;
-                    mainHandler.sendMessage(msg);
-                }
-
-                if (null == diffDataJson || null == htmlString || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, sessionConnection.getResponseHeaderFields())) {
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
-                    SonicUtils.removeSessionCache(id);
-                    return;
-                }
-
-                switchState(STATE_RUNNING, STATE_READY, true);
-
-                Thread.yield();
-
-                startTime = System.currentTimeMillis();
-                Map<String, List<String>> headers = sessionConnection.getResponseHeaderFields();
-                if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString(), headers)) {
-                    long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
-                    SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);
-                    SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: finish save session cache, cost " + (System.currentTimeMillis() - startTime) + " ms.");
-                } else {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate: save session files fail.");
-                    SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
-                }
-
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate error:" + e.getMessage());
-            } finally {
-                try {
-                    output.close();
-                } catch (Throwable e) {
-                    SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate close output stream error:" + e.getMessage());
-                }
+            if (TextUtils.isEmpty(serverRsp)) {
+                serverRsp = server.getResponseData(true);
+            } else {
+                htmlString = server.getResponseData(false);
             }
+
+            if (TextUtils.isEmpty(serverRsp)) {
+                SonicUtils.log(TAG, Log.ERROR, "handleFlow_DataUpdate:getResponseData error.");
+                return;
+            }
+
+            final String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            final String templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+
+            String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+
+            long startTime = System.currentTimeMillis();
+            JSONObject serverRspJson = new JSONObject(serverRsp);
+            final JSONObject serverDataJson = serverRspJson.optJSONObject("data");
+            String htmlSha1 = serverRspJson.optString("html-sha1");
+
+            JSONObject diffDataJson = SonicUtils.getDiffData(id, serverDataJson);
+
+            Bundle diffDataBundle = new Bundle();
+            if (null != diffDataJson) {
+                diffDataBundle.putString(DATA_UPDATE_BUNDLE_PARAMS_DIFF, diffDataJson.toString());
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "handleFlow_DataUpdate:getDiffData error.");
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_MERGE_DIFF_DATA_FAIL);
+            }
+            if (SonicUtils.shouldLog(Log.DEBUG)) {
+                SonicUtils.log(TAG, Log.DEBUG, "handleFlow_DataUpdate:getDiffData cost " + (System.currentTimeMillis() - startTime) + " ms.");
+            }
+
+            boolean hasSentDataUpdateMessage = false;
+            if (wasLoadDataInvoked.get()) {
+                if (SonicUtils.shouldLog(Log.INFO)) {
+                    SonicUtils.log(TAG, Log.INFO, "handleFlow_DataUpdate:loadData was invoked, quick notify web data update.");
+                }
+                Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_DATA_UPDATE);
+                if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
+                    msg.setData(diffDataBundle);
+                }
+                mainHandler.sendMessage(msg);
+                hasSentDataUpdateMessage = true;
+            }
+
+            startTime = System.currentTimeMillis();
+            if (TextUtils.isEmpty(htmlString)) {
+                htmlString = SonicUtils.buildHtml(id, serverDataJson, htmlSha1, serverRsp.length());
+            }
+
+            if (SonicUtils.shouldLog(Log.DEBUG)) {
+                SonicUtils.log(TAG, Log.DEBUG, "handleFlow_DataUpdate:buildHtml cost " + (System.currentTimeMillis() - startTime) + " ms.");
+            }
+
+            if (TextUtils.isEmpty(htmlString)) {
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_BUILD_HTML_ERROR);
+            }
+
+            if (!hasSentDataUpdateMessage) {
+                mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
+                Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_DATA_UPDATE);
+                msg.obj = htmlString;
+                mainHandler.sendMessage(msg);
+            }
+
+            if (null == diffDataJson || null == htmlString || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
+                SonicUtils.removeSessionCache(id);
+                return;
+            }
+
+            switchState(STATE_RUNNING, STATE_READY, true);
+
+            Thread.yield();
+
+            startTime = System.currentTimeMillis();
+            Map<String, List<String>> headers = server.getResponseHeaderFields();
+            if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString(), headers)) {
+                long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
+                SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);
+                SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: finish save session cache, cost " + (System.currentTimeMillis() - startTime) + " ms.");
+            } else {
+                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate: save session files fail.");
+                SonicEngine.getInstance().getRuntime().notifyError(sessionClient, srcUrl, SonicConstants.ERROR_CODE_WRITE_FILE_FAIL);
+            }
+
+        } catch (Throwable e) {
+            SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_DataUpdate error:" + e.getMessage());
         }
+
     }
 
     @Override

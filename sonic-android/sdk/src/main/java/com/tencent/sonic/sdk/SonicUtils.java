@@ -147,7 +147,7 @@ class SonicUtils {
      */
     private static void handleCacheControl(Map<String, List<String>> headers, SonicDataHelper.SessionData sessionData) {
         List<String> responseHeaderValues;
-        if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL)) {
+        if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase())) {
             responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_CACHE_CONTROL.toLowerCase());
             if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
                 String header = responseHeaderValues.get(0).toLowerCase();
@@ -165,30 +165,32 @@ class SonicUtils {
                     } catch (Exception e) {
                         log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());
                     }
-                } else if (header.contains("private")) {
-                    //max 10min
-                    sessionData.expiredTime = 10 * 60 * 1000 + System.currentTimeMillis();
-                } else if (header.contains("public")) {
-                    //max 24 hour
-                    sessionData.expiredTime = 24 * 60 * 60 * 1000 + System.currentTimeMillis();
+                } else if (header.contains("private") || header.contains("public")) {
+                    //max 5min
+                    sessionData.expiredTime = System.currentTimeMillis() + SonicEngine.getInstance().getConfig().SONIC_CACHE_MAX_AGE;
+                }
+            } else if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES)) {
+                responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES);
+                if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
+                    String header = responseHeaderValues.get(0);
+                    DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.US);
+                    df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    try {
+                        Date date = df.parse(header);
+                        sessionData.expiredTime = date.getTime() + 8 * 60 * 60 * 1000;
+                    } catch (Exception e) {
+                        log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());
+                    }
                 }
             }
-        } else if (headers.containsKey(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES)) {
-            responseHeaderValues = headers.get(SonicSessionConnection.HTTP_HEAD_FIELD_EXPIRES);
-            if (responseHeaderValues != null && responseHeaderValues.size() > 0) {
-                String header = responseHeaderValues.get(0);
-                DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.US);
-                df.setTimeZone(TimeZone.getTimeZone("GMT"));
-                try {
-                    Date date = df.parse(header);
-                    sessionData.expiredTime = date.getTime() + 8 * 60 * 60 * 1000;
-                } catch (Exception e) {
-                    log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());
-                }
+
+            //The max age of sonic cache is {@link com.tencent.sonic.sdk.SonicConfig.SONIC_CACHE_MAX_AGE}
+            long maxAge = System.currentTimeMillis() + SonicEngine.getInstance().getConfig().SONIC_CACHE_MAX_AGE;
+            if (sessionData.expiredTime > maxAge) {
+                sessionData.expiredTime = maxAge;
             }
         }
     }
-
 
     /**
      * Obtain the difference data between the server and the local data

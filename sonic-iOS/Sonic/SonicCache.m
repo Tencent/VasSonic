@@ -143,7 +143,18 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 - (void)memoryWarningClearCache
 {
-    [self clearAllCache];
+    [self clearMemoryCache];
+}
+
+- (void)clearMemoryCache
+{
+    //we need clear or create memory cache in sonic queue
+    dispatchToSonicSessionQueue(^{
+        [self.lock lock];
+        [self.memoryCache removeAllObjects];
+        [self.recentlyUsedKey removeAllObjects];
+        [self.lock unlock];
+    });
 }
 
 - (void)clearAllCache
@@ -158,13 +169,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         [self setupDatabase];
     });
     
-    //we need clear or create memory cache in sonic queue
-    dispatchToSonicSessionQueue(^{
-        [self.lock lock];
-        [self.memoryCache removeAllObjects];
-        [self.recentlyUsedKey removeAllObjects];
-        [self.lock unlock];
-    });
+    [self clearMemoryCache];
 }
 
 - (void)removeCacheBySessionID:(NSString *)sessionID

@@ -34,8 +34,9 @@
     if (value.length != 0 && [value isEqualToString:SonicHeaderValueWebviewLoad]) {
         NSString * delegateId = [request.allHTTPHeaderFields objectForKey:SonicHeaderKeyDelegateId];
         if (delegateId.length != 0) {
+            NSString * sessionID = sonicSessionID(request.URL.absoluteString);
             SonicSession *session = [[SonicEngine sharedEngine] sessionWithDelegateId:delegateId];
-            if (session) {
+            if (session && [sessionID isEqualToString:session.sessionID]) {
                 return YES;
             }
             NSLog(@"SonicURLProtocol.canInitWithRequest error:Cannot find sonic session!");

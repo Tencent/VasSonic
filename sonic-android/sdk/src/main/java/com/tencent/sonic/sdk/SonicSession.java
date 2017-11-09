@@ -535,7 +535,14 @@ public abstract class SonicSession implements Handler.Callback {
             sessionData = SonicDataHelper.getSessionData(id);
         }
 
-        server = new SonicServer(this, sessionData);
+        if (config.SUPPORT_CACHE_CONTROL && statistics.connectionFlowStartTime < sessionData.expiredTime) {
+            if (SonicUtils.shouldLog(Log.DEBUG)) {
+                SonicUtils.log(TAG, Log.DEBUG,  "session(" + sId + ") won't send any request in " + (sessionData.expiredTime - statistics.connectionFlowStartTime) + ".ms");
+            }
+            return;
+        }
+
+        server = new SonicServer(this, createConnectionIntent(sessionData));
 
         // Connect to web server
         int responseCode = server.connect();
@@ -1118,7 +1125,7 @@ public abstract class SonicSession implements Handler.Callback {
             clearSessionData();
 
             if (force || canDestroy()) {
-                if (null != server) {
+                if (null != server && !force) {
                     server.disconnect();
                     server = null;
                 }

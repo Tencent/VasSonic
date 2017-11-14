@@ -399,6 +399,15 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             return;
         }
         
+        //cache-control
+        if (self.configuration.supportCacheControl) {
+            NSString *cacheControl = [self.sonicServer responseHeaderForKey:SonicHeaderValueCacheControl];
+            if ([cacheControl isEqualToString:@"no-cache"] || [cacheControl isEqualToString:@"no-store"] || [cacheControl isEqualToString:@"must-revalidate"]) {
+                NSLog(@"cache control need't cache!");
+                return;
+            }
+        }
+        
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineStore] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {
             
             NSDictionary *serverResult = [self.sonicServer sonicItemForCache];

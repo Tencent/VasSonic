@@ -349,7 +349,7 @@ static NSLock *sonicRequestClassLock;
     _response = [newResponse retain];
     
     // Not sonic response and enabel local-server
-    if (![self isValidateSonicResponse:response] && self.enableLocalSever && self.response.statusCode == 200) {
+    if ((response.statusCode == 304 || ![self isValidateSonicResponse:response]) && self.enableLocalSever) {
         _isInLocalServerMode = true;
         if (![self isFirstLoadRequest]) {
             return; // not first load request just return util all data are received.
@@ -387,14 +387,20 @@ static NSLock *sonicRequestClassLock;
     self.isCompletion = YES;
     if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
         
-        self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
-        NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
-        if (splitResult) {
-            self.templateString = splitResult[kSonicTemplateFieldName];
-            self.data = splitResult[kSonicDataFieldName];
-        }
-        
         do {
+            
+            //if http status is 304, there is nothing changed
+            if (self.response.statusCode == 304) {
+                NSLog(@"response status 304!");
+                break;
+            }
+            
+            self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
+            NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
+            if (splitResult) {
+                self.templateString = splitResult[kSonicTemplateFieldName];
+                self.data = splitResult[kSonicDataFieldName];
+            }
             
             NSMutableDictionary *headers = [[_response.allHeaderFields mutableCopy]autorelease];
             

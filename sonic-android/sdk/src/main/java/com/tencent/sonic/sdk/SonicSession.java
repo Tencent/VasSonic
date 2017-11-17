@@ -758,6 +758,11 @@ public abstract class SonicSession implements Handler.Callback {
                 SonicEngine.getInstance().getRuntime().postTaskToThread(new Runnable() {
                     @Override
                     public void run() {
+                        // if the session has been destroyed, exit directly
+                        if(isDestroyedOrWaitingForDestroy()) {
+                            return;
+                        }
+
                         String htmlString = server.getResponseData(false);
                         if (SonicUtils.shouldLog(Log.DEBUG)) {
                             SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") onClose:htmlString size:"

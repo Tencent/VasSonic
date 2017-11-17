@@ -385,7 +385,7 @@ static NSLock *sonicRequestClassLock;
 - (void)connectionDidCompleteWithoutError:(SonicConnection *)connection
 {
     self.isCompletion = YES;
-    if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
+    if (self.isInLocalServerMode) {
         
         do {
             

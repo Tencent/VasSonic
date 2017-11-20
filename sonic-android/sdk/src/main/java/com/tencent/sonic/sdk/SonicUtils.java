@@ -160,7 +160,7 @@ class SonicUtils {
                     try {
                         long maxAgeTime = Long.parseLong(maxAgeStr) * 1000;
                         if (maxAgeTime != 0) {
-                            sessionData.expiredTime = Long.parseLong(maxAgeStr) * 1000 + System.currentTimeMillis();
+                            sessionData.expiredTime = maxAgeTime + System.currentTimeMillis();
                         }
                     } catch (Exception e) {
                         log(TAG, Log.ERROR, "handleCacheControl:sessionId(" + sessionData.sessionId + ") error:" + e.getMessage());

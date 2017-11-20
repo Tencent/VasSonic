@@ -87,6 +87,11 @@
 
 - (BOOL)isCacheExpired
 {
+    //NO cache !
+    if (self.htmlData == nil) {
+        return YES;
+    }
+    
     unsigned long long now = (unsigned long long)[[NSDate date] timeIntervalSince1970];
     
     unsigned long long cacheExpireTime = [self.config[kSonicLocalCacheExpireTime] longLongValue];

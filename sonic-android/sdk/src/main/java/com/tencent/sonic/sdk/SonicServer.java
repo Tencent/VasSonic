@@ -61,8 +61,6 @@ public class SonicServer implements SonicSessionStream.Callback {
 
     final protected SonicSession session;
 
-    final protected SonicDataHelper.SessionData sessionData;
-
     final protected Intent requestIntent;
 
     /**
@@ -72,10 +70,9 @@ public class SonicServer implements SonicSessionStream.Callback {
     protected Map<String, List<String>> cachedResponseHeaders;
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-    public SonicServer(SonicSession session, SonicDataHelper.SessionData sessionData) {
+    public SonicServer(SonicSession session, Intent requestIntent) {
         this.session = session;
-        this.sessionData = sessionData;
-        this.requestIntent = session.createConnectionIntent(sessionData);
+        this.requestIntent = requestIntent;
         connectionImpl = SonicSessionConnectionInterceptor.getSonicSessionConnection(session, requestIntent);
     }
 
@@ -88,11 +85,6 @@ public class SonicServer implements SonicSessionStream.Callback {
      */
     protected int connect() {
         long startTime = System.currentTimeMillis();
-        if (session.config.SUPPORT_CACHE_CONTROL && startTime < sessionData.expiredTime) {
-            responseCode = HttpURLConnection.HTTP_NOT_MODIFIED; // fix 304 case
-            return SonicConstants.ERROR_CODE_SUCCESS;
-        }
-
 
         int resultCode = connectionImpl.connect();
         session.statistics.connectionConnectTime = System.currentTimeMillis();
@@ -428,6 +420,7 @@ public class SonicServer implements SonicSessionStream.Callback {
             }
 
             String eTag = getResponseHeaderField(CUSTOM_HEAD_FILED_ETAG);
+            String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
             if (TextUtils.isEmpty(eTag)) { // When eTag is empty, fill eTag with Sha1
                 eTag = SonicUtils.getSHA1(serverRsp);
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_ETAG, eTag);
@@ -437,7 +430,7 @@ public class SonicServer implements SonicSessionStream.Callback {
             if (TextUtils.isEmpty(templateString)) { // The same with htmlString
                 templateString = serverRsp;
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_TEMPLATE_TAG, eTag);
-            } else {
+            } else if (TextUtils.isEmpty(templateTag)){ // When eTag is empty, fill templateTag with Sha1 of templateString
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_TEMPLATE_TAG, SonicUtils.getSHA1(templateString));
             }
 

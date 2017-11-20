@@ -291,9 +291,15 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             NSArray *cookiesFromResp = [NSHTTPCookie cookiesWithResponseHeaderFields:response.allHeaderFields forURL:response.URL];
             [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookies:cookiesFromResp forURL:response.URL mainDocumentURL:self.sonicServer.request.mainDocumentURL];
         });
-        self.cacheResponseHeaders = response.allHeaderFields;
         if (self.isFirstLoad) {
             [self firstLoadRecieveResponse:response];
+        }else{
+            if ([self.sonicServer isSonicResponse] && !self.configuration.enableLocalServer) {
+                self.cacheResponseHeaders = response.allHeaderFields;
+            }
+            if (self.configuration.enableLocalServer) {
+                self.cacheResponseHeaders = response.allHeaderFields;
+            }
         }
     };
     NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
@@ -397,6 +403,15 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             self.isDataFetchFinished = YES;
             
             return;
+        }
+        
+        //cache-control
+        if (self.configuration.supportCacheControl) {
+            NSString *cacheControl = [self.sonicServer responseHeaderForKey:SonicHeaderValueCacheControl];
+            if ([cacheControl isEqualToString:@"no-cache"] || [cacheControl isEqualToString:@"no-store"] || [cacheControl isEqualToString:@"must-revalidate"]) {
+                NSLog(@"cache control need't cache!");
+                return;
+            }
         }
         
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineStoreRefresh] || [policy isEqualToString:SonicHeaderValueCacheOfflineStore] || [policy isEqualToString:SonicHeaderValueCacheOfflineRefresh]) {

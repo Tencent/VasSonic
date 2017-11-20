@@ -159,6 +159,11 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyCacheOffline       @"cache-offline"
 
 /**
+ * Http header cache control policy
+ */
+#define SonicHeaderValueCacheControl  @"cache-control"
+
+/**
  * Store the new data and don't refresh web content.
  */
 #define SonicHeaderValueCacheOfflineStore  @"store"

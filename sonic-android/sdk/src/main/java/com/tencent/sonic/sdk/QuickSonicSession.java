@@ -361,7 +361,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_TEMPLATE_CHANGE, false);
             } else {
                 SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:not refresh.");
-                setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE, SONIC_RESULT_CODE_HIT_CACHE, false);
+                setResult(SONIC_RESULT_CODE_TEMPLATE_CHANGE_CACHE_STORE, SONIC_RESULT_CODE_HIT_CACHE, false);
             }
         } else {
             SonicUtils.log(TAG, Log.INFO, "handleClientCoreMessage_TemplateChange:oh yeah template change hit 304.");

@@ -585,28 +585,33 @@ public abstract class SonicSession implements Handler.Callback {
             return;
         }
 
+        String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: cacheOffline is " + cacheOffline + ".");
+
+        // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
+        if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
+            if (!TextUtils.isEmpty(cacheHtml)) {
+                //stop loading local sonic cache.
+                handleFlow_ServiceUnavailable();
+            }
+            long unavailableTime = System.currentTimeMillis() + SonicEngine.getInstance().getConfig().SONIC_UNAVAILABLE_TIME;
+            SonicDataHelper.setSonicUnavailableTime(id, unavailableTime);
+            return;
+        }
+
         // When cacheHtml is empty, run First-Load flow
         if (TextUtils.isEmpty(cacheHtml)) {
             handleFlow_FirstLoad();
             return;
         }
 
-        // Handle cache-offline
-        String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-        SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_Connection: cacheOffline is " + cacheOffline + ".");
+        // Handle cache-offline : false or null.
         if (TextUtils.isEmpty(cacheOffline) || OFFLINE_MODE_FALSE.equalsIgnoreCase(cacheOffline)) {
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_Connection error: Cache-Offline is empty or false!");
             SonicUtils.removeSessionCache(id);
             return;
         }
 
-        // When cache-offline is "http": which means sonic server is in bad condition, need feed back to run standard http request.
-        if (OFFLINE_MODE_HTTP.equalsIgnoreCase(cacheOffline)) {
-            handleFlow_ServiceUnavailable();
-            long unavailableTime = System.currentTimeMillis() + SonicEngine.getInstance().getConfig().SONIC_UNAVAILABLE_TIME;
-            SonicDataHelper.setSonicUnavailableTime(id, unavailableTime);
-            return;
-        }
 
         String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         String templateChange = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);

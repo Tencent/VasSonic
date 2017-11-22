@@ -168,6 +168,11 @@ public abstract class SonicSession implements Handler.Callback {
     public static final int SONIC_RESULT_CODE_TEMPLATE_CHANGE = 2000;
 
     /**
+     * Sonic mode : template change but only store cache.
+     */
+    public static final int SONIC_RESULT_CODE_TEMPLATE_CHANGE_CACHE_STORE = 3000;
+
+    /**
      * Sonic mode : data update.
      */
     public static final int SONIC_RESULT_CODE_DATA_UPDATE = 200;

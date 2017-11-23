@@ -260,8 +260,15 @@ class SonicDataHelper {
             sessionData.unAvailableTime = unavailableTime;
             updateSessionData(db, sessionId, sessionData);
             return true;
+        } else {
+            sessionData = new SessionData();
+            sessionData.sessionId = sessionId;
+            sessionData.eTag = "Unknown";
+            sessionData.htmlSha1 = "Unknown";
+            sessionData.unAvailableTime = unavailableTime;
+            insertSessionData(db, sessionId, sessionData);
+            return true;
         }
-        return false;
     }
 
     /**

@@ -269,6 +269,9 @@ public class StandardSonicSession extends SonicSession implements Handler.Callba
                     if (SonicUtils.needRefreshPage(cacheOffline)) {
                         Bundle data = new Bundle();
                         data.putBoolean(TEMPLATE_CHANGE_BUNDLE_PARAMS_REFRESH, true);
+                        msg.setData(data);
+                    } else {
+                        msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
                     }
                 }
                 isCachePendingStream.set(false);

@@ -11,7 +11,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 25
         versionCode 2
-        versionName "2.0.0-alpha"
+        versionName "2.0.0-beta"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -36,7 +36,7 @@ dependencies {
 
 
 // sdk info
-version = "2.0.0-alpha" // sdk version num
+version = "2.0.0-beta" // sdk version num
 group = "com.tencent.sonic" // maven group id for the artifact
 def SITE_URL = "https://github.com/Tencent/VasSonic" // web site url
 def GIT_URL = "https://github.com/Tencent/VasSonic.git" // git url

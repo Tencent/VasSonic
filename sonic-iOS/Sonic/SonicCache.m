@@ -342,6 +342,14 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     cacheItem.diffData = mergeResult[@"diff"];
     NSMutableDictionary *config = [NSMutableDictionary dictionaryWithDictionary:[self createConfigFromResponseHeaders:headers]];
     NSString *sha1 = dataDict[@"html-sha1"];
+    if (sha1.length == 0) {
+        sha1 = @"";
+        NSString *errMsg = @"DataUpdateMode while html-sha1 not exist!";
+#if DEBUG
+        NSAssert(sha1.length>0, errMsg);
+#endif
+        NSLog(@"%@",errMsg);
+    }
     [config setObject:sha1 forKey:kSonicSha1];
     cacheItem.config = config;
     NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
@@ -582,13 +590,13 @@ void dealInFileQueue(dispatch_block_t block)
 
 - (BOOL)isAllCacheExist:(NSString *)sessionID
 {
-    NSUInteger checkList[4] = {
+    NSUInteger checkList[3] = {
         SonicCacheTypeHtml,
         SonicCacheTypeTemplate,
         SonicCacheTypeResponseHeader
     };
     
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<3; i++) {
         if (![self checkCacheTypeExist:checkList[i] sessionID:sessionID]) { return NO; }
     }
     
@@ -691,7 +699,10 @@ void dealInFileQueue(dispatch_block_t block)
     }
     
     //save the config data
-    [self.database insertWithKeyAndValue:config withSessionID:sessionID];
+    BOOL isSuccess = [self.database insertWithKeyAndValue:config withSessionID:sessionID];
+    if (!isSuccess) {
+        [self removeFileCacheOnly:sessionID];
+    }
 }
 
 - (NSDictionary *)filterResponseHeaders:(NSDictionary *)responseHeaders

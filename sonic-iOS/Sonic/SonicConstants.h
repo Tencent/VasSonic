@@ -192,7 +192,7 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 /**
  * The last time to refresh the cache.
  */
-#define kSonicLocalRefreshTime  @"local-refresh"
+#define kSonicLocalRefreshTime  @"local_refresh"
 
 /**
  * The timestamp when the local cache expire

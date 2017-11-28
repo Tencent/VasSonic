@@ -24,7 +24,7 @@
  *  create a config table to save data;important: all column used text type,because of that is easy to access and update
  */
 
-#define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template_tag' text,'etag' text,'sha1' text,'cache_expire_time' text)"
+#define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template-tag' text,'etag' text,'sha1' text,'cache-expire-time' text)"
 
 @interface SonicDatabase()
 {
@@ -127,8 +127,6 @@
                 v = [NSString stringWithUTF8String:value];
             }
             NSString *keyStr = [NSString stringWithUTF8String:key];
-            //database not support -
-            keyStr = [keyStr stringByReplacingOccurrencesOfString:@"_" withString:@"-"];
             [resultDict setObject:v forKey:keyStr];
         }
     }
@@ -182,7 +180,6 @@
         
         NSString *key = keyValues.allKeys[index];
         NSString *value = keyValues[key];
-        key = [key stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
 
         if (isUpdate) {
             if (index != keyValues.count - 1 && keyValues.count > 0) {
@@ -192,10 +189,10 @@
             }
         }else{
             if (index != keyValues.count-1 && keyValues.count > 0) {
-                [keySort appendFormat:@"%@,",key];
+                [keySort appendFormat:@"'%@',",key];
                 [dataPart appendFormat:@"'%@',",value];
             }else{
-                [keySort appendFormat:@"%@)",key];
+                [keySort appendFormat:@"'%@')",key];
                 [dataPart appendFormat:@"'%@')",value];
             }
         }
@@ -217,17 +214,21 @@
 
 - (NSDictionary *)queryAllKeysWithSessionID:(NSString *)sessionID
 {
-    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template_tag",@"sha1",@"Etag",@"cache_expire_time"] withSessionID:sessionID];
+    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template-tag",@"sha1",@"Etag",@"cache-expire-time"] withSessionID:sessionID];
 }
 
 - (NSDictionary *)queryWithKeys:(NSArray *)keys withSessionID:(NSString *)sessionID
 {
     NSMutableString *selectColumn = [NSMutableString string];
     for (int index = 0; index < keys.count; index++) {
+        NSString *key = keys[index];
+        if ([key rangeOfString:@"-"].location != NSNotFound) {
+            key = [NSString stringWithFormat:@"\"%@\"",key];
+        }
         if (index != keys.count - 1) {
-            [selectColumn appendFormat:@"%@,",keys[index]];
+            [selectColumn appendFormat:@"%@,",key];
         }else{
-            [selectColumn appendFormat:@"%@",keys[index]];
+            [selectColumn appendFormat:@"%@",key];
         }
     }
     
@@ -245,7 +246,7 @@
 
 - (BOOL)clearWithSessionID:(NSString *)sessionID
 {
-    NSString *sql = [NSString stringWithFormat:@"delete from config where 'sessionID' = '%@'",sessionID];
+    NSString *sql = [NSString stringWithFormat:@"delete from config where sessionID = '%@'",sessionID];
     
     return [self execSql:sql];
 }

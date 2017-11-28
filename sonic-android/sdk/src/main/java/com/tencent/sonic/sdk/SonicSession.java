@@ -991,7 +991,7 @@ public abstract class SonicSession implements Handler.Callback {
      */
     protected boolean setCookiesFromHeaders(Map<String, List<String>> headers, boolean executeInNewThread) {
         if (null != headers) {
-            final List<String> cookies = headers.get(SonicSessionConnection.HTTP_HEAD_FILED_SET_COOKIE);
+            final List<String> cookies = headers.get(SonicSessionConnection.HTTP_HEAD_FILED_SET_COOKIE.toLowerCase());
             if (null != cookies && 0 != cookies.size()) {
                 if (!executeInNewThread) {
                     return SonicEngine.getInstance().getRuntime().setCookie(getCurrentUrl(), cookies);

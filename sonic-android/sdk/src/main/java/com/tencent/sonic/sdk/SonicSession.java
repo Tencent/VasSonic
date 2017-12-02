@@ -741,7 +741,7 @@ public abstract class SonicSession implements Handler.Callback {
      *
      * @param readComplete Whether the html is read complete.
      */
-    public void onServerClosed(final boolean readComplete) {
+    public void onServerClosed(final SonicServer server, final boolean readComplete) {
         // if the session has been destroyed, exit directly
         if(isDestroyedOrWaitingForDestroy()) {
             return;
@@ -1135,15 +1135,16 @@ public abstract class SonicSession implements Handler.Callback {
             clearSessionData();
 
             if (force || canDestroy()) {
+                sessionState.set(STATE_DESTROY);
+                synchronized (sessionState) {
+                    sessionState.notify();
+                }
+
                 if (null != server && !force) {
                     server.disconnect();
                     server = null;
                 }
 
-                sessionState.set(STATE_DESTROY);
-                synchronized (sessionState) {
-                    sessionState.notify();
-                }
                 notifyStateChange(curState, STATE_DESTROY, null);
 
                 mainHandler.removeMessages(SESSION_MSG_FORCE_DESTROY);

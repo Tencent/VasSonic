@@ -458,7 +458,7 @@ public class SonicServer implements SonicSessionStream.Callback {
                 SonicUtils.log(TAG, Log.ERROR, "session(" + session.sId + "), onClose error:" + e.getMessage() + ".");
             }
         }
-        session.onServerClosed(readComplete);
+        session.onServerClosed(this, readComplete);
     }
 
 }

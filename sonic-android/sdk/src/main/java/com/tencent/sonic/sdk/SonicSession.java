@@ -757,18 +757,34 @@ public abstract class SonicSession implements Handler.Callback {
 
         //Separate and save html.
         if (readComplete) {
-            String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
-            if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
+            String cacheOffline ;
+            Map<String, List<String>> headers;
+            // if server has been closed and set to null asynchronous, exit directly
+            synchronized (sessionState) {
+                if (server != null) {
+                    cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
+                    headers = server.getResponseHeaderFields();
+                } else {
+                    return;
+                }
+            }
+
+            if (!TextUtils.isEmpty(cacheOffline) && headers != null
+                    && SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, headers)) {
                 SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") onClose:offline->" + cacheOffline + " , post separateAndSaveCache task.");
                 SonicEngine.getInstance().getRuntime().postTaskToThread(new Runnable() {
                     @Override
                     public void run() {
-                        // if the session has been destroyed, exit directly
-                        if(isDestroyedOrWaitingForDestroy()) {
-                            return;
+                        // if server has been closed and set to null asynchronous, exit directly
+                        String htmlString;
+                        synchronized (sessionState) {
+                            if (server != null) {
+                                htmlString = server.getResponseData(false);
+                            } else {
+                                return;
+                            }
                         }
 
-                        String htmlString = server.getResponseData(false);
                         if (SonicUtils.shouldLog(Log.DEBUG)) {
                             SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") onClose:htmlString size:"
                                     + (!TextUtils.isEmpty(htmlString) ? htmlString.length() : 0));
@@ -1135,15 +1151,16 @@ public abstract class SonicSession implements Handler.Callback {
             clearSessionData();
 
             if (force || canDestroy()) {
-                if (null != server && !force) {
-                    server.disconnect();
-                    server = null;
-                }
-
                 sessionState.set(STATE_DESTROY);
                 synchronized (sessionState) {
                     sessionState.notify();
+
+                    if (null != server && !force) {
+                        server.disconnect();
+                        server = null;
+                    }
                 }
+
                 notifyStateChange(curState, STATE_DESTROY, null);
 
                 mainHandler.removeMessages(SESSION_MSG_FORCE_DESTROY);

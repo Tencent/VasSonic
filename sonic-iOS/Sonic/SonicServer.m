@@ -465,8 +465,12 @@ static NSLock *sonicRequestClassLock;
             break;
             
         } while (true);
-        [self.delegate server:self didRecieveResponse:self.response];
-        [self.delegate server:self didReceiveData:self.responseData];
+        
+        //First request need't to load again
+        if (![self isFirstLoadRequest]) {
+            [self.delegate server:self didRecieveResponse:self.response];
+            [self.delegate server:self didReceiveData:self.responseData];
+        }
     }
     [self.delegate serverDidCompleteWithoutError:self];
 }

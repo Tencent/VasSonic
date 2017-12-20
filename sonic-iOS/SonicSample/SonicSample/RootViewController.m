@@ -149,7 +149,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)unstrictModeSonicRequestAction
 {
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://mc.vip.qq.com/demo/indexv2" useSonicMode:YES unStrictMode:YES];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://www.kgc.cn/zhuanti/bigca.shtml?jump=1" useSonicMode:YES unStrictMode:YES];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 

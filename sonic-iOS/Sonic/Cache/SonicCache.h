@@ -148,6 +148,18 @@
  */
 - (NSString *)localRefreshTimeBySessionID:(NSString *)sessionID;
 
+#pragma mark - Sub resource load
+
+- (BOOL)saveSubResourceData:(NSData *)data withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeader withSessionID:(NSString *)sessionID;
+
+- (NSData *)resourceCacheWithSessionID:(NSString *)sessionID;
+
+- (NSDictionary *)responseHeadersWithSessionID:(NSString *)sessionID;
+
+- (NSDictionary *)resourceConfigWithSessionID:(NSString *)sessionID;
+
+- (BOOL)clearResourceWithSessionID:(NSString *)sessionID;
+
 /**
  * Check file cache size, we keep max cache size 30MB
  */

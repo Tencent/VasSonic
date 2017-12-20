@@ -93,7 +93,7 @@ static NSLock *sonicRequestClassLock;
     self.enableLocalSever = enable;
 }
 
-- (Class)canCustomRequest
++ (Class)canCustomRequest:(NSURLRequest *)aRequest
 {
     Class findDestClass = nil;
     
@@ -104,7 +104,7 @@ static NSLock *sonicRequestClassLock;
         NSMethodSignature *sign = [itemClass methodSignatureForSelector:@selector(canInitWithRequest:)];
         NSInvocation *invoke = [NSInvocation invocationWithMethodSignature:sign];
         invoke.target = itemClass;
-        NSURLRequest *argRequest = self.request;
+        NSURLRequest *argRequest = aRequest;
         [invoke setArgument:&argRequest atIndex:2];
         invoke.selector = @selector(canInitWithRequest:);
         [invoke invoke];
@@ -121,19 +121,28 @@ static NSLock *sonicRequestClassLock;
     return findDestClass;
 }
 
++ (Class)connectionClassForRequest:(NSURLRequest *)aRequest
+{
+    Class customRequest = [SonicServer canCustomRequest:aRequest];
+    if (!customRequest) {
+        // If there no custom request ,then use the default
+        customRequest = [SonicConnection class];
+    }
+    return customRequest;
+}
+
 - (void)start
 {
-    if (nil == self.connection) {
-        Class customRequest = [self canCustomRequest];
-        if (!customRequest) {
-            // If there no custom request ,then use the default
-            customRequest = [SonicConnection class];
-        }
-        SonicConnection *tConnect = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
-        self.connection = tConnect;
-        [tConnect release];
-        [self.connection startLoading];
+    if (nil != self.connection) {
+        [self.connection stopLoading];
+        self.connection = nil;
     }
+    Class customRequest = [SonicServer connectionClassForRequest:self.request];
+    SonicConnection *tConnect = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
+    tConnect.supportHTTPRedirection = YES;
+    self.connection = tConnect;
+    [tConnect release];
+    [self.connection startLoading];
 }
 
 - (void)stop
@@ -143,8 +152,6 @@ static NSLock *sonicRequestClassLock;
     
     if (self.connection) {
        [self.connection stopLoading];
-    } else {
-        NSLog(@"SonicServer.stop warning:Request headers should be set only before server start!");
     }
 }
 
@@ -186,20 +193,16 @@ static NSLock *sonicRequestClassLock;
 
 - (void)setRequestHeaderFields:(NSDictionary *)headers
 {
-    if (nil == self.connection) {
-        NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
-        [requestHeaderFileds setObject:@"true" forKey:@"accept-diff"];
-        [requestHeaderFileds setObject:@"GET" forKey:@"method"];
-        [requestHeaderFileds setObject:@"utf-8" forKey:@"accept-Encoding"];
-        [requestHeaderFileds setObject:@"zh-CN,zh;" forKey:@"accept-Language"];
-        [requestHeaderFileds setObject:@"gzip" forKey:@"accept-Encoding"];
-        [requestHeaderFileds setObject:SonicHeaderValueSDKVersion  forKey:SonicHeaderKeySDKVersion];
-        [requestHeaderFileds setObject:SonicHeaderValueSonicLoad forKey:SonicHeaderKeyLoadType];
-        [requestHeaderFileds addEntriesFromDictionary:headers];
-        [self.request setAllHTTPHeaderFields:requestHeaderFileds];
-    } else {
-        NSLog(@"setRequestHeaderFields warning:Request headers should be set only before server start!");
-    }
+    NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
+    [requestHeaderFileds setObject:@"true" forKey:@"accept-diff"];
+    [requestHeaderFileds setObject:@"GET" forKey:@"method"];
+    [requestHeaderFileds setObject:@"utf-8" forKey:@"accept-Encoding"];
+    [requestHeaderFileds setObject:@"zh-CN,zh;" forKey:@"accept-Language"];
+    [requestHeaderFileds setObject:@"gzip" forKey:@"accept-Encoding"];
+    [requestHeaderFileds setObject:SonicHeaderValueSDKVersion  forKey:SonicHeaderKeySDKVersion];
+    [requestHeaderFileds setObject:SonicHeaderValueSonicLoad forKey:SonicHeaderKeyLoadType];
+    [requestHeaderFileds addEntriesFromDictionary:headers];
+    [self.request setAllHTTPHeaderFields:requestHeaderFileds];
 }
 
 - (void)setResponseHeaderFields:(NSDictionary *)headers

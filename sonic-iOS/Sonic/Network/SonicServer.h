@@ -48,6 +48,11 @@
 + (void)unregisterSonicConnection:(Class)connectionClass;
 
 /**
+ * Which connection class can intercept the request.
+ */
++ (Class)connectionClassForRequest:(NSURLRequest *)aRequest;
+
+/**
  * SonicServer init with params
  * @param url The target url which will request
  * @param delegate The delegate which will receiver server operation notifies

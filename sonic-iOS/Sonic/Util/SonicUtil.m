@@ -38,6 +38,14 @@ NSString *sonicSessionID(NSString *url)
     }
 }
 
+NSString *resourceSessionID(NSString *url)
+{
+    if (url.length == 0) {
+        return @"";
+    }
+    return stringFromMD5(url);
+}
+
 NSString *stringFromMD5(NSString *url)
 {
     
@@ -217,6 +225,19 @@ NSString * getDataSha1(NSData *data)
     }
     
     return @{kSonicDiffFieldName:diffData};
+}
+
++ (NSDictionary *)protocolActionItem:(SonicURLProtocolAction)action param:(NSObject *)param
+{
+    if (param == nil) {
+        param = @"";
+    }
+    return @{kSonicProtocolAction:@(action),kSonicProtocolData:param};
+}
+
+unsigned long long currentTimeStamp()
+{
+    return (unsigned long long)([[NSDate date] timeIntervalSince1970]*1000);
 }
 
 @end

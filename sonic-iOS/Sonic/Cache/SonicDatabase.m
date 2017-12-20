@@ -26,6 +26,8 @@
 
 #define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template-tag' text,'etag' text,'sha1' text,'cache-expire-time' text)"
 
+#define SonicCreateResourceConfigSql @"create table if not exists 'resource_config' ('sessionID' text primary key not null,'sha1' text,'cache-expire-time' text)"
+
 @interface SonicDatabase()
 {
     sqlite3 *_db;
@@ -47,6 +49,7 @@
         }
         
         [self createConfigTableIfNotExist];
+        [self createResourceConfigIfNotExist];
     }
     return self;
 }
@@ -75,7 +78,9 @@
 {
     
     int ret = sqlite3_exec(_db, sql.UTF8String, NULL, NULL, NULL);
-    
+    if (ret != SQLITE_OK) {
+        NSLog(@"sql error:%@",sql);
+    }
     return ret == SQLITE_OK;
 }
 
@@ -149,15 +154,15 @@
         [self clearWithSessionID:sessionID];
     }
     
-    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO];
+    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO table:@"config"];
 }
 
 - (BOOL)updateWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID
 {
-    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:YES];
+    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:YES table:@"config"];
 }
 
-- (BOOL)execSqlWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID withUpdate:(BOOL)isUpdate
+- (BOOL)execSqlWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID withUpdate:(BOOL)isUpdate table:(NSString *)table
 {
     if (keyValues.count == 0 || sessionID.length == 0) {
         return NO;
@@ -204,9 +209,9 @@
     NSString *sql = nil;
     
     if (isUpdate) {
-        sql = [NSString stringWithFormat:@"%@ config %@ %@",action,updateValues,condition];
+        sql = [NSString stringWithFormat:@"%@ %@ %@ %@",action,table,updateValues,condition];
     }else{
-       sql = [NSString stringWithFormat:@"%@ config %@ values %@ %@",action,keySort,dataPart,condition];
+       sql = [NSString stringWithFormat:@"%@ %@ %@ values %@ %@",action,table,keySort,dataPart,condition];
     }
     
    return [self execSql:sql];
@@ -214,10 +219,10 @@
 
 - (NSDictionary *)queryAllKeysWithSessionID:(NSString *)sessionID
 {
-    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template-tag",@"sha1",@"Etag",@"cache-expire-time"] withSessionID:sessionID];
+    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template-tag",@"sha1",@"Etag",@"cache-expire-time"] withSessionID:sessionID table:@"config"];
 }
 
-- (NSDictionary *)queryWithKeys:(NSArray *)keys withSessionID:(NSString *)sessionID
+- (NSDictionary *)queryWithKeys:(NSArray *)keys withSessionID:(NSString *)sessionID table:(NSString *)table
 {
     NSMutableString *selectColumn = [NSMutableString string];
     for (int index = 0; index < keys.count; index++) {
@@ -232,14 +237,14 @@
         }
     }
     
-    NSString *sql = [NSString stringWithFormat:@"select %@ from config where sessionID = '%@'",selectColumn,sessionID];
+    NSString *sql = [NSString stringWithFormat:@"select %@ from %@ where sessionID = '%@'",selectColumn,table,sessionID];
     
     return [self querySql:sql withQueryResultKey:keys];
 }
 
 - (NSString *)queryKey:(NSString *)key withSessionID:(NSString *)sessionID
 {
-    NSDictionary *resultDict = [self queryWithKeys:@[key] withSessionID:sessionID];
+    NSDictionary *resultDict = [self queryWithKeys:@[key] withSessionID:sessionID table:@"config"];
     
     return resultDict[key];
 }
@@ -248,6 +253,39 @@
 {
     NSString *sql = [NSString stringWithFormat:@"delete from config where sessionID = '%@'",sessionID];
     
+    return [self execSql:sql];
+}
+
+#pragma mark - resource
+
+- (void)createResourceConfigIfNotExist
+{
+    [self execSql:SonicCreateResourceConfigSql];
+}
+
+- (BOOL)insertResourceConfigWithKeyValues:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID
+{
+    if (keyValues.count == 0) {
+        return NO;
+    }
+    
+    //clear if exist
+    NSString *isExistSql = [NSString stringWithFormat:@"select 'sessionID' from resource_config where sessionID = '%@'",sessionID];
+    BOOL isExist = [self execSql:isExistSql];
+    if (isExist) {
+        [self clearResourceConfigWithSessionID:sessionID];
+    }
+    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO table:@"resource_config"];
+}
+
+- (NSDictionary *)queryResourceConfigWithSessionID:(NSString *)sessionID
+{
+    return [self queryWithKeys:@[@"sessionID",@"cache-expire-time"] withSessionID:sessionID table:@"resource_config"];
+}
+
+- (BOOL)clearResourceConfigWithSessionID:(NSString *)sessionID
+{
+    NSString *sql = [NSString stringWithFormat:@"delete from resource_config where sessionID = '%@'",sessionID];
     return [self execSql:sql];
 }
 

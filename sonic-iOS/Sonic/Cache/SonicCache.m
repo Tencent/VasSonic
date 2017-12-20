@@ -55,6 +55,8 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 @property (nonatomic,readonly)NSString *rootCachePath;
 
+@property (nonatomic,readonly)NSString *rootResourceCachePath;
+
 /*
  * memory cache item manage lock
  */
@@ -122,6 +124,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     
     //setup cache dir
     [self setupCacheDirectory];
+    [self setupSubResourceCacheDirectory];
     
     //read server disable sonic request timestamps
     [self setupCacheOfflineTimeCfgDict];
@@ -169,6 +172,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         [self setupDatabase];
     });
     
+    [self clearResourceCache];
     [self clearMemoryCache];
 }
 
@@ -817,6 +821,83 @@ void dealInFileQueue(dispatch_block_t block)
     [self clearAllCache];
 
     return YES;
+}
+
+#pragma mark - Sub resource load
+
+- (void)clearResourceCache
+{
+    [SonicFileManager removeItemAtPath:_rootResourceCachePath error:nil];
+    [self setupSubResourceCacheDirectory];
+}
+
+- (BOOL)setupSubResourceCacheDirectory
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    
+    NSString *subDir = @"SonicResourceCache";
+    
+    _rootResourceCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:subDir] copy];
+    
+    NSLog(@"resource cache path:%@",_rootResourceCachePath);
+
+    return _rootResourceCachePath.length > 0;
+}
+
+- (BOOL)saveSubResourceData:(NSData *)data withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeader withSessionID:(NSString *)sessionID
+{
+    NSLog(@"Resource start save for:%@",sessionID);
+
+    NSString *cacheFilePath = [[_rootResourceCachePath stringByAppendingPathComponent:sessionID] stringByAppendingPathExtension:@"data"];
+    BOOL isSuccess = [data writeToFile:cacheFilePath atomically:YES];
+    if (!isSuccess) {
+        NSLog(@"Resource data save error!");
+        return isSuccess;
+    }
+    
+    NSString *responsePath = [[_rootResourceCachePath stringByAppendingPathComponent:sessionID] stringByAppendingPathExtension:@"rsp"];
+    isSuccess = [responseHeader writeToFile:responsePath atomically:YES];
+    if (!isSuccess) {
+        NSLog(@"Resource response save error!");
+        return isSuccess;
+    }
+    
+    isSuccess = [self.database insertResourceConfigWithKeyValues:config withSessionID:sessionID];
+    if (!isSuccess) {
+        NSLog(@"Resource config save error!");
+        [SonicFileManager removeItemAtPath:cacheFilePath error:nil];
+    }
+    
+    NSLog(@"Resource save state:%d sessionID:%@",(int)isSuccess,sessionID);
+    
+    return isSuccess;
+}
+
+- (NSDictionary *)responseHeadersWithSessionID:(NSString *)sessionID
+{
+    NSString *responsePath = [[_rootResourceCachePath stringByAppendingPathComponent:sessionID] stringByAppendingPathExtension:@"rsp"];
+    return [NSDictionary dictionaryWithContentsOfFile:responsePath];
+}
+
+- (NSData *)resourceCacheWithSessionID:(NSString *)sessionID
+{
+    NSString *cacheFilePath = [[_rootResourceCachePath stringByAppendingPathComponent:sessionID] stringByAppendingPathExtension:@"data"];
+    return [NSData dataWithContentsOfFile:cacheFilePath];
+}
+
+- (NSDictionary *)resourceConfigWithSessionID:(NSString *)sessionID
+{
+    return [self.database queryResourceConfigWithSessionID:sessionID];
+}
+
+- (BOOL)clearResourceWithSessionID:(NSString *)sessionID
+{
+    NSString *cacheFilePath = [_rootResourceCachePath stringByAppendingPathComponent:sessionID];
+    BOOL isSuccess = [SonicFileManager removeItemAtPath:cacheFilePath error:nil];
+    if (!isSuccess) {
+        return isSuccess;
+    }
+    return [self.database clearResourceConfigWithSessionID:sessionID];
 }
 
 @end

@@ -22,6 +22,10 @@
 #import "SonicSession.h"
 #import "SonicUtil.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 static NSMutableArray *sonicRequestClassArray = nil;
 static NSLock *sonicRequestClassLock;
 
@@ -65,6 +69,8 @@ static NSLock *sonicRequestClassLock;
 
 - (void)dealloc
 {
+    self.delegate = nil;
+    
     if (nil != self.connection) {
         [self.connection stopLoading];
         self.connection = nil;
@@ -84,6 +90,12 @@ static NSLock *sonicRequestClassLock;
         [_error release];
         _error = nil;
     }
+    
+    self.delegateQueue = nil;
+    self.customResponseHeaders = nil;
+    self.htmlString = nil;
+    self.templateString = nil;
+    self.data = nil;
     
     [super dealloc];
 }
@@ -249,7 +261,7 @@ static NSLock *sonicRequestClassLock;
 {
     if (self.isCompletion) {
         if (nil == _error) {
-            NSMutableDictionary *sonicItemDict = [[[NSMutableDictionary alloc]init]autorelease];
+            NSMutableDictionary *sonicItemDict = [NSMutableDictionary dictionary];
             if (0 == self.htmlString.length) { // not split yet
                 self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
                 NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];

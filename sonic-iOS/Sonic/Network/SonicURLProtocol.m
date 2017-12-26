@@ -45,17 +45,13 @@
     }
     
     //Sub resource intercept
-    if ([SonicResourceLoader isResourceRequest:request]) {
-        NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
-        SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
-        if ([session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
-            NSLog(@"SonicURLProtocol.canInitWithRequest resource intercept:%@",request.debugDescription);
-            return YES;
-        }else{
-            NSLog(@"SonicURLProtocol resource connection not exist:%@",request.URL.absoluteString);
-        }
+    NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
+    SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
+    if (session.resourceLoader && [session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
+        NSLog(@"SonicURLProtocol resource should intercept:%@",request.debugDescription);
+        return YES;
     }else{
-        NSLog(@"SonicURLProtocol mainDocReq %@ main:%@",request.URL.absoluteString,request.mainDocumentURL.absoluteString);
+        NSLog(@"SonicURLProtocol resource can't intercept:%@ resourceLoader:%@",request.debugDescription,session.resourceLoader.debugDescription);
     }
     
     return NO;

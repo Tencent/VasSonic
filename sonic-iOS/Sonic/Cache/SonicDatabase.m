@@ -20,6 +20,10 @@
 #import "SonicDatabase.h"
 #import "sqlite3.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 /**
  *  create a config table to save data;important: all column used text type,because of that is easy to access and update
  */
@@ -29,7 +33,6 @@
 @interface SonicDatabase()
 {
     sqlite3 *_db;
-    NSLock *_resourceLock;
 }
 
 @end
@@ -45,7 +48,6 @@
         if (ret != SQLITE_OK) {
             
             NSLog(@"database open db faild :%@ code:%d",dbPath,ret);
-            _resourceLock = [NSLock new];
         }
         
         [self createConfigTableIfNotExist];

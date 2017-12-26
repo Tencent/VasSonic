@@ -2,7 +2,18 @@
 //  SonicResourceLoadOperation.m
 //  Sonic
 //
-//  Created by zyvincenthu on 2017/12/18.
+//  Tencent is pleased to support the open source community by making VasSonic available.
+//  Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+//  Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
+//  in compliance with the License. You may obtain a copy of the License at
+//
+//  https://opensource.org/licenses/BSD-3-Clause
+//
+//  Unless required by applicable law or agreed to in writing, software distributed under the
+//  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+//  either express or implied. See the License for the specific language governing permissions
+//  and limitations under the License.
+//
 //  Copyright © 2017年 Tencent. All rights reserved.
 //
 
@@ -12,6 +23,10 @@
 #import "SonicCache.h"
 #import "SonicUtil.h"
 #import "SonicConfiguration.h"
+
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
 
 @interface SonicResourceLoadOperation()<SonicConnectionDelegate>
 
@@ -29,7 +44,7 @@
 
 @property (nonatomic,assign)BOOL isComplete;
 
-@property (nonatomic,retain)NSLock *lock;
+@property (nonatomic,retain)NSRecursiveLock *lock;
 
 
 @end
@@ -42,26 +57,30 @@
         _url = [aUrl copy];
         self.responseData = [NSMutableData data];
         _sessionID = [resourceSessionID(_url) copy];
-        self.lock = [NSLock new];
+        NSRecursiveLock *tmpLock = [NSRecursiveLock new];
+        self.lock = tmpLock;
+        [tmpLock release];
     
         self.config = [[SonicCache shareCache] resourceConfigWithSessionID:self.sessionID];
         if (self.config) {
             long long cacheExpire = [self.config[@"cache-expire-time"] longLongValue];
-            long long now = (long long)[[NSDate date] timeIntervalSince1970];
-            if (cacheExpire <= now) {
+            BOOL isCacheExpire = NO;
+            if (cacheExpire > 0) {
+                long long now = (long long)[[NSDate date] timeIntervalSince1970];
+                isCacheExpire = cacheExpire <= now;
+            }
+            if (isCacheExpire) {
                 self.config = nil;
                 NSLog(@"resource expire:%@",self.url);
             }else{
                 self.cacheFileData = [[SonicCache shareCache] resourceCacheWithSessionID:self.sessionID];
                 NSString *cacheFileSha1 = getDataSha1(self.cacheFileData);
-                _sha1 = self.config[@"sha1"];
-                if ([cacheFileSha1 isEqualToString:_sha1]) {
+                NSString *sha1 = self.config[@"sha1"];
+                if ([cacheFileSha1 isEqualToString:sha1]) {
                     self.cacheResponseHeaders = [[SonicCache shareCache] responseHeadersWithSessionID:self.sessionID];
                 }else{
                     self.cacheFileData = nil;
                     self.config = nil;
-                    [_sha1 release];
-                    _sha1 = nil;
                     NSLog(@"resource sha1 wrong:%@",self.url);
                 }
             }
@@ -72,21 +91,17 @@
 
 - (void)dealloc
 {
-    [self cancel];
+    self.lock = nil;
     [_url release];
     _url = nil;
     [_sessionID release];
     _sessionID = nil;
     self.responseData = nil;
-    self.lock = nil;
     self.cacheFileData = nil;
     self.originResponse = nil;
+    self.protocolCallBack = nil;
+    self.cacheResponseHeaders = nil;
     [super dealloc];
-}
-
-- (BOOL)isCacheExist
-{
-    return self.cacheFileData.length > 0;
 }
 
 - (void)preloadDataWithProtocolCallBack:(SonicURLProtocolCallBack)callBack
@@ -109,19 +124,19 @@
         [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
     }else{
         if (self.isComplete) {
-            rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
             [self.lock lock];
+            rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
             dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
             [self.lock unlock];
             finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
             NSLog(@"resource read from network:%@",self.url);
             [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
         }else{
+            [self.lock lock];
             if (self.originResponse) {
                 rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
                 [actions addObject:rspItem];
             }
-            [self.lock lock];
             if (self.responseData.length> 0) {
                 dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
                 [actions addObject:dataItem];
@@ -141,6 +156,7 @@
 
 - (void)cancel
 {
+    self.lock = nil;
     if (self.connection) {
         self.connection.delegate = nil;
         [self.connection stopLoading];
@@ -180,11 +196,10 @@
     
     //Allow custom class to intercept the request
     Class connectionClass = [SonicServer connectionClassForRequest:request];
-    self.connection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[SonicResourceLoader resourceQueue]];
+    self.connection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[NSOperationQueue currentQueue]];
     self.connection.supportHTTPRedirection = YES;
     [self.connection startLoading];
-    _hasStartNetwork = YES;
-    NSLog(@"statrt load resource:%@",self.url);
+    [request release];
 }
 
 - (void)appendData:(NSData *)data
@@ -198,9 +213,9 @@
 
 - (void)connection:(SonicConnection *)connection didReceiveResponse:(NSHTTPURLResponse *)response
 {
-    NSLog(@"resource recieve response:%@",response.allHeaderFields);
-
+    [self.lock lock];
     self.originResponse = response;
+    [self.lock unlock];
     [self disaptchProtocolAction:SonicURLProtocolActionRecvResponse withParam:response];
 }
 
@@ -256,8 +271,8 @@
         }
     }
     //default resource expire time
-    unsigned long long maxAgeTime = maxAge.length > 0? [maxAge longLongValue]:[SonicConfiguration defaultConfiguration].maxResourceDefaultCacheTime;
-    unsigned long long cacheExpireTime = currentTimeStamp() + maxAgeTime;
+    unsigned long long maxAgeTime = maxAge.length > 0? [maxAge longLongValue]:0;
+    unsigned long long cacheExpireTime = maxAgeTime == 0? 0:currentTimeStamp() + maxAgeTime;
     NSString *tmpSha1 = getDataSha1(self.responseData);
     if (tmpSha1.length == 0) {
         return nil;

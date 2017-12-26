@@ -61,22 +61,49 @@
  */
 - (instancetype)initWithUrl:(NSString *)url delegate:(id<SonicServerDelegate>) delegate delegateQueue:(NSOperationQueue *) queue;
 
+/**
+ * Set the specified field to the request header.
+ */
 - (void)setRequestHeaderFields:(NSDictionary *)headers;
 
+/**
+ * Add the specified field to the request header.
+ */
 - (void)addRequestHeaderFields:(NSDictionary *)headers;
 
+/**
+ * Set the specified field to the response header.
+ */
 - (void)setResponseHeaderFields:(NSDictionary *)headers;
 
+/**
+ * Get response header specified field for key.
+ */
 - (NSString *)responseHeaderForKey:(NSString *)aKey;
 
+/**
+ * Returns whether the Sonic response is currently valid.
+ */
 - (BOOL)isSonicResponse;
 
+/**
+ * Enable the local server mode.
+ */
 - (void)enableLocalServer:(BOOL)enable;
 
+/**
+ * Request data over the network.
+ */
 - (void)start;
 
+/**
+ * Cancel the request.
+ */
 - (void)stop;
 
+/**
+ * Get the sonic cache from the item
+ */
 - (NSDictionary *)sonicItemForCache;
 
 @end

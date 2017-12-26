@@ -19,23 +19,24 @@
 
 #import "SonicConfiguration.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 @implementation SonicConfiguration
 
 + (SonicConfiguration *)defaultConfiguration
 {
     SonicConfiguration *configuration = [[SonicConfiguration new]autorelease];
     configuration.cacheOfflineDisableTime = 21600;
-//    configuration.cacheMaxDirectorySize = 31457280;
-    configuration.cacheMaxDirectorySize = 50;
+    configuration.cacheMaxDirectorySize = 31457280;
     configuration.cacheDirectorySizeWarningPercent = 0.8;
     configuration.cacheDirectorySizeSafePercent = 0.25;
     configuration.maxMemroyCacheItemCount = 3;
     configuration.maxUnStrictModeCacheSeconds = 300;
-    configuration.maxResourceDefaultCacheTime = 600;
-    configuration.resourceCacheSizeCheckDuration = 20;
-//    configuration.resourcCacheMaxDirectorySize = 31457280 * 2;
-    configuration.resourcCacheMaxDirectorySize = 20;
-    configuration.rootCacheSizeCheckDuration = 20;
+    configuration.resourceCacheSizeCheckDuration = 60 * 60 * 12;
+    configuration.resourcCacheMaxDirectorySize = 31457280 * 2;
+    configuration.rootCacheSizeCheckDuration = 60 * 60 * 12;
     
     return configuration;
 }

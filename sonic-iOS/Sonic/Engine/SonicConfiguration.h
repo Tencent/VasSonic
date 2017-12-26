@@ -32,35 +32,42 @@
 @property (nonatomic,assign)unsigned long long cacheMaxDirectorySize;
 
 /**
- * Clean up the cache if the current cache reaches the maximum cache of 0.8
+ * Clean up the cache if the current cache reaches the maximum cache of 0.8.
  */
 @property (nonatomic,assign)float cacheDirectorySizeWarningPercent;
 
 /**
- * Clean up the cache to the maximum cache of 0.2
+ * Clean up the cache to the maximum cache of 0.2.
  */
 @property (nonatomic,assign)float cacheDirectorySizeSafePercent;
 
 /**
- * The memory cache maximum count
+ * The memory cache maximum count.
  */
 @property (nonatomic,assign)NSInteger maxMemroyCacheItemCount;
 
 /**
- * The max cache time under strict-mode:false,default is 5 min
+ * The max cache time under strict-mode:false,default is 5 min.
  */
 @property (nonatomic,assign)unsigned long long maxUnStrictModeCacheSeconds;
 
-@property (nonatomic,assign)unsigned long long maxResourceDefaultCacheTime;
-
+/**
+ * The default time interval for clearing resource cache, default is 12 hours.
+ */
 @property (nonatomic,assign)unsigned long long resourceCacheSizeCheckDuration;
 
+/**
+ * The default time interval for clearing root cache, default is 12 hours.
+ */
 @property (nonatomic,assign)unsigned long long rootCacheSizeCheckDuration;
 
+/**
+ * Maximum resource cache directory size, default is 60MB.
+ */
 @property (nonatomic,assign)unsigned long long resourcCacheMaxDirectorySize;
 
 /**
- * Return default configuration
+ * Return default configuration.
  */
 + (SonicConfiguration *)defaultConfiguration;
 

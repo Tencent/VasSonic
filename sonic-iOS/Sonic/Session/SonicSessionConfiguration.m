@@ -19,6 +19,10 @@
 
 #import "SonicSessionConfiguration.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 @implementation SonicSessionConfiguration
 
 - (void)dealloc

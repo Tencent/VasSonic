@@ -150,16 +150,34 @@
 
 #pragma mark - Sub resource load
 
+/**
+ * Save resource data and configuration information by Resource ID.
+ */
 - (BOOL)saveSubResourceData:(NSData *)data withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeader withSessionID:(NSString *)sessionID;
 
+/**
+ * Returns the binary data of the resource.
+ */
 - (NSData *)resourceCacheWithSessionID:(NSString *)sessionID;
 
+/**
+ * Return the resource's response header field information.
+ */
 - (NSDictionary *)responseHeadersWithSessionID:(NSString *)sessionID;
 
+/**
+ * Return resource configuration information.
+ */
 - (NSDictionary *)resourceConfigWithSessionID:(NSString *)sessionID;
 
+/**
+ * Clear the cache with the resource ID.
+ */
 - (BOOL)clearResourceWithSessionID:(NSString *)sessionID;
 
+/**
+ * Resource save file operation queue.
+ */
 + (NSOperationQueue *)subResourceQueue;
 
 /**

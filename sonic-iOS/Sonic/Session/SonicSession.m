@@ -119,16 +119,16 @@
         self.cacheConfigHeaders = cacheItem.config;
         self.cacheResponseHeaders = cacheItem.cacheResponseHeaders;
         self.localRefreshTime = cacheItem.lastRefreshTime;
+        //load sub resource if need
+        [self preloadSubResourceWithResponseHeaders:self.cacheResponseHeaders];
     }
     
     [self setupRequestHeaders];
-    
-    //setup resource loader
-    _resourceLoader = [[SonicResourceLoader alloc]initWithSessionID:self.sessionID];
 }
 
 - (void)dealloc
 {
+    [_resourceLoader cancelAll];
     [_resourceLoader release];
     _resourceLoader = nil;
     
@@ -156,6 +156,10 @@
     
     if (self.protocolCallBack) {
         self.protocolCallBack = nil;
+    }
+    
+    if (self.updateCallBack) {
+        self.updateCallBack = nil;
     }
     
     [self cancel];
@@ -626,6 +630,17 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     self.localRefreshTime = self.localRefreshTime.length > 0? self.localRefreshTime:@"";
     [resultDict setObject:self.localRefreshTime forKey:@"local_refresh_time"];
     
+    //Add extra info
+    NSString *templateTag = self.cacheConfigHeaders[@"template-tag"];
+    templateTag = templateTag.length > 0? templateTag:@"";
+    NSString *etag = self.cacheConfigHeaders[@"etag"];
+    etag = etag.length > 0? etag:@"";
+    NSString *isRefresh = self.isUpdate? @"true":@"false";
+    NSString *cacheOffline = [self.sonicServer responseHeaderForKey:@"cache-offline"];
+    cacheOffline = cacheOffline.length > 0? cacheOffline:@"";
+    NSDictionary *extra = @{@"template-tag":templateTag,@"eTag":etag,@"isReload":isRefresh,@"cache-offline":cacheOffline};
+    [resultDict setObject:extra forKey:@"extra"];
+
     NSLog(@"sonic diff result :%@",resultDict);
     
     return resultDict;
@@ -709,13 +724,6 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     if (self.isUpdate) {
         if (self.updateCallBack) {
             NSDictionary *resultDict = [self sonicDiffResult];
-            //Add Update Info
-            NSString *templateTag = self.cacheConfigHeaders[@"template-tag"];
-            NSString *etag = self.cacheConfigHeaders[@"Etag"];
-            NSString *isRefresh = [@(self.isUpdate) stringValue];
-            NSDictionary *extra = @{@"template-tag":templateTag,@"Etag":etag,@"isReload":isRefresh};
-            NSMutableDictionary *mResultDict = [NSMutableDictionary dictionaryWithDictionary:resultDict];
-            [mResultDict setObject:extra forKey:@"extra"];
             if (resultDict) {
                 self.updateCallBack(resultDict);
             }
@@ -800,12 +808,11 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         return;
     }
     NSArray *linkArray = [linkValue componentsSeparatedByString:@";"];
-    if ([linkArray isKindOfClass:[NSArray class]]) {
-        for (NSString *url in linkArray) {
-            [self.resourceLoader loadResourceWithUrl:url];
+    if (linkArray.count > 0) {
+        if (!_resourceLoader) {
+            _resourceLoader = [SonicResourceLoader new];
         }
-    }else{
-        NSLog(@"link json not array");
+        [_resourceLoader loadResourceLinks:linkArray];
     }
 }
 

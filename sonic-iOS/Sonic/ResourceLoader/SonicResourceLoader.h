@@ -21,6 +21,10 @@
 
 - (instancetype)initWithSessionID:(NSString *)sessionID;
 
+- (void)cancelAll;
+
++ (BOOL)isResourceRequest:(NSURLRequest *)request;
+
 - (BOOL)canInterceptResourceWithUrl:(NSString *)url;
 
 - (void)loadResourceWithUrl:(NSString *)url;

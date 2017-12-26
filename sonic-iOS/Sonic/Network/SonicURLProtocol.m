@@ -45,11 +45,17 @@
     }
     
     //Sub resource intercept
-    NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
-    SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
-    if ([session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
-        NSLog(@"SonicURLProtocol.canInitWithRequest resource intercept:%@",request.debugDescription);
-        return YES;
+    if ([SonicResourceLoader isResourceRequest:request]) {
+        NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
+        SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
+        if ([session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
+            NSLog(@"SonicURLProtocol.canInitWithRequest resource intercept:%@",request.debugDescription);
+            return YES;
+        }else{
+            NSLog(@"SonicURLProtocol resource connection not exist:%@",request.URL.absoluteString);
+        }
+    }else{
+        NSLog(@"SonicURLProtocol mainDocReq %@ main:%@",request.URL.absoluteString,request.mainDocumentURL.absoluteString);
     }
     
     return NO;
@@ -71,6 +77,8 @@
     
     if ([session.resourceLoader canInterceptResourceWithUrl:self.request.URL.absoluteString]) {
         
+        NSLog(@"protocol resource did start loading :%@",self.request.debugDescription);
+
         SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
         
         [session.resourceLoader preloadResourceWithUrl:self.request.URL.absoluteString withProtocolCallBack:^(NSDictionary *param) {
@@ -116,12 +124,14 @@
             NSData *recvData = params[kSonicProtocolData];
             if (recvData.length > 0) {
                 [self.client URLProtocol:self didLoadData:recvData];
+                NSLog(@"protocol did load data length:%ld",recvData.length);
             }
         }
             break;
         case SonicURLProtocolActionDidSuccess:
         {
             [self.client URLProtocolDidFinishLoading:self];
+            NSLog(@"protocol did finish loading request:%@",self.request.debugDescription);
         }
             break;
         case SonicURLProtocolActionDidFaild:

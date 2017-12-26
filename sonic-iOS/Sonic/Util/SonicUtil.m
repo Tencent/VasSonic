@@ -237,7 +237,7 @@ NSString * getDataSha1(NSData *data)
 
 unsigned long long currentTimeStamp()
 {
-    return (unsigned long long)([[NSDate date] timeIntervalSince1970]*1000);
+    return (unsigned long long)([[NSDate date] timeIntervalSince1970]);
 }
 
 @end

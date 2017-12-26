@@ -25,11 +25,17 @@
 {
     SonicConfiguration *configuration = [[SonicConfiguration new]autorelease];
     configuration.cacheOfflineDisableTime = 21600;
-    configuration.cacheMaxDirectorySize = 31457280.0;
+//    configuration.cacheMaxDirectorySize = 31457280;
+    configuration.cacheMaxDirectorySize = 50;
     configuration.cacheDirectorySizeWarningPercent = 0.8;
     configuration.cacheDirectorySizeSafePercent = 0.25;
     configuration.maxMemroyCacheItemCount = 3;
     configuration.maxUnStrictModeCacheSeconds = 300;
+    configuration.maxResourceDefaultCacheTime = 600;
+    configuration.resourceCacheSizeCheckDuration = 20;
+//    configuration.resourcCacheMaxDirectorySize = 31457280 * 2;
+    configuration.resourcCacheMaxDirectorySize = 20;
+    configuration.rootCacheSizeCheckDuration = 20;
     
     return configuration;
 }

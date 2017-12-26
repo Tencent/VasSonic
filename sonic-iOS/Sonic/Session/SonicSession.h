@@ -80,6 +80,9 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 /** SonicSession use this callback to notify SonicEngine when it finished. */
 @property (nonatomic,copy)SonicSessionCompleteCallback completionCallback;
 
+/** SonicSession use this callback to transfer status data to webview. */
+@property (nonatomic,copy)SonicWebviewCallBack updateCallBack;
+
 /** Check if all data did finish updated*/
 @property (nonatomic,assign)BOOL isDataFetchFinished;
 
@@ -139,7 +142,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block);
 /**
  * update current session by send request
  */
-- (void)update;
+- (BOOL)update;
 
 /**
  * It provide the network data by the protocolCallBack block

@@ -44,6 +44,7 @@
 @property (nonatomic,retain)NSData *cacheFileData;
 @property (nonatomic,retain)NSDictionary  *cacheResponseHeaders;
 @property (nonatomic,assign)BOOL didFinishCacheRead;
+@property (nonatomic,assign)BOOL isUpdate;
 
 /**
  * Use to hold all block operation in sonic session queue
@@ -102,10 +103,7 @@
         self.url = aUrl;
         _configuration = [aConfiguration retain];
         _sessionID = [sonicSessionID(aUrl) copy];
-        SonicServer *tServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
-        self.sonicServer = tServer;
-        [tServer release];
-        [self.sonicServer enableLocalServer:_configuration.enableLocalServer];
+        [self setupSonicServer];
         [self setupData];
     }
     return self;
@@ -233,11 +231,27 @@
     }
 }
 
-- (void)update
+- (void)setupSonicServer
 {
+    if (self.sonicServer) {
+        self.sonicServer = nil;
+    }
+    SonicServer *tServer = [[SonicServer alloc] initWithUrl:self.url delegate:self delegateQueue:[SonicSession sonicSessionQueue]];
+    self.sonicServer = tServer;
+    [tServer release];
+    [self.sonicServer enableLocalServer:_configuration.enableLocalServer];
+}
+
+- (BOOL)update
+{
+    if (self.sonicServer.isRuning) {
+        return NO;
+    }
+    [self setupSonicServer];
     self.isFirstLoad = self.cacheConfigHeaders.count > 0 ? NO:YES;
     [self setupRequestHeaders];
     [self start];
+    return YES;
 }
 
 - (void)syncCookies
@@ -459,9 +473,10 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     }
     
     self.isDataFetchFinished = YES;
+    
+    //use the call back to tell web page which mode used
+    [self dispatchUpdateCallBack];
 }
-
-
 
 - (void)dispatchProtocolAction:(SonicURLProtocolAction)action param:(NSObject *)param
 {
@@ -673,14 +688,41 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     }
     
     //use the call back to tell web page which mode used
-    if (self.webviewCallBack) {
-        NSDictionary *resultDict = [self sonicDiffResult];
-        if (resultDict) {
-            self.webviewCallBack(resultDict);
+    if (self.isUpdate) {
+        [self dispatchUpdateCallBack];
+    }else{
+        if (self.webviewCallBack) {
+            NSDictionary *resultDict = [self sonicDiffResult];
+            if (resultDict) {
+                self.webviewCallBack(resultDict);
+            }
+        }else{
+            NSLog(@"There is no webViewCallBack!");
         }
     }
     
     [self checkAutoCompletionAction];
+}
+
+- (void)dispatchUpdateCallBack
+{
+    if (self.isUpdate) {
+        if (self.updateCallBack) {
+            NSDictionary *resultDict = [self sonicDiffResult];
+            //Add Update Info
+            NSString *templateTag = self.cacheConfigHeaders[@"template-tag"];
+            NSString *etag = self.cacheConfigHeaders[@"Etag"];
+            NSString *isRefresh = [@(self.isUpdate) stringValue];
+            NSDictionary *extra = @{@"template-tag":templateTag,@"Etag":etag,@"isReload":isRefresh};
+            NSMutableDictionary *mResultDict = [NSMutableDictionary dictionaryWithDictionary:resultDict];
+            [mResultDict setObject:extra forKey:@"extra"];
+            if (resultDict) {
+                self.updateCallBack(resultDict);
+            }
+        }else{
+            NSLog(@"There is no updateCallBack!");
+        }
+    }
 }
 
 - (void)dealWithTemplateChange
@@ -752,11 +794,18 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 
 - (void)preloadSubResourceWithResponseHeaders:(NSDictionary *)responseHeaders
 {
-    for (NSString *key in responseHeaders.allKeys) {
-        if ([key hasPrefix:@"link_"]) {
-            NSString *url = responseHeaders[key];
-            [_resourceLoader loadResourceWithUrl:url];
+    NSString *linkValue = responseHeaders[SonicHeaderKeyLink];
+    if (linkValue.length == 0) {
+        NSLog(@"no preload link exist!");
+        return;
+    }
+    NSArray *linkArray = [linkValue componentsSeparatedByString:@";"];
+    if ([linkArray isKindOfClass:[NSArray class]]) {
+        for (NSString *url in linkArray) {
+            [self.resourceLoader loadResourceWithUrl:url];
         }
+    }else{
+        NSLog(@"link json not array");
     }
 }
 

@@ -264,12 +264,13 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     return findSession;
 }
 
-- (BOOL)reloadSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate
+- (BOOL)reloadSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate completion:(SonicWebviewCallBack)resultBlock
 {
     SonicSession *findSession = [self sessionWithWebDelegate:aWebDelegate];
     if (!findSession) {
         return NO;
     }
+    findSession.updateCallBack = resultBlock;
     [findSession update];
     return YES;
 }

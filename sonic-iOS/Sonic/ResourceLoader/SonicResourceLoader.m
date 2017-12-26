@@ -51,30 +51,29 @@
     return [SonicResourceLoader resourceQueue];
 }
 
++ (BOOL)isResourceRequest:(NSURLRequest *)request
+{
+    return ![request.URL.absoluteString isEqualToString:request.mainDocumentURL.absoluteString];
+}
+
 - (BOOL)canInterceptResourceWithUrl:(NSString *)url
 {
-    NSLog(@"resource load canInterceptUrl:%@ operations:%@",url,self.operationQueue.operations.debugDescription);
-    BOOL findOperation = NO;
-    if (self.operationQueue.operations.count > 0) {
+    SonicResourceLoadOperation *findOperation = nil;
+    if (self.operationQueue.operationCount > 0) {
         for (NSOperation *item in self.operationQueue.operations) {
-            NSString *resourceOperationClass = NSStringFromClass(SonicResourceLoadOperation.class);
-            if ([NSStringFromClass(item.class) isEqualToString:resourceOperationClass]) {
+            if ([NSStringFromClass(item.class) isEqualToString:NSStringFromClass(SonicResourceLoadOperation.class)]) {
                 if ([[(SonicResourceLoadOperation*)item url] isEqualToString:url]) {
-                    findOperation = YES;
+                    findOperation = (SonicResourceLoadOperation *)item;
                     break;
                 }
             }
         }
     }
-    if (findOperation) {
-        return findOperation;
+    if (findOperation.hasStartNetwork || findOperation.isCacheExist ) {
+        NSLog(@"find resource connection hasStartNetwork:%d isCacheExist:%d",findOperation.hasStartNetwork,findOperation.isCacheExist);
+        return YES;
     }
-    
-    //is cache here
-    SonicResourceLoadOperation *operation = [[SonicResourceLoadOperation alloc]initWithUrl:url];
-    [self.operationQueue addOperation:operation];
-    
-    return operation.isCacheExist;
+    return [[SonicCache shareCache] resourceConfigWithSessionID:resourceSessionID(url)].count > 0;
 }
 
 - (void)loadResourceWithUrl:(NSString *)url
@@ -86,15 +85,20 @@
 - (void)preloadResourceWithUrl:(NSString *)url withProtocolCallBack:(SonicURLProtocolCallBack)callback
 {
     SonicResourceLoadOperation *findOperation = nil;
-    for (SonicResourceLoadOperation *item in self.operationQueue.operations) {
-        if ([item.url isEqualToString:url]) {
-            findOperation = item;
-            break;
+    for (NSOperation *item in self.operationQueue.operations) {
+        if ([NSStringFromClass(item.class) isEqualToString:NSStringFromClass(SonicResourceLoadOperation.class)]) {
+            if ([[(SonicResourceLoadOperation*)item url] isEqualToString:url]) {
+                findOperation = (SonicResourceLoadOperation *)item;
+                break;
+            }
         }
     }
-    if (findOperation) {
-        [findOperation preloadDataWithProtocolCallBack:callback];
+    if (!findOperation) {
+       //cache must be exist
+        findOperation = [[SonicResourceLoadOperation alloc]initWithUrl:url];
+        [self.operationQueue addOperation:findOperation];
     }
+    [findOperation preloadDataWithProtocolCallBack:callback];
 }
 
 @end

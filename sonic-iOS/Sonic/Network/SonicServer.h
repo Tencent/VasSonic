@@ -36,6 +36,7 @@
 
 @property (nonatomic,readonly)BOOL isInLocalServerMode;
 
+@property (nonatomic,readonly)BOOL isRuning;
 
 /**
  * Register a SonicConnection Class to provide network data.

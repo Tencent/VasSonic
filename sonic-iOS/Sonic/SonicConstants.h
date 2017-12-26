@@ -143,6 +143,8 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
  */
 #define SonicHeaderKeyTemplateChange @"template-change"
 
+#define SonicHeaderKeyLink @"sonic-link"
+
 /**
  * Pass Etag through this field.
  */

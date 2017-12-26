@@ -26,11 +26,10 @@
 
 #define SonicCreateTableSql @"create table if not exists 'config' ('sessionID' text primary key not null,'local_refresh' text,'template-tag' text,'etag' text,'sha1' text,'cache-expire-time' text)"
 
-#define SonicCreateResourceConfigSql @"create table if not exists 'resource_config' ('sessionID' text primary key not null,'sha1' text,'cache-expire-time' text)"
-
 @interface SonicDatabase()
 {
     sqlite3 *_db;
+    NSLock *_resourceLock;
 }
 
 @end
@@ -46,10 +45,10 @@
         if (ret != SQLITE_OK) {
             
             NSLog(@"database open db faild :%@ code:%d",dbPath,ret);
+            _resourceLock = [NSLock new];
         }
         
         [self createConfigTableIfNotExist];
-        [self createResourceConfigIfNotExist];
     }
     return self;
 }
@@ -253,39 +252,6 @@
 {
     NSString *sql = [NSString stringWithFormat:@"delete from config where sessionID = '%@'",sessionID];
     
-    return [self execSql:sql];
-}
-
-#pragma mark - resource
-
-- (void)createResourceConfigIfNotExist
-{
-    [self execSql:SonicCreateResourceConfigSql];
-}
-
-- (BOOL)insertResourceConfigWithKeyValues:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID
-{
-    if (keyValues.count == 0) {
-        return NO;
-    }
-    
-    //clear if exist
-    NSString *isExistSql = [NSString stringWithFormat:@"select 'sessionID' from resource_config where sessionID = '%@'",sessionID];
-    BOOL isExist = [self execSql:isExistSql];
-    if (isExist) {
-        [self clearResourceConfigWithSessionID:sessionID];
-    }
-    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO table:@"resource_config"];
-}
-
-- (NSDictionary *)queryResourceConfigWithSessionID:(NSString *)sessionID
-{
-    return [self queryWithKeys:@[@"sessionID",@"cache-expire-time"] withSessionID:sessionID table:@"resource_config"];
-}
-
-- (BOOL)clearResourceConfigWithSessionID:(NSString *)sessionID
-{
-    NSString *sql = [NSString stringWithFormat:@"delete from resource_config where sessionID = '%@'",sessionID];
     return [self execSql:sql];
 }
 

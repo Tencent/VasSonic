@@ -51,6 +51,14 @@
  */
 @property (nonatomic,assign)unsigned long long maxUnStrictModeCacheSeconds;
 
+@property (nonatomic,assign)unsigned long long maxResourceDefaultCacheTime;
+
+@property (nonatomic,assign)unsigned long long resourceCacheSizeCheckDuration;
+
+@property (nonatomic,assign)unsigned long long rootCacheSizeCheckDuration;
+
+@property (nonatomic,assign)unsigned long long resourcCacheMaxDirectorySize;
+
 /**
  * Return default configuration
  */

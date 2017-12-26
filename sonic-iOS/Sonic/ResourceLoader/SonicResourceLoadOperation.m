@@ -11,6 +11,7 @@
 #import "SonicResourceLoader.h"
 #import "SonicCache.h"
 #import "SonicUtil.h"
+#import "SonicConfiguration.h"
 
 @interface SonicResourceLoadOperation()<SonicConnectionDelegate>
 
@@ -26,6 +27,8 @@
 
 @property (nonatomic,retain)NSHTTPURLResponse *originResponse;
 
+@property (nonatomic,assign)BOOL isComplete;
+
 @property (nonatomic,retain)NSLock *lock;
 
 
@@ -40,16 +43,29 @@
         self.responseData = [NSMutableData data];
         _sessionID = [resourceSessionID(_url) copy];
         self.lock = [NSLock new];
-        
-        long long cacheExpire = [self.config[@"cache-expire-time"] longLongValue];
-        long long now = (long long)([[NSDate date] timeIntervalSince1970] * 1000);
-//        if (cacheExpire <= now) {
-//            [[SonicCache shareCache] clearResourceWithSessionID:sourceID];
-//        }else{
-            self.cacheFileData = [[SonicCache shareCache] resourceCacheWithSessionID:self.sessionID];
-            self.config = [[SonicCache shareCache] resourceConfigWithSessionID:self.sessionID];
-            self.cacheResponseHeaders = [[SonicCache shareCache] responseHeadersWithSessionID:self.sessionID];
-//        }
+    
+        self.config = [[SonicCache shareCache] resourceConfigWithSessionID:self.sessionID];
+        if (self.config) {
+            long long cacheExpire = [self.config[@"cache-expire-time"] longLongValue];
+            long long now = (long long)[[NSDate date] timeIntervalSince1970];
+            if (cacheExpire <= now) {
+                self.config = nil;
+                NSLog(@"resource expire:%@",self.url);
+            }else{
+                self.cacheFileData = [[SonicCache shareCache] resourceCacheWithSessionID:self.sessionID];
+                NSString *cacheFileSha1 = getDataSha1(self.cacheFileData);
+                _sha1 = self.config[@"sha1"];
+                if ([cacheFileSha1 isEqualToString:_sha1]) {
+                    self.cacheResponseHeaders = [[SonicCache shareCache] responseHeadersWithSessionID:self.sessionID];
+                }else{
+                    self.cacheFileData = nil;
+                    self.config = nil;
+                    [_sha1 release];
+                    _sha1 = nil;
+                    NSLog(@"resource sha1 wrong:%@",self.url);
+                }
+            }
+        }
     }
     return self;
 }
@@ -78,27 +94,47 @@
     if (!callBack) {
         return;
     }
-    self.protocolCallBack = callBack;
     NSDictionary *rspItem = nil;
     NSDictionary *dataItem = nil;
     NSDictionary *finishItem = nil;
+    NSMutableArray *actions = [NSMutableArray array];
     if (self.cacheFileData && self.cacheFileData.length > 0 && self.cacheResponseHeaders.count > 0) {
         NSHTTPURLResponse *resp = [[[NSHTTPURLResponse alloc]initWithURL:[NSURL URLWithString:self.url] statusCode:200 HTTPVersion:@"HTTP/1.1" headerFields:self.cacheResponseHeaders]autorelease];
         rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:resp];
-        dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
-        finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
-        NSLog(@"resource read from cache:%@",self.url);
-    }else{
-        rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
         [self.lock lock];
         dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
         [self.lock unlock];
         finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
-        NSLog(@"resource read from network:%@",self.url);
+        NSLog(@"resource read from cache:%@",self.url);
+        [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
+    }else{
+        if (self.isComplete) {
+            rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
+            [self.lock lock];
+            dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
+            [self.lock unlock];
+            finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
+            NSLog(@"resource read from network:%@",self.url);
+            [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
+        }else{
+            if (self.originResponse) {
+                rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
+                [actions addObject:rspItem];
+            }
+            [self.lock lock];
+            if (self.responseData.length> 0) {
+                dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
+                [actions addObject:dataItem];
+            }
+            [self.lock unlock];
+            NSLog(@"resource read from network preload:%@",self.url);
+        }
     }
-    self.protocolCallBack(rspItem);
-    self.protocolCallBack(dataItem);
-    self.protocolCallBack(finishItem);
+    self.protocolCallBack = callBack;
+    for (NSInteger index = 0; index < actions.count; index ++){
+        NSDictionary *item = actions[index];
+        self.protocolCallBack(item);
+    }
 }
 
 
@@ -147,7 +183,7 @@
     self.connection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[SonicResourceLoader resourceQueue]];
     self.connection.supportHTTPRedirection = YES;
     [self.connection startLoading];
-    
+    _hasStartNetwork = YES;
     NSLog(@"statrt load resource:%@",self.url);
 }
 
@@ -176,7 +212,10 @@
 
 - (void)connection:(SonicConnection *)connection didCompleteWithError:(NSError *)error
 {
+    NSLog(@"resource recieve error:%@",error.debugDescription);
+
     [self disaptchProtocolAction:SonicURLProtocolActionDidFaild withParam:error];
+    self.isComplete = YES;
 }
 
 - (void)connectionDidCompleteWithoutError:(SonicConnection *)connection
@@ -184,7 +223,17 @@
     [self disaptchProtocolAction:SonicURLProtocolActionDidSuccess withParam:nil];
     
     //save resource data
-    [[SonicCache shareCache] saveSubResourceData:self.responseData withConfig:[self createConfig] withResponseHeaders:self.originResponse.allHeaderFields withSessionID:self.sessionID];
+    NSBlockOperation *block = [NSBlockOperation blockOperationWithBlock:^{
+        NSDictionary *config = [self createConfig];
+        if (config) {
+           [[SonicCache shareCache] saveSubResourceData:self.responseData withConfig:config withResponseHeaders:self.originResponse.allHeaderFields withSessionID:self.sessionID];
+        }else{
+            NSLog(@"config create fail to save resource:%@",self.url);
+        }
+    }];
+    [[SonicCache subResourceQueue] addOperation:block];
+    
+    self.isComplete = YES;
 }
 
 - (void)disaptchProtocolAction:(SonicURLProtocolAction)action withParam:(NSObject *)param
@@ -206,11 +255,14 @@
             break;
         }
     }
-    unsigned long long maxAgeTime = maxAge.length > 0? [maxAge longLongValue]:0;
+    //default resource expire time
+    unsigned long long maxAgeTime = maxAge.length > 0? [maxAge longLongValue]:[SonicConfiguration defaultConfiguration].maxResourceDefaultCacheTime;
     unsigned long long cacheExpireTime = currentTimeStamp() + maxAgeTime;
-    NSString *sha1 = getDataSha1(self.responseData);
-    sha1 = sha1.length>0? sha1:@"";
-    return @{@"sha1":sha1,@"cache-expire-time":[@(cacheExpireTime) stringValue]};
+    NSString *tmpSha1 = getDataSha1(self.responseData);
+    if (tmpSha1.length == 0) {
+        return nil;
+    }
+    return @{@"sha1":tmpSha1,@"cache-expire-time":[@(cacheExpireTime) stringValue]};
 }
 
 @end

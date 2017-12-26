@@ -131,7 +131,7 @@
 /**
  * Reload session to update page content
  */
-- (BOOL)reloadSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate;
+- (BOOL)reloadSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate completion:(SonicWebviewCallBack)resultBlock;
 
 /**
  * Get the patch between local data and server data.

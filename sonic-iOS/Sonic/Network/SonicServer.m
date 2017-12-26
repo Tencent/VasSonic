@@ -133,6 +133,7 @@ static NSLock *sonicRequestClassLock;
 
 - (void)start
 {
+    _isRuning = YES;
     if (nil != self.connection) {
         [self.connection stopLoading];
         self.connection = nil;
@@ -476,6 +477,7 @@ static NSLock *sonicRequestClassLock;
         }
     }
     [self.delegate serverDidCompleteWithoutError:self];
+    _isRuning = NO;
 }
 
 /**
@@ -490,6 +492,7 @@ static NSLock *sonicRequestClassLock;
         [self.delegate server:self didReceiveData:self.responseData];
     }
     [self.delegate server:self didCompleteWithError:error];
+    _isRuning = NO;
 }
 
 @end

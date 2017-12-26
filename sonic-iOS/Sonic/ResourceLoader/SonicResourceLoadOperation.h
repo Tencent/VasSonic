@@ -17,7 +17,11 @@ typedef void(^SonicResourceOperationCompleteBlock) (BOOL state,NSError *errorMsg
 
 @property (nonatomic,readonly)NSString *url;
 
+@property (nonatomic,readonly)NSString *sha1;
+
 @property (nonatomic,copy)SonicURLProtocolCallBack protocolCallBack;
+
+@property (nonatomic,readonly)BOOL hasStartNetwork;
 
 @property (nonatomic,readonly)BOOL isCacheExist;
 

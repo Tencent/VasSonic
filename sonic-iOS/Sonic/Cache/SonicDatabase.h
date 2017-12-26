@@ -56,12 +56,4 @@
  */
 - (void)close;
 
-- (BOOL)insertResourceConfigWithKeyValues:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID;
-
-- (NSDictionary *)queryResourceConfigWithSessionID:(NSString *)sessionID;
-
-- (BOOL)clearResourceConfigWithMainSessionID:(NSString *)sessionID;
-
-- (BOOL)clearResourceConfigWithSessionID:(NSString *)sessionID;
-
 @end

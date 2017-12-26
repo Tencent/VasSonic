@@ -160,6 +160,8 @@
 
 - (BOOL)clearResourceWithSessionID:(NSString *)sessionID;
 
++ (NSOperationQueue *)subResourceQueue;
+
 /**
  * Check file cache size, we keep max cache size 30MB
  */

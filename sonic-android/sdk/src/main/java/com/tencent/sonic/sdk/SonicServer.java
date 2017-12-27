@@ -409,7 +409,7 @@ public class SonicServer implements SonicSessionStream.Callback {
         return true;
     }
 
-    private void separateTemplateAndData() {
+    protected void separateTemplateAndData() {
         if (!TextUtils.isEmpty(serverRsp)) {
             StringBuilder templateStringBuilder = new StringBuilder();
             StringBuilder dataStringBuilder = new StringBuilder();
@@ -421,10 +421,11 @@ public class SonicServer implements SonicSessionStream.Callback {
 
             String eTag = getResponseHeaderField(CUSTOM_HEAD_FILED_ETAG);
             String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+            String newHtmlSha1 = null;
             if (TextUtils.isEmpty(eTag)) { // When eTag is empty, fill eTag with Sha1
-                eTag = SonicUtils.getSHA1(serverRsp);
+                newHtmlSha1 = eTag = SonicUtils.getSHA1(serverRsp);
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_ETAG, eTag);
-                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, newHtmlSha1);
             }
 
             if (TextUtils.isEmpty(templateString)) { // The same with htmlString
@@ -438,6 +439,10 @@ public class SonicServer implements SonicSessionStream.Callback {
                 try {
                     JSONObject object = new JSONObject();
                     object.put("data", new JSONObject(data));
+                    if (TextUtils.isEmpty(newHtmlSha1)) {
+                        newHtmlSha1 = SonicUtils.getSHA1(serverRsp);
+                        addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, newHtmlSha1);
+                    }
                     object.put("html-sha1", getResponseHeaderField(CUSTOM_HEAD_FILED_HTML_SHA1));
                     object.put("template-tag", getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG));
                     dataString = object.toString();

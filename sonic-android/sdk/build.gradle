@@ -14,7 +14,6 @@ android {
         versionName "2.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
     }
 
     buildTypes {
@@ -30,8 +29,16 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
     testCompile 'junit:junit:4.12'
+
+
+    // Required for instrumented tests
+    androidTestCompile 'com.android.support:support-annotations:24.0.0'
+    androidTestCompile 'com.android.support.test:runner:0.5'
+
     compile 'com.android.support:support-annotations:25.2.0'
+    androidTestCompile 'com.squareup.okhttp3:mockwebserver:3.9.1'
 }
 
 

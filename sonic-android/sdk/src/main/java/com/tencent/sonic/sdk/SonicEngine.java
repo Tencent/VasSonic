@@ -262,7 +262,7 @@ public class SonicEngine {
             } else {
                 sonicSession = new StandardSonicSession(sessionId, url, sessionConfig);
             }
-            sonicSession.addCallback(sessionCallback);
+            sonicSession.addSessionStateChangedCallback(sessionCallback);
 
             if (sessionConfig.AUTO_START_WHEN_CREATE) {
                 sonicSession.start();
@@ -347,6 +347,7 @@ public class SonicEngine {
      */
     public void trimSonicCache() {
         SonicFileUtils.checkAndTrimCache();
+        SonicFileUtils.checkAndTrimResourceCache();
     }
 
     /**

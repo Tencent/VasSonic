@@ -21,15 +21,6 @@ import android.support.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_CACHE_HIT_COUNT;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_ETAG;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_HTML_SHA1;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_HTML_SIZE;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_SESSION_ID;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_EAG;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME;
-import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_UNAVAILABLE_TIME;
 /**
  *
  * SonicDataHelper provides sonic data such as eTag, templateTag, etc.
@@ -41,6 +32,72 @@ class SonicDataHelper {
      * Log filter
      */
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicDataHelper";
+
+    /**
+     * table name of the SessionData
+     */
+    protected static final String Sonic_SESSION_TABLE_NAME = "SessionData";
+
+    /**
+     * SessionData's id
+     */
+    protected static final String SESSION_DATA_COLUMN_SESSION_ID = "sessionID";
+
+    /**
+     * The key of eTag
+     */
+    protected static final String SESSION_DATA_COLUMN_ETAG = "eTag";
+
+    /**
+     * The key of templateTag
+     */
+    protected static final String SESSION_DATA_COLUMN_TEMPLATE_EAG = "templateTag";
+
+    /**
+     * The key of html sha1
+     */
+    protected static final String SESSION_DATA_COLUMN_HTML_SHA1 = "htmlSha1";
+
+    /**
+     * The key of html size
+     */
+    protected static final String SESSION_DATA_COLUMN_HTML_SIZE = "htmlSize";
+
+    /**
+     * The key of template update time
+     */
+    protected static final String SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME = "templateUpdateTime";
+
+    /**
+     * The key of Unavailable Time
+     */
+    protected static final String SESSION_DATA_COLUMN_UNAVAILABLE_TIME = "UnavailableTime";
+
+    /**
+     * The key of cache expired Time
+     */
+    protected static final String SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME = "cacheExpiredTime";
+
+    /**
+     * The key of cache hit count
+     */
+    protected static final String SESSION_DATA_COLUMN_CACHE_HIT_COUNT = "cacheHitCount";
+
+    /**
+     * The create table sql
+     */
+    public static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS " + Sonic_SESSION_TABLE_NAME + " ( " +
+            "id  integer PRIMARY KEY autoincrement" +
+            " , " + SESSION_DATA_COLUMN_SESSION_ID + " text not null" +
+            " , " + SESSION_DATA_COLUMN_ETAG + " text not null" +
+            " , " + SESSION_DATA_COLUMN_TEMPLATE_EAG + " text" +
+            " , " + SESSION_DATA_COLUMN_HTML_SHA1 + " text not null" +
+            " , " + SESSION_DATA_COLUMN_UNAVAILABLE_TIME + " integer default 0" +
+            " , " + SESSION_DATA_COLUMN_HTML_SIZE + " integer default 0" +
+            " , " + SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME + " integer default 0" +
+            " , " + SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME + " integer default 0" +
+            " , " + SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " integer default 0" +
+            " ); ";
 
     /**
      * Sonic data structure
@@ -104,6 +161,18 @@ class SonicDataHelper {
             unAvailableTime = 0;
         }
     }
+
+    /**
+     *
+     * @return all of the column in {@code Sonic_SESSION_TABLE_NAME}
+     */
+    static String[] getAllSessionDataColumn() {
+        return new String[] {SESSION_DATA_COLUMN_SESSION_ID, SESSION_DATA_COLUMN_ETAG,
+                SESSION_DATA_COLUMN_TEMPLATE_EAG, SESSION_DATA_COLUMN_HTML_SHA1,
+                SESSION_DATA_COLUMN_UNAVAILABLE_TIME, SESSION_DATA_COLUMN_HTML_SIZE,
+                SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME, SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME,
+                SESSION_DATA_COLUMN_CACHE_HIT_COUNT};
+    }
     
     /**
      * Get sonic sessionData by unique session id
@@ -128,8 +197,8 @@ class SonicDataHelper {
      * @return SessionData
      */
     private static SessionData getSessionData(SQLiteDatabase db, String sessionId) {
-        Cursor cursor = db.query(SonicDBHelper.Sonic_SESSION_TABLE_NAME,
-                SonicDBHelper.getAllSessionDataColumn(),
+        Cursor cursor = db.query(Sonic_SESSION_TABLE_NAME,
+                getAllSessionDataColumn(),
                 SESSION_DATA_COLUMN_SESSION_ID + "=?",
                 new String[] {sessionId},
                 null, null, null);
@@ -169,8 +238,8 @@ class SonicDataHelper {
     static List<SessionData> getAllSessionByHitCount() {
         List<SessionData> sessionDatas = new ArrayList<SessionData>();
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
-        Cursor cursor = db.query(SonicDBHelper.Sonic_SESSION_TABLE_NAME,
-                SonicDBHelper.getAllSessionDataColumn(),
+        Cursor cursor = db.query(Sonic_SESSION_TABLE_NAME,
+                getAllSessionDataColumn(),
                 null,null,null, null, SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " ASC");
         while(cursor != null && cursor.moveToNext()) {
             sessionDatas.add(querySessionData(cursor));
@@ -210,12 +279,12 @@ class SonicDataHelper {
 
     private static void insertSessionData(SQLiteDatabase db, String sessionId, SessionData sessionData) {
         ContentValues contentValues = getContentValues(sessionId, sessionData);
-        db.insert(SonicDBHelper.Sonic_SESSION_TABLE_NAME, null, contentValues);
+        db.insert(Sonic_SESSION_TABLE_NAME, null, contentValues);
     }
 
     private static void updateSessionData(SQLiteDatabase db, String sessionId, SessionData sessionData) {
         ContentValues contentValues = getContentValues(sessionId, sessionData);
-        db.update(SonicDBHelper.Sonic_SESSION_TABLE_NAME, contentValues, SESSION_DATA_COLUMN_SESSION_ID + "=?",
+        db.update(Sonic_SESSION_TABLE_NAME, contentValues, SESSION_DATA_COLUMN_SESSION_ID + "=?",
                 new String[] {sessionId});
     }
 
@@ -242,7 +311,7 @@ class SonicDataHelper {
      */
     static void removeSessionData(String sessionId) {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
-        db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, SESSION_DATA_COLUMN_SESSION_ID + "=?",
+        db.delete(Sonic_SESSION_TABLE_NAME, SESSION_DATA_COLUMN_SESSION_ID + "=?",
                 new String[] {sessionId});
     }
 
@@ -310,6 +379,6 @@ class SonicDataHelper {
      */
     static synchronized void clear() {
         SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
-        db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, null, null);
+        db.delete(Sonic_SESSION_TABLE_NAME, null, null);
     }
 }

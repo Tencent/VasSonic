@@ -28,6 +28,18 @@
 #import <CommonCrypto/CommonDigest.h>
 #import "SonicDatabase.h"
 
+#define SonicRootCacheDirName      @"SonicCache"
+
+#define SonicRootCacheConfigDirName @"SonicConfigCache"
+
+#define SonicResourceConfigDirName  @"SonicResourceConfig"
+
+#define SonicResourceCacheDirName   @"SonicResourceCache"
+
+#define kSonicRootCacheTrimTimestampUDF     @"kSonicRootCacheTrimTimestampUDF"
+
+#define kSonicResourceCacheTrimTimestampUDF @"kSonicResourceCacheTrimTimestampUDF"
+
 typedef NS_ENUM(NSUInteger, SonicCacheType) {
     /*
      * template
@@ -54,6 +66,10 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 @interface SonicCache ()
 
 @property (nonatomic,readonly)NSString *rootCachePath;
+
+@property (nonatomic,readonly)NSString *rootResourceCachePath;
+
+@property (nonatomic,readonly)NSString *rootResourceConfigCachePath;
 
 /*
  * memory cache item manage lock
@@ -113,6 +129,19 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     return _fileQueue;
 }
 
++ (NSOperationQueue *)subResourceQueue
+{
+    static NSOperationQueue *_fileQueue = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _fileQueue = [NSOperationQueue new];
+        _fileQueue.qualityOfService = NSQualityOfServiceDefault;
+        _fileQueue.name = @"Sonic.Resource.Cache";
+        _fileQueue.maxConcurrentOperationCount = 1;
+    });
+    return _fileQueue;
+}
+
 - (void)setupInit
 {
     self.maxCacheCount = [SonicEngine sharedEngine].configuration.maxMemroyCacheItemCount;
@@ -122,6 +151,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     
     //setup cache dir
     [self setupCacheDirectory];
+    [self setupSubResourceCacheDirectory];
     
     //read server disable sonic request timestamps
     [self setupCacheOfflineTimeCfgDict];
@@ -135,7 +165,8 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 - (void)setupDatabase
 {
-    NSString *dbPath = [self.rootCachePath stringByAppendingPathComponent:SonicCacheDatabase];
+    NSString *configPath = [self createDirectoryIfNotExist:self.rootCachePath withSubPath:SonicRootCacheConfigDirName];
+    NSString *dbPath = [configPath stringByAppendingPathComponent:SonicCacheDatabase];
     SonicDatabase *tDatabase = [[SonicDatabase alloc]initWithPath:dbPath];
     self.database = tDatabase;
     [tDatabase release];
@@ -169,6 +200,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         [self setupDatabase];
     });
     
+    [self clearResourceCache];
     [self clearMemoryCache];
 }
 
@@ -558,9 +590,7 @@ void dealInFileQueue(dispatch_block_t block)
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     
-    NSString *subDir = @"SonicCache";
-    
-    _rootCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:subDir] copy];
+    _rootCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:SonicRootCacheDirName] copy];
         
     return _rootCachePath.length > 0;
 }
@@ -730,16 +760,35 @@ void dealInFileQueue(dispatch_block_t block)
 
 - (void)checkAndTrimCache
 {
+    [self checkAndTrimRootCache];
+    [self checkAndTrimResourceCache];
+}
+
+- (void)checkAndTrimRootCache
+{
+    unsigned long long lastTrimStamp = [[[NSUserDefaults standardUserDefaults] objectForKey:kSonicRootCacheTrimTimestampUDF] longLongValue];
+    unsigned long long duration = currentTimeStamp() - lastTrimStamp;
+    if (duration < [SonicConfiguration defaultConfiguration].rootCacheSizeCheckDuration) {
+        NSLog(@"Trim root cache in duration!");
+        return;
+    }
+    NSLog(@"Trim root cache start !");
+    [self checkAndTrimCacheAtDirPath:_rootCachePath unIncludeSubDir:SonicRootCacheConfigDirName withMaxDirectorySize:[SonicConfiguration defaultConfiguration].cacheMaxDirectorySize withWarningPercent:[SonicConfiguration defaultConfiguration].cacheDirectorySizeWarningPercent];
+    [[NSUserDefaults standardUserDefaults] setObject:[@(currentTimeStamp()) stringValue] forKey:kSonicRootCacheTrimTimestampUDF];
+}
+
+- (void)checkAndTrimCacheAtDirPath:(NSString *)dirPath unIncludeSubDir:(NSString *)unInclueSubDir withMaxDirectorySize:(unsigned long long)maxDirSize withWarningPercent:(CGFloat)warningPercent
+{
     //Check current root cache directory size
-    if (_rootCachePath.length == 0) {
+    if (dirPath.length == 0) {
         return;
     }
 
-    unsigned long long cacheSize = [self folderSize:_rootCachePath];
+    unsigned long long cacheSize = [self folderSize:dirPath];
     
-    CGFloat percent = cacheSize/[SonicEngine sharedEngine].configuration.cacheMaxDirectorySize;
+    CGFloat percent = cacheSize/maxDirSize;
     
-    if ( percent < [SonicEngine sharedEngine].configuration.cacheDirectorySizeWarningPercent ) {
+    if ( percent < warningPercent ) {
         
         return;
         
@@ -748,7 +797,7 @@ void dealInFileQueue(dispatch_block_t block)
     dealInFileQueue(^{
         
         //sort sub directory by update time
-        NSArray *contentArray = [SonicFileManager contentsOfDirectoryAtPath:_rootCachePath error:nil];
+        NSArray *contentArray = [SonicFileManager contentsOfDirectoryAtPath:dirPath error:nil];
         
         if (contentArray.count == 0) {
             return;
@@ -756,8 +805,8 @@ void dealInFileQueue(dispatch_block_t block)
         
         NSArray *sortArray = [contentArray sortedArrayUsingComparator:^NSComparisonResult(NSString *fileName1, NSString *fileName2) {
             
-            NSString *subDir1 = [_rootCachePath stringByAppendingPathComponent:fileName1];
-            NSString *subDir2 = [_rootCachePath stringByAppendingPathComponent:fileName2];
+            NSString *subDir1 = [dirPath stringByAppendingPathComponent:fileName1];
+            NSString *subDir2 = [dirPath stringByAppendingPathComponent:fileName2];
             
             NSDictionary *fileAttrs1 = [SonicFileManager attributesOfItemAtPath:subDir1 error:nil];
             NSDictionary *fileAttrs2 = [SonicFileManager attributesOfItemAtPath:subDir2 error:nil];
@@ -773,13 +822,17 @@ void dealInFileQueue(dispatch_block_t block)
         
         for (NSString *fileItem in sortArray) {
             
-            NSString *subDir = [_rootCachePath stringByAppendingPathComponent:fileItem];
+            //special directory
+            if ([fileItem isEqualToString:unInclueSubDir]) {
+                continue;
+            }
+            NSString *subDir = [dirPath stringByAppendingPathComponent:fileItem];
             
             unsigned long long fileSize = [self folderSize:subDir];
             totalReadSize = totalReadSize + fileSize;
             [willClearSubDirs addObject:fileItem];
             
-            if ((cacheSize - totalReadSize)/[SonicEngine sharedEngine].configuration.cacheMaxDirectorySize < [SonicEngine sharedEngine].configuration.cacheDirectorySizeSafePercent ) {
+            if ((cacheSize - totalReadSize)/maxDirSize < percent ) {
                 break;
             }
         }
@@ -789,9 +842,11 @@ void dealInFileQueue(dispatch_block_t block)
             
             for (NSString *fileItem in willClearSubDirs) {
                 
-                NSString *subDir = [_rootCachePath stringByAppendingPathComponent:fileItem];
+                NSString *subDir = [dirPath stringByAppendingPathComponent:fileItem];
                 
                 [SonicFileManager removeItemAtPath:subDir error:nil];
+                
+                NSLog(@"trim clear cache at subDir :%@",subDir);
             }
         }
         
@@ -817,6 +872,120 @@ void dealInFileQueue(dispatch_block_t block)
     [self clearAllCache];
 
     return YES;
+}
+
+#pragma mark - Sub resource load
+
+- (void)clearResourceCache
+{
+    [SonicFileManager removeItemAtPath:_rootResourceCachePath error:nil];
+    [SonicFileManager removeItemAtPath:_rootResourceConfigCachePath error:nil];
+    [self setupSubResourceCacheDirectory];
+}
+
+- (BOOL)setupSubResourceConfigDirectory
+{
+    NSString *configPath = [self createDirectoryIfNotExist:_rootCachePath withSubPath:SonicRootCacheConfigDirName];
+    _rootResourceConfigCachePath = [[self createDirectoryIfNotExist:configPath withSubPath:SonicResourceConfigDirName] copy];
+    
+    return _rootResourceConfigCachePath;
+}
+
+- (BOOL)setupSubResourceCacheDirectory
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    
+    _rootResourceCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:SonicResourceCacheDirName] copy];
+    
+    NSLog(@"resource cache path:%@",_rootResourceCachePath);
+    
+    [self setupSubResourceConfigDirectory];
+
+    return _rootResourceCachePath.length > 0;
+}
+
+- (NSString *)resourcePathWithFileType:(SonicCacheType)type withSessionID:(NSString *)sessionID
+{
+    NSDictionary *extMap = @{
+                             @(SonicCacheTypeConfig):@"cfg",
+                             @(SonicCacheTypeData):@"data",
+                             @(SonicCacheTypeResponseHeader):@"rsp",
+                             };
+    NSString *subResourcePath = nil;
+    if (type == SonicCacheTypeConfig) {
+        subResourcePath = [[_rootResourceConfigCachePath stringByAppendingPathComponent:sessionID]stringByAppendingPathExtension:extMap[@(type)]];
+    }else{
+        NSString *sessionSubDir = [self createDirectoryIfNotExist:_rootResourceCachePath withSubPath:sessionID];
+        subResourcePath = [[sessionSubDir stringByAppendingPathComponent:sessionID]stringByAppendingPathExtension:extMap[@(type)]];
+    }
+    return subResourcePath;
+}
+
+- (BOOL)saveSubResourceData:(NSData *)data withConfig:(NSDictionary *)config withResponseHeaders:(NSDictionary *)responseHeader withSessionID:(NSString *)sessionID
+{
+    NSString *cacheFilePath = [self resourcePathWithFileType:SonicCacheTypeData withSessionID:sessionID];
+    BOOL isSuccess = [data writeToFile:cacheFilePath atomically:YES];
+    if (!isSuccess) {
+        return isSuccess;
+    }
+    
+    NSString *responsePath = [self resourcePathWithFileType:SonicCacheTypeResponseHeader withSessionID:sessionID];
+    isSuccess = [responseHeader writeToFile:responsePath atomically:YES];
+    if (!isSuccess) {
+        return isSuccess;
+    }
+    
+    NSString *cfgPath = [self resourcePathWithFileType:SonicCacheTypeConfig withSessionID:sessionID];
+    isSuccess = [config writeToFile:cfgPath atomically:YES];
+    if (!isSuccess) {
+        [SonicFileManager removeItemAtPath:cacheFilePath error:nil];
+    }
+    
+    NSLog(@"resource save state:%d sessionID:%@",isSuccess,sessionID);
+    
+    return isSuccess;
+}
+
+- (NSDictionary *)responseHeadersWithSessionID:(NSString *)sessionID
+{
+    NSString *responsePath = [self resourcePathWithFileType:SonicCacheTypeResponseHeader withSessionID:sessionID];
+    return [NSDictionary dictionaryWithContentsOfFile:responsePath];
+}
+
+- (NSData *)resourceCacheWithSessionID:(NSString *)sessionID
+{
+    NSString *cacheFilePath = [self resourcePathWithFileType:SonicCacheTypeData withSessionID:sessionID];
+    return [NSData dataWithContentsOfFile:cacheFilePath];
+}
+
+- (NSDictionary *)resourceConfigWithSessionID:(NSString *)sessionID
+{
+    NSString *configPath = [self resourcePathWithFileType:SonicCacheTypeConfig withSessionID:sessionID];
+    return [NSDictionary dictionaryWithContentsOfFile:configPath];
+}
+
+- (BOOL)clearResourceWithSessionID:(NSString *)sessionID
+{
+    NSString *responsePath = [self resourcePathWithFileType:SonicCacheTypeResponseHeader withSessionID:sessionID];
+    NSString *cacheFilePath = [self resourcePathWithFileType:SonicCacheTypeData withSessionID:sessionID];
+    NSString *configPath = [self resourcePathWithFileType:SonicCacheTypeConfig withSessionID:sessionID];
+    [SonicFileManager removeItemAtPath:responsePath error:nil];
+    [SonicFileManager removeItemAtPath:cacheFilePath error:nil];
+    [SonicFileManager removeItemAtPath:configPath error:nil];
+    return YES;
+}
+
+- (void)checkAndTrimResourceCache
+{
+    unsigned long long lastTrimStamp = [[[NSUserDefaults standardUserDefaults] objectForKey:kSonicResourceCacheTrimTimestampUDF] longLongValue];
+    unsigned long long duration = currentTimeStamp() - lastTrimStamp;
+    if (duration < [SonicConfiguration defaultConfiguration].resourceCacheSizeCheckDuration) {
+        NSLog(@"Trim resource cache in duration!");
+        return;
+    }
+    NSLog(@"Trim resource cache start !");
+    [self checkAndTrimCacheAtDirPath:SonicResourceCacheDirName unIncludeSubDir:nil withMaxDirectorySize:[SonicConfiguration defaultConfiguration].resourcCacheMaxDirectorySize withWarningPercent:[SonicConfiguration defaultConfiguration].cacheDirectorySizeWarningPercent];
+    [[NSUserDefaults standardUserDefaults] setObject:[@(currentTimeStamp()) stringValue] forKey:kSonicResourceCacheTrimTimestampUDF];
 }
 
 @end

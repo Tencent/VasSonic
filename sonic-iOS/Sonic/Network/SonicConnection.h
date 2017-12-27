@@ -36,6 +36,9 @@
 /** Queue for connection delegate operation. */
 @property (nonatomic,retain) NSOperationQueue* delegateQueue;
 
+/** HTTPSession redirection support, Default is NO */
+@property (nonatomic,assign) BOOL supportHTTPRedirection;
+
 /**
  * Check if this request class can use SonicConnection to load
  

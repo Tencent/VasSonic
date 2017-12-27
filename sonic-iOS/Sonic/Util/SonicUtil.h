@@ -35,6 +35,11 @@
 NSString *sonicSessionID(NSString *url);
 
 /**
+ * Using MD5 to encode the URL to session ID;
+ */
+NSString *resourceSessionID(NSString *url);
+
+/**
  * Create sonic path with URL
  */
 + (NSString *)sonicUrl:(NSString *)url;
@@ -64,5 +69,20 @@ NSString * getDataSha1(NSData *data);
  * @result Return the difference data
  */
 + (NSDictionary *)mergeDynamicData:(NSDictionary *)updateDict withOriginData:(NSMutableDictionary *)existData;
+
+/**
+ * Create an item by specifying the action type and parameters to return to the NSURLProtocol.
+ */
++ (NSDictionary *)protocolActionItem:(SonicURLProtocolAction)action param:(NSObject *)param;
+
+/**
+ * Translate the URL's query into a dictionary.
+ */
+NSMutableDictionary * queryComponents(NSString *aUrlStr);
+
+/**
+ * Get the current timestamp.
+ */
+unsigned long long currentTimeStamp();
 
 @end

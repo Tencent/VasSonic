@@ -25,11 +25,12 @@
 #import "SonicConstants.h"
 #import "SonicEngine.h"
 #import "SonicUtil.h"
+#import "SonicResourceLoader.h"
 
 @implementation SonicURLProtocol
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request
-{    
+{
     NSString *value = [request.allHTTPHeaderFields objectForKey:SonicHeaderKeyLoadType];
     if (value.length != 0 && [value isEqualToString:SonicHeaderValueWebviewLoad]) {
         NSString * delegateId = [request.allHTTPHeaderFields objectForKey:SonicHeaderKeyDelegateId];
@@ -42,6 +43,17 @@
             NSLog(@"SonicURLProtocol.canInitWithRequest error:Cannot find sonic session!");
         }
     }
+    
+    //Sub resource intercept
+    NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
+    SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
+    if (session.resourceLoader && [session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
+        NSLog(@"SonicURLProtocol resource should intercept:%@",request.debugDescription);
+        return YES;
+    }else{
+        NSLog(@"SonicURLProtocol resource can't intercept:%@ resourceLoader:%@",request.debugDescription,session.resourceLoader.debugDescription);
+    }
+    
     return NO;
 }
 
@@ -53,16 +65,33 @@
 - (void)startLoading
 {    
     NSThread *currentThread = [NSThread currentThread];
-
-    NSString *sessionID = [self.request valueForHTTPHeaderField:SonicHeaderKeySessionID];
     
     __weak typeof(self) weakSelf = self;
     
-    [[SonicEngine sharedEngine] registerURLProtocolCallBackWithSessionID:sessionID completion:^(NSDictionary *param) {
+    NSString * sessionID = sonicSessionID(self.request.mainDocumentURL.absoluteString);
+    SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
+    
+    if ([session.resourceLoader canInterceptResourceWithUrl:self.request.URL.absoluteString]) {
         
-        [weakSelf performSelector:@selector(callClientActionWithParams:) onThread:currentThread withObject:param waitUntilDone:NO];
+        NSLog(@"protocol resource did start loading :%@",self.request.debugDescription);
+
+        SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
         
-    }];
+        [session.resourceLoader preloadResourceWithUrl:self.request.URL.absoluteString withProtocolCallBack:^(NSDictionary *param) {
+            [weakSelf performSelector:@selector(callClientActionWithParams:) onThread:currentThread withObject:param waitUntilDone:NO];
+        }];
+        
+    }else{
+       
+        NSString *sessionID = [self.request valueForHTTPHeaderField:SonicHeaderKeySessionID];
+
+        [[SonicEngine sharedEngine] registerURLProtocolCallBackWithSessionID:sessionID completion:^(NSDictionary *param) {
+            
+            [weakSelf performSelector:@selector(callClientActionWithParams:) onThread:currentThread withObject:param waitUntilDone:NO];
+            
+        }];
+        
+    }
 }
 
 - (void)stopLoading
@@ -91,12 +120,14 @@
             NSData *recvData = params[kSonicProtocolData];
             if (recvData.length > 0) {
                 [self.client URLProtocol:self didLoadData:recvData];
+                NSLog(@"protocol did load data length:%ld",recvData.length);
             }
         }
             break;
         case SonicURLProtocolActionDidSuccess:
         {
             [self.client URLProtocolDidFinishLoading:self];
+            NSLog(@"protocol did finish loading request:%@",self.request.debugDescription);
         }
             break;
         case SonicURLProtocolActionDidFaild:

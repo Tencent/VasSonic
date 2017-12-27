@@ -138,10 +138,14 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task willPerformHTTPRedirection:(NSHTTPURLResponse *)response newRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
 {
-    completionHandler(nil);
-    // Since HTTPRedirection may preform middle-page, HTTPRedirection is not support in Sonic now.
-    NSError *redirectErr = [NSError errorWithDomain:@"com.sonic.connection" code:302 userInfo:@{@"msg":@"sonic is not support HTTPRedirection!"}];
-    [self.delegate connection:self didCompleteWithError:redirectErr];
+    if (!self.supportHTTPRedirection) {
+        completionHandler(nil);
+        // Since HTTPRedirection may preform middle-page, HTTPRedirection is not support in Sonic now.
+        NSError *redirectErr = [NSError errorWithDomain:@"com.sonic.connection" code:302 userInfo:@{@"msg":@"sonic is not support HTTPRedirection!"}];
+        [self.delegate connection:self didCompleteWithError:redirectErr];
+    }else{
+        completionHandler(request);
+    }
 }
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask

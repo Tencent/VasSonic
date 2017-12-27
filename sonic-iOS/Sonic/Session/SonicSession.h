@@ -22,6 +22,8 @@
 #import "SonicConstants.h"
 #import "SonicSessionConfiguration.h"
 
+@class SonicResourceLoader;
+
 /**
  * SonicSession use this callback to transfer network data to SonicURLProtocol.
  * The parameters of the dictionary is:
@@ -78,6 +80,9 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 /** SonicSession use this callback to notify SonicEngine when it finished. */
 @property (nonatomic,copy)SonicSessionCompleteCallback completionCallback;
 
+/** SonicSession use this callback to transfer status data to webview. */
+@property (nonatomic,copy)SonicWebviewCallBack updateCallBack;
+
 /** Check if all data did finish updated*/
 @property (nonatomic,assign)BOOL isDataFetchFinished;
 
@@ -92,6 +97,8 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 
 /** Return the session configuration */
 @property (nonatomic,readonly)SonicSessionConfiguration *configuration;
+
+@property (nonatomic,readonly)SonicResourceLoader *resourceLoader;
 
 /**
  * Register a SonicConnection Class to provide network data.
@@ -131,6 +138,11 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block);
  * beacause it has been retained by the NSURLSession, or it will be leaked.
  */
 - (void)cancel;
+
+/**
+ * update current session by send request
+ */
+- (BOOL)update;
 
 /**
  * It provide the network data by the protocolCallBack block

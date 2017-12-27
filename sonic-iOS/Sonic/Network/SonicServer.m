@@ -22,6 +22,10 @@
 #import "SonicSession.h"
 #import "SonicUtil.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 static NSMutableArray *sonicRequestClassArray = nil;
 static NSLock *sonicRequestClassLock;
 
@@ -65,6 +69,8 @@ static NSLock *sonicRequestClassLock;
 
 - (void)dealloc
 {
+    self.delegate = nil;
+    
     if (nil != self.connection) {
         [self.connection stopLoading];
         self.connection = nil;
@@ -85,6 +91,12 @@ static NSLock *sonicRequestClassLock;
         _error = nil;
     }
     
+    self.delegateQueue = nil;
+    self.customResponseHeaders = nil;
+    self.htmlString = nil;
+    self.templateString = nil;
+    self.data = nil;
+    
     [super dealloc];
 }
 
@@ -93,7 +105,7 @@ static NSLock *sonicRequestClassLock;
     self.enableLocalSever = enable;
 }
 
-- (Class)canCustomRequest
++ (Class)canCustomRequest:(NSURLRequest *)aRequest
 {
     Class findDestClass = nil;
     
@@ -104,7 +116,7 @@ static NSLock *sonicRequestClassLock;
         NSMethodSignature *sign = [itemClass methodSignatureForSelector:@selector(canInitWithRequest:)];
         NSInvocation *invoke = [NSInvocation invocationWithMethodSignature:sign];
         invoke.target = itemClass;
-        NSURLRequest *argRequest = self.request;
+        NSURLRequest *argRequest = aRequest;
         [invoke setArgument:&argRequest atIndex:2];
         invoke.selector = @selector(canInitWithRequest:);
         [invoke invoke];
@@ -121,19 +133,29 @@ static NSLock *sonicRequestClassLock;
     return findDestClass;
 }
 
++ (Class)connectionClassForRequest:(NSURLRequest *)aRequest
+{
+    Class customRequest = [SonicServer canCustomRequest:aRequest];
+    if (!customRequest) {
+        // If there no custom request ,then use the default
+        customRequest = [SonicConnection class];
+    }
+    return customRequest;
+}
+
 - (void)start
 {
-    if (nil == self.connection) {
-        Class customRequest = [self canCustomRequest];
-        if (!customRequest) {
-            // If there no custom request ,then use the default
-            customRequest = [SonicConnection class];
-        }
-        SonicConnection *tConnect = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
-        self.connection = tConnect;
-        [tConnect release];
-        [self.connection startLoading];
+    _isRuning = YES;
+    if (nil != self.connection) {
+        [self.connection stopLoading];
+        self.connection = nil;
     }
+    Class customRequest = [SonicServer connectionClassForRequest:self.request];
+    SonicConnection *tConnect = [[customRequest alloc]initWithRequest:self.request delegate: self delegateQueue:self.delegateQueue];
+    tConnect.supportHTTPRedirection = YES;
+    self.connection = tConnect;
+    [tConnect release];
+    [self.connection startLoading];
 }
 
 - (void)stop
@@ -143,8 +165,6 @@ static NSLock *sonicRequestClassLock;
     
     if (self.connection) {
        [self.connection stopLoading];
-    } else {
-        NSLog(@"SonicServer.stop warning:Request headers should be set only before server start!");
     }
 }
 
@@ -186,20 +206,16 @@ static NSLock *sonicRequestClassLock;
 
 - (void)setRequestHeaderFields:(NSDictionary *)headers
 {
-    if (nil == self.connection) {
-        NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
-        [requestHeaderFileds setObject:@"true" forKey:@"accept-diff"];
-        [requestHeaderFileds setObject:@"GET" forKey:@"method"];
-        [requestHeaderFileds setObject:@"utf-8" forKey:@"accept-Encoding"];
-        [requestHeaderFileds setObject:@"zh-CN,zh;" forKey:@"accept-Language"];
-        [requestHeaderFileds setObject:@"gzip" forKey:@"accept-Encoding"];
-        [requestHeaderFileds setObject:SonicHeaderValueSDKVersion  forKey:SonicHeaderKeySDKVersion];
-        [requestHeaderFileds setObject:SonicHeaderValueSonicLoad forKey:SonicHeaderKeyLoadType];
-        [requestHeaderFileds addEntriesFromDictionary:headers];
-        [self.request setAllHTTPHeaderFields:requestHeaderFileds];
-    } else {
-        NSLog(@"setRequestHeaderFields warning:Request headers should be set only before server start!");
-    }
+    NSMutableDictionary *requestHeaderFileds = [NSMutableDictionary dictionaryWithDictionary:self.request.allHTTPHeaderFields];
+    [requestHeaderFileds setObject:@"true" forKey:@"accept-diff"];
+    [requestHeaderFileds setObject:@"GET" forKey:@"method"];
+    [requestHeaderFileds setObject:@"utf-8" forKey:@"accept-Encoding"];
+    [requestHeaderFileds setObject:@"zh-CN,zh;" forKey:@"accept-Language"];
+    [requestHeaderFileds setObject:@"gzip" forKey:@"accept-Encoding"];
+    [requestHeaderFileds setObject:SonicHeaderValueSDKVersion  forKey:SonicHeaderKeySDKVersion];
+    [requestHeaderFileds setObject:SonicHeaderValueSonicLoad forKey:SonicHeaderKeyLoadType];
+    [requestHeaderFileds addEntriesFromDictionary:headers];
+    [self.request setAllHTTPHeaderFields:requestHeaderFileds];
 }
 
 - (void)setResponseHeaderFields:(NSDictionary *)headers
@@ -245,7 +261,7 @@ static NSLock *sonicRequestClassLock;
 {
     if (self.isCompletion) {
         if (nil == _error) {
-            NSMutableDictionary *sonicItemDict = [[[NSMutableDictionary alloc]init]autorelease];
+            NSMutableDictionary *sonicItemDict = [NSMutableDictionary dictionary];
             if (0 == self.htmlString.length) { // not split yet
                 self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
                 NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
@@ -473,6 +489,7 @@ static NSLock *sonicRequestClassLock;
         }
     }
     [self.delegate serverDidCompleteWithoutError:self];
+    _isRuning = NO;
 }
 
 /**
@@ -487,6 +504,7 @@ static NSLock *sonicRequestClassLock;
         [self.delegate server:self didReceiveData:self.responseData];
     }
     [self.delegate server:self didCompleteWithError:error];
+    _isRuning = NO;
 }
 
 @end

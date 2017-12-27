@@ -20,6 +20,10 @@
 #import "SonicDatabase.h"
 #import "sqlite3.h"
 
+#if  __has_feature(objc_arc)
+#error This file must be compiled without ARC. Use -fno-objc-arc flag.
+#endif
+
 /**
  *  create a config table to save data;important: all column used text type,because of that is easy to access and update
  */
@@ -75,7 +79,9 @@
 {
     
     int ret = sqlite3_exec(_db, sql.UTF8String, NULL, NULL, NULL);
-    
+    if (ret != SQLITE_OK) {
+        NSLog(@"sql error:%@",sql);
+    }
     return ret == SQLITE_OK;
 }
 
@@ -149,15 +155,15 @@
         [self clearWithSessionID:sessionID];
     }
     
-    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO];
+    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:NO table:@"config"];
 }
 
 - (BOOL)updateWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID
 {
-    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:YES];
+    return [self execSqlWithKeyAndValue:keyValues withSessionID:sessionID withUpdate:YES table:@"config"];
 }
 
-- (BOOL)execSqlWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID withUpdate:(BOOL)isUpdate
+- (BOOL)execSqlWithKeyAndValue:(NSDictionary *)keyValues withSessionID:(NSString *)sessionID withUpdate:(BOOL)isUpdate table:(NSString *)table
 {
     if (keyValues.count == 0 || sessionID.length == 0) {
         return NO;
@@ -204,9 +210,9 @@
     NSString *sql = nil;
     
     if (isUpdate) {
-        sql = [NSString stringWithFormat:@"%@ config %@ %@",action,updateValues,condition];
+        sql = [NSString stringWithFormat:@"%@ %@ %@ %@",action,table,updateValues,condition];
     }else{
-       sql = [NSString stringWithFormat:@"%@ config %@ values %@ %@",action,keySort,dataPart,condition];
+       sql = [NSString stringWithFormat:@"%@ %@ %@ values %@ %@",action,table,keySort,dataPart,condition];
     }
     
    return [self execSql:sql];
@@ -214,10 +220,10 @@
 
 - (NSDictionary *)queryAllKeysWithSessionID:(NSString *)sessionID
 {
-    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template-tag",@"sha1",@"Etag",@"cache-expire-time"] withSessionID:sessionID];
+    return [self queryWithKeys:@[@"sessionID",@"local_refresh",@"template-tag",@"sha1",@"Etag",@"cache-expire-time"] withSessionID:sessionID table:@"config"];
 }
 
-- (NSDictionary *)queryWithKeys:(NSArray *)keys withSessionID:(NSString *)sessionID
+- (NSDictionary *)queryWithKeys:(NSArray *)keys withSessionID:(NSString *)sessionID table:(NSString *)table
 {
     NSMutableString *selectColumn = [NSMutableString string];
     for (int index = 0; index < keys.count; index++) {
@@ -232,14 +238,14 @@
         }
     }
     
-    NSString *sql = [NSString stringWithFormat:@"select %@ from config where sessionID = '%@'",selectColumn,sessionID];
+    NSString *sql = [NSString stringWithFormat:@"select %@ from %@ where sessionID = '%@'",selectColumn,table,sessionID];
     
     return [self querySql:sql withQueryResultKey:keys];
 }
 
 - (NSString *)queryKey:(NSString *)key withSessionID:(NSString *)sessionID
 {
-    NSDictionary *resultDict = [self queryWithKeys:@[key] withSessionID:sessionID];
+    NSDictionary *resultDict = [self queryWithKeys:@[key] withSessionID:sessionID table:@"config"];
     
     return resultDict[key];
 }

@@ -129,6 +129,11 @@
 - (SonicSession *)sessionWithDelegateId:(NSString *)delegateId;
 
 /**
+ * Reload session to update page content
+ */
+- (BOOL)reloadSessionWithWebDelegate:(id<SonicSessionDelegate>)aWebDelegate completion:(SonicWebviewCallBack)resultBlock;
+
+/**
  * Get the patch between local data and server data.
  * Web page use this patch data to update itself.
  */

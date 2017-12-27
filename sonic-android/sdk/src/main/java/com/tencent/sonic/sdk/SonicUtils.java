@@ -14,6 +14,7 @@
 package com.tencent.sonic.sdk;
 
 import android.annotation.TargetApi;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.text.TextUtils;
@@ -39,7 +40,7 @@ import java.util.regex.Pattern;
 /**
  * Sonic Utils
  */
-class SonicUtils {
+public class SonicUtils {
 
     /**
      * the default charset is UTF-8.
@@ -93,12 +94,17 @@ class SonicUtils {
     private static final String SONIC_TAG_KEY_END = "}";
 
     /**
+     * the key of last cache check and clear time saved in SharedPreference
+     */
+    private static final String SONIC_CLEAR_CACHE_TIME = "check_and_clear_cache_time";
+
+    /**
      * Logger function
      *
      * @param level Level of this log，such like Log.DEBUG.
      * @return Should log or not
      */
-    static boolean shouldLog(int level) {
+    public static boolean shouldLog(int level) {
         return SonicEngine.getInstance().getRuntime().shouldLog(level);
     }
 
@@ -110,7 +116,7 @@ class SonicUtils {
      * @param level Level of this log，such like Log.DEBUG.
      * @param message The message you would like logged.
      */
-    static void log(String tag, int level, String message) {
+    public static void log(String tag, int level, String message) {
         SonicEngine.getInstance().getRuntime().log(tag, level, message);
     }
 
@@ -188,6 +194,49 @@ class SonicUtils {
             long maxAge = System.currentTimeMillis() + SonicEngine.getInstance().getConfig().SONIC_CACHE_MAX_AGE;
             if (sessionData.expiredTime > maxAge) {
                 sessionData.expiredTime = maxAge;
+            }
+        }
+    }
+
+    /**
+     * save resource data to database, such as resource sha1, resource size etc.
+     *
+     * @param resourceUrl the resource url
+     * @param resourceSha1 the resource sha1
+     * @param resourceSize the resource size
+     */
+    public static void saveSonicResourceData(String resourceUrl, String resourceSha1, long resourceSize) {
+        if (SonicUtils.shouldLog(Log.INFO)) {
+            SonicUtils.log(TAG, Log.INFO, "saveSonicResourceData resourceUrl = " + resourceUrl + ", resourceSha1 = " + resourceSha1 + ", resourceSize = " + resourceSize);
+        }
+        SonicResourceDataHelper.ResourceData resourceData = new SonicResourceDataHelper.ResourceData();
+        resourceData.resourceId = getMD5(resourceUrl);
+        resourceData.resourceSha1 = resourceSha1;
+        resourceData.resourceSize = resourceSize;
+        handleResourceExpireTime(resourceUrl, resourceData);
+        resourceData.lastUpdateTime = System.currentTimeMillis();
+        SonicResourceDataHelper.saveResourceData(resourceData.resourceId, resourceData);
+    }
+
+    /**
+     * parse the cache expired time from resource url parameters.
+     *
+     * @param resourceUrl the resource url
+     * @param resourceData the resource data
+     */
+    private static void handleResourceExpireTime(String resourceUrl, SonicResourceDataHelper.ResourceData resourceData) {
+        Uri uri = Uri.parse(resourceUrl);
+        String maxAgeStr = uri.getQueryParameter("max-age");
+        if (TextUtils.isEmpty(maxAgeStr)) {
+            resourceData.expiredTime = Long.MAX_VALUE;
+        } else {
+            try {
+                long maxAgeTime = Long.parseLong(maxAgeStr) * 1000;
+                if (maxAgeTime != 0) {
+                    resourceData.expiredTime = maxAgeTime + System.currentTimeMillis();
+                }
+            } catch (Exception e) {
+                log(TAG, Log.ERROR, "handleResourceExpireTime:resourceUrl(" + resourceUrl + ") error:" + e.getMessage());
             }
         }
     }
@@ -342,13 +391,35 @@ class SonicUtils {
     }
 
     /**
+     * save resource files, including resource and headers.
+     *
+     * @param resourceName resource file name
+     * @param resourceBytes resource bytes content
+     * @param headers resource headers
+     * @return The result of save files. true if all data is saved successfully.
+     */
+    public static boolean saveResourceFiles(String resourceName, byte[] resourceBytes, Map<String, List<String>> headers) {
+        if (resourceBytes != null && !SonicFileUtils.writeFile(resourceBytes, SonicFileUtils.getSonicResourcePath(resourceName))) {
+            log(TAG, Log.ERROR, "saveResourceFiles error: write resource data fail.");
+            return false;
+        }
+
+        if (headers != null && headers.size() > 0
+                &&!SonicFileUtils.writeFile(SonicFileUtils.convertHeadersToString(headers), SonicFileUtils.getSonicResourceHeaderPath(resourceName))) {
+            log(TAG, Log.ERROR, "saveResourceFiles error: write header file fail.");
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Get filtered headers by session id, this method will return a map of header(k-v) which
      * will not contains "Set-Cookie", "Cache-Control", "Expires".
      *
      * @param srcHeaders      The source headers
      * @return The headers of sessionId
      */
-    static HashMap<String, String> getFilteredHeaders(Map<String, List<String>> srcHeaders) {
+    public static HashMap<String, String> getFilteredHeaders(Map<String, List<String>> srcHeaders) {
         HashMap<String, String> headers = new HashMap<String, String>();
         if (null != srcHeaders) {
             List<String> headerValues;
@@ -466,6 +537,16 @@ class SonicUtils {
     }
 
     /**
+     * Remove a unique resource cache.
+     *
+     * @param resourceId a unique resource id
+     */
+    public static void removeResourceCache(String resourceId) {
+        SonicResourceDataHelper.removeResourceData(resourceId);
+        SonicFileUtils.deleteResourceFiles(resourceId);
+    }
+
+    /**
      * Remove all session cache, include memory cache and disk cache
      *
      */
@@ -567,7 +648,7 @@ class SonicUtils {
      * @param url target url
      * @return mime type
      */
-    static String getMime(String url) {
+    public static String getMime(String url) {
         String mime = "text/html";
         Uri currentUri = Uri.parse(url);
         String path = currentUri.getPath();
@@ -589,12 +670,19 @@ class SonicUtils {
 
 
     static String getSHA1(String content) {
-        if (TextUtils.isEmpty(content))
+        if (TextUtils.isEmpty(content)) {
             return "";
+        }
+        return getSHA1(content.getBytes());
+    }
+
+    public static String getSHA1(byte[] contentBytes) {
+        if (contentBytes == null || contentBytes.length <= 0) {
+            return "";
+        }
         try {
             MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-            byte[] bytes = content.getBytes();
-            sha1.update(bytes, 0, bytes.length);
+            sha1.update(contentBytes, 0, contentBytes.length);
             return toHexString(sha1.digest());
         } catch (Exception e) {
             return "";
@@ -602,7 +690,7 @@ class SonicUtils {
     }
 
 
-    static String getMD5(String content) {
+    public static String getMD5(String content) {
         if (TextUtils.isEmpty(content))
             return "";
         try {
@@ -623,4 +711,24 @@ class SonicUtils {
         return sb.toString();
     }
 
+    /**
+     *
+     * @param timeInterval The time interval between check and clear sonic cache
+     * @return true if we should clear sonic cache.
+     */
+    static boolean shouldClearCache(long timeInterval) {
+        SharedPreferences sp = SonicEngine.getInstance().getRuntime().getSonicSharedPreferences();
+        long lastCheckTime = sp.getLong(SONIC_CLEAR_CACHE_TIME, 0L);
+        return System.currentTimeMillis() - lastCheckTime > timeInterval;
+    }
+
+    /**
+     * save the clear cache time.
+     *
+     * @param timestamp time when clear the cache
+     */
+    static void saveClearCacheTime(long timestamp) {
+        SharedPreferences sp = SonicEngine.getInstance().getRuntime().getSonicSharedPreferences();
+        sp.edit().putLong(SONIC_CLEAR_CACHE_TIME, timestamp).apply();
+    }
 }

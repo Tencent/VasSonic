@@ -13,30 +13,28 @@
 
 package com.tencent.sonic.sdk;
 
-import android.content.Context;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import android.os.Bundle;
+import android.webkit.WebView;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import java.util.HashMap;
 
-import static org.junit.Assert.*;
+public class SonicSessionClientImplTest extends SonicSessionClient{
 
-/**
- * Instrumentation test, which will execute on an Android device.
- *
- * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
- */
-@RunWith(AndroidJUnit4.class)
-public class ExampleInstrumentedTest {
-
-    @Test
-    public void useAppContext() throws Exception {
-
-        // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getTargetContext();
-
-        assertEquals("com.tencent.sonic.sdk.test", appContext.getPackageName());
+    @Override
+    public void loadUrl(String url, Bundle extraData) {
 
     }
+
+    @Override
+    public void loadDataWithBaseUrl(String baseUrl, String data, String mimeType, String encoding, String historyUrl) {
+
+    }
+
+
+    @Override
+    public void loadDataWithBaseUrlAndHeader(String baseUrl, String data, String mimeType, String encoding, String historyUrl, HashMap<String, String> headers) {
+
+    }
+
+
 }

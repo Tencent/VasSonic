@@ -22,6 +22,7 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -397,6 +398,13 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             msg.arg1 = PRE_LOAD_NO_CACHE;
         }
         mainHandler.sendMessage(msg);
+
+        for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+            SonicSessionCallback callback = ref.get();
+            if (callback != null) {
+                callback.onSessionLoadLocalCache(cacheHtml);
+            }
+        }
     }
 
     public boolean onWebReady(SonicDiffDataCallback callback) {
@@ -482,16 +490,6 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         return null;
     }
 
-    /**
-     * Handle 304{@link SonicSession#SONIC_RESULT_CODE_HIT_CACHE}, it just updates the sonic code.
-     */
-    protected void handleFlow_NotModified(){
-        Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
-        msg.arg1 = SONIC_RESULT_CODE_HIT_CACHE;
-        msg.arg2 = SONIC_RESULT_CODE_HIT_CACHE;
-        mainHandler.sendMessage(msg);
-    }
-
     protected void handleFlow_HttpError(int responseCode){
         if (config.RELOAD_IN_BAD_NETWORK) {
             mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
@@ -499,12 +497,19 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             msg.arg1 = responseCode;
             mainHandler.sendMessage(msg);
         }
+        for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+            SonicSessionCallback callback = ref.get();
+            if (callback != null) {
+                callback.onSessionHttpError(responseCode);
+            }
+        }
     }
 
     protected void handleFlow_ServiceUnavailable(){
         mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
         Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_SERVICE_UNAVAILABLE);
         mainHandler.sendMessage(msg);
+
     }
 	
     /**
@@ -536,19 +541,33 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                     return;
                 }
 
-                htmlString = server.getResponseData(false);
+                htmlString = server.getResponseData(clientIsReload.get());
             }
 
             String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
 
-            // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
-            mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
-            Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
-            msg.obj = htmlString;
-            if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
-                msg.arg1 = TEMPLATE_CHANGE_REFRESH;
+            if (!clientIsReload.get()) {
+                // send CLIENT_CORE_MSG_TEMPLATE_CHANGE message
+                mainHandler.removeMessages(CLIENT_CORE_MSG_PRE_LOAD);
+                Message msg = mainHandler.obtainMessage(CLIENT_CORE_MSG_TEMPLATE_CHANGE);
+                msg.obj = htmlString;
+                if (!OFFLINE_MODE_STORE.equals(cacheOffline)) {
+                    msg.arg1 = TEMPLATE_CHANGE_REFRESH;
+                }
+                mainHandler.sendMessage(msg);
+            } else {
+                Message msg = mainHandler.obtainMessage(CLIENT_MSG_NOTIFY_RESULT);
+                msg.arg1 = SONIC_RESULT_CODE_TEMPLATE_CHANGE;
+                msg.arg2 = SONIC_RESULT_CODE_TEMPLATE_CHANGE;
+                mainHandler.sendMessage(msg);
             }
-            mainHandler.sendMessage(msg);
+
+            for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+                SonicSessionCallback callback = ref.get();
+                if (callback != null) {
+                    callback.onSessionTemplateChanged(htmlString);
+                }
+            }
 
             if (SonicUtils.shouldLog(Log.DEBUG)) {
                 SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") read byte stream cost " + (System.currentTimeMillis() - startTime) + " ms, wasInterceptInvoked: " + wasInterceptInvoked.get());
@@ -558,16 +577,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
                 switchState(STATE_RUNNING, STATE_READY, true);
                 if (!TextUtils.isEmpty(htmlString)) {
-                    try {
-                        //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
-                        Thread.sleep(1500);
-                        startTime = System.currentTimeMillis();
-                        saveSonicCache(htmlString);
-
-                        SonicUtils.log(TAG, Log.DEBUG, "session(" + sId + ") handleFlow_TemplateChange: read complete and finish separate and save cache cost " + (System.currentTimeMillis() - startTime) + " ms.");
-                    } catch (Throwable e) {
-                        SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_TemplateChange error:" + e.getMessage());
-                    }
+                    postTaskToSaveSonicCache(htmlString);
                 }
             } else if (OFFLINE_MODE_FALSE.equals(cacheOffline)) {
                 SonicUtils.removeSessionCache(id);
@@ -616,18 +626,18 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
         msg.obj = htmlString;
         msg.arg1 = hasCompletionData ? FIRST_LOAD_WITH_DATA : FIRST_LOAD_NO_DATA;
         mainHandler.sendMessage(msg);
+        for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+            SonicSessionCallback callback = ref.get();
+            if (callback != null) {
+                callback.onSessionFirstLoad(htmlString);
+            }
+        }
 
         String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);
         if (SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
-            try {
-                if (hasCompletionData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) { // Otherwise will save cache in com.tencent.sonic.sdk.SonicSession.onServerClosed
-                    switchState(STATE_RUNNING, STATE_READY, true);
-                    //In order not to seize the cpu resources, affecting the rendering of the kernel，sleep 1.5s here
-                    Thread.sleep(1500);
-                    saveSonicCache(htmlString);
-                }
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") handleFlow_FirstLoad error:  " + e.getMessage());
+            if (hasCompletionData && !wasLoadUrlInvoked.get() && !wasInterceptInvoked.get()) { // Otherwise will save cache in com.tencent.sonic.sdk.SonicSession.onServerClosed
+                switchState(STATE_RUNNING, STATE_READY, true);
+                postTaskToSaveSonicCache(htmlString);
             }
         } else {
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_FirstLoad:offline->" + cacheOffline + " , so do not need cache to file.");
@@ -658,6 +668,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 SonicUtils.log(TAG, Log.ERROR, "handleFlow_DataUpdate:getResponseData error.");
                 return;
             }
+
 
             final String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
             final String templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
@@ -715,6 +726,13 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
                 mainHandler.sendMessage(msg);
             }
 
+            for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+                SonicSessionCallback callback = ref.get();
+                if (callback != null) {
+                    callback.onSessionDataUpdated(serverRsp);
+                }
+            }
+
             if (null == diffDataJson || null == htmlString || !SonicUtils.needSaveData(config.SUPPORT_CACHE_CONTROL, cacheOffline, server.getResponseHeaderFields())) {
                 SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") handleFlow_DataUpdate: clean session cache.");
                 SonicUtils.removeSessionCache(id);
@@ -727,6 +745,13 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
 
             startTime = System.currentTimeMillis();
             Map<String, List<String>> headers = server.getResponseHeaderFields();
+
+            for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
+                SonicSessionCallback callback = ref.get();
+                if (callback != null) {
+                    callback.onSessionSaveCache(htmlString, null, serverDataJson.toString());
+                }
+            }
             if (SonicUtils.saveSessionFiles(id, htmlString, null, serverDataJson.toString(), headers)) {
                 long htmlSize = new File(SonicFileUtils.getSonicHtmlPath(id)).length();
                 SonicUtils.saveSonicData(id, eTag, templateTag, htmlSha1, htmlSize, headers);

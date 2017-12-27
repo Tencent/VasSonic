@@ -22,7 +22,7 @@ import java.io.File;
 /**
  * <code>SonicCacheInterceptor</code> provide local data.
  * if a {@link SonicSessionConfig} does not set a sonicCacheInterceptor
- * sonic will use {@link SonicCacheInterceptorDefaultImpl} as default.
+ * sonic will use {@link SonicSessionConnection.SessionConnectionDefaultImpl} as default.
  *
  */
 public abstract class SonicCacheInterceptor {
@@ -75,10 +75,11 @@ public abstract class SonicCacheInterceptor {
             boolean verifyError;
             String htmlString = "";
             // verify local data
-            if (TextUtils.isEmpty(sessionData.etag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
+            if (TextUtils.isEmpty(sessionData.eTag) || TextUtils.isEmpty(sessionData.htmlSha1)) {
                 verifyError = true;
                 SonicUtils.log(TAG, Log.INFO, "session(" + session.sId + ") runSonicFlow : session data is empty.");
             } else {
+                SonicDataHelper.updateSonicCacheHitCount(session.id);
                 File htmlCacheFile = new File(SonicFileUtils.getSonicHtmlPath(session.id));
                 htmlString = SonicFileUtils.readFile(htmlCacheFile);
                 verifyError = TextUtils.isEmpty(htmlString);

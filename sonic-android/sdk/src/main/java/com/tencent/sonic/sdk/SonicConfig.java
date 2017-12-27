@@ -40,10 +40,28 @@ public class SonicConfig {
     long SONIC_CACHE_CHECK_TIME_INTERVAL = 24 * 60 * 60 * 1000L;
 
     /**
+     * The max age of sonic cache before expired.
+     */
+    int SONIC_CACHE_MAX_AGE = 5 * 60 * 1000;
+
+    /**
      * Whether verify file by compare SHA1. If this value is false, sonic will verify file by file's size.
      * Verify the file size is less time consuming than checking SHA1.
      */
     boolean VERIFY_CACHE_FILE_WITH_SHA1 = true;
+
+    /**
+     * Whether auto call init db when create sonicEngine or not, default is true.
+     */
+    boolean AUTO_INIT_DB_WHEN_CREATE = true;
+
+    /**
+     * There will be a deadlock when ShouldInterceptRequest and getCookie are running at the same thread.
+     * This bug was found on Android ( < 5.0) system. @see <a href="https://github.com/Tencent/VasSonic/issues/90">Issue 90</a> <br>
+     * So Sonic will call getCookie before sending Sonic request If GET_COOKIE_WHEN_SESSION_CREATE is true.<br>
+     * The value of this property should be true unless your app uses <a href="https://x5.tencent.com/tbs">X5 kernel</a>.
+     */
+    boolean GET_COOKIE_WHEN_SESSION_CREATE = true;
 
     private SonicConfig() {
 
@@ -82,6 +100,21 @@ public class SonicConfig {
 
         public Builder setCacheCheckTimeInterval(long time) {
             target.SONIC_CACHE_CHECK_TIME_INTERVAL = time;
+            return this;
+        }
+
+        public Builder setAutoInitDBWhenCreate(boolean autoInitDBWhenCreate) {
+            target.AUTO_INIT_DB_WHEN_CREATE = autoInitDBWhenCreate;
+            return this;
+        }
+
+        public Builder setGetCookieWhenSessionCreate(boolean value) {
+            target.GET_COOKIE_WHEN_SESSION_CREATE = value;
+            return this;
+        }
+
+        public Builder setSonicCacheMaxAge(int maxAge) {
+            target.SONIC_CACHE_MAX_AGE = maxAge;
             return this;
         }
 

@@ -125,7 +125,7 @@ class SonicSniSSLSocketFactory extends SSLSocketFactory {
      * <p>This method verifies the peer's certificate hostname after connecting
      */
     @Override
-    public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+    public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
         Socket socket = createSocket();
         socket.bind(new InetSocketAddress(localHost, localPort));
         socket.connect(new InetSocketAddress(host, port));

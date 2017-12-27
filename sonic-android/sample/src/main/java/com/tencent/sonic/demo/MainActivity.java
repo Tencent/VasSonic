@@ -82,8 +82,11 @@ public class MainActivity extends Activity {
         btnSonicPreload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SonicSessionConfig sessionConfig = new SonicSessionConfig.Builder().build();
-                boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfig);
+                SonicSessionConfig.Builder sessionConfigBuilder = new SonicSessionConfig.Builder();
+                sessionConfigBuilder.setSupportLocalServer(true);
+
+                // preload session
+                boolean preloadSuccess = SonicEngine.getInstance().preCreateSession(DEMO_URL, sessionConfigBuilder.build());
                 Toast.makeText(getApplicationContext(), preloadSuccess ? "Preload start up success!" : "Preload start up fail!", Toast.LENGTH_LONG).show();
             }
         });

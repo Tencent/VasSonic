@@ -4,7 +4,7 @@
 在模块的build.gradle文件里面加入
 
 ```
-compile 'com.tencent.sonic:sdk:1.0.0'
+compile 'com.tencent.sonic:sdk:2.0.0'
 ```
 
 ## 2.代码接入

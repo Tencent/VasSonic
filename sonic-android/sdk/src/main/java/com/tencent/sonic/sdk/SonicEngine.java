@@ -98,9 +98,19 @@ public class SonicEngine {
     public static synchronized SonicEngine createInstance(@NonNull SonicRuntime runtime, @NonNull SonicConfig config) {
         if (null == sInstance) {
             sInstance = new SonicEngine(runtime, config);
+            if (config.AUTO_INIT_DB_WHEN_CREATE) {
+                sInstance.initSonicDB();
+            }
         }
 
         return sInstance;
+    }
+
+    /**
+     * Init sonic DB which will upgrade to new version of database.
+     */
+    public void initSonicDB() {
+        SonicDBHelper.createInstance(getRuntime().getContext()).getWritableDatabase(); // init and update db
     }
 
     /**
@@ -115,6 +125,15 @@ public class SonicEngine {
      */
     public SonicConfig getConfig() {
         return config;
+    }
+
+
+    /**
+     * Whether Sonic Service is available or not
+     * @return return true if Sonic Service is available , false else others.
+     */
+    public boolean isSonicAvailable() {
+        return !SonicDBHelper.getInstance().isUpgrading();
     }
 
     /**
@@ -144,24 +163,28 @@ public class SonicEngine {
      *  <code>false</code> otherwise.
      */
     public synchronized boolean preCreateSession(@NonNull String url, @NonNull SonicSessionConfig sessionConfig) {
-        String sessionId = makeSessionId(url, sessionConfig.IS_ACCOUNT_RELATED);
-        if (!TextUtils.isEmpty(sessionId)) {
-            SonicSession sonicSession = lookupSession(sessionConfig, sessionId, false);
-            if (null != sonicSession) {
-                runtime.log(TAG, Log.ERROR, "preCreateSession：sessionId(" + sessionId + ") is already in preload pool.");
-                return false;
-            }
-            if (preloadSessionPool.size() < config.MAX_PRELOAD_SESSION_COUNT) {
-                if (isSessionAvailable(sessionId) && runtime.isNetworkValid()) {
-                    sonicSession = internalCreateSession(sessionId, url, sessionConfig);
-                    if (null != sonicSession) {
-                        preloadSessionPool.put(sessionId, sonicSession);
-                        return true;
-                    }
+        if (isSonicAvailable()) {
+            String sessionId = makeSessionId(url, sessionConfig.IS_ACCOUNT_RELATED);
+            if (!TextUtils.isEmpty(sessionId)) {
+                SonicSession sonicSession = lookupSession(sessionConfig, sessionId, false);
+                if (null != sonicSession) {
+                    runtime.log(TAG, Log.ERROR, "preCreateSession：sessionId(" + sessionId + ") is already in preload pool.");
+                    return false;
                 }
-            } else {
-                runtime.log(TAG, Log.ERROR, "create id(" + sessionId + ") fail for preload size is bigger than " + config.MAX_PRELOAD_SESSION_COUNT + ".");
+                if (preloadSessionPool.size() < config.MAX_PRELOAD_SESSION_COUNT) {
+                    if (isSessionAvailable(sessionId) && runtime.isNetworkValid()) {
+                        sonicSession = internalCreateSession(sessionId, url, sessionConfig);
+                        if (null != sonicSession) {
+                            preloadSessionPool.put(sessionId, sonicSession);
+                            return true;
+                        }
+                    }
+                } else {
+                    runtime.log(TAG, Log.ERROR, "create id(" + sessionId + ") fail for preload size is bigger than " + config.MAX_PRELOAD_SESSION_COUNT + ".");
+                }
             }
+        } else {
+            runtime.log(TAG, Log.ERROR, "preCreateSession fail for sonic service is unavailable!");
         }
         return false;
     }
@@ -173,15 +196,19 @@ public class SonicEngine {
      * @return This method will create and return SonicSession Object when url is legal.
      */
     public synchronized SonicSession createSession(@NonNull String url, @NonNull SonicSessionConfig sessionConfig) {
-        String sessionId = makeSessionId(url, sessionConfig.IS_ACCOUNT_RELATED);
-        if (!TextUtils.isEmpty(sessionId)) {
-            SonicSession sonicSession = lookupSession(sessionConfig, sessionId, true);
-            if (null != sonicSession) {
-                sonicSession.setIsPreload(url);
-            } else if (isSessionAvailable(sessionId)) { // 缓存中未存在
-                sonicSession = internalCreateSession(sessionId, url, sessionConfig);
+        if (isSonicAvailable()) {
+            String sessionId = makeSessionId(url, sessionConfig.IS_ACCOUNT_RELATED);
+            if (!TextUtils.isEmpty(sessionId)) {
+                SonicSession sonicSession = lookupSession(sessionConfig, sessionId, true);
+                if (null != sonicSession) {
+                    sonicSession.setIsPreload(url);
+                } else if (isSessionAvailable(sessionId)) { // 缓存中未存在
+                    sonicSession = internalCreateSession(sessionId, url, sessionConfig);
+                }
+                return sonicSession;
             }
-            return sonicSession;
+        } else {
+            runtime.log(TAG, Log.ERROR, "createSession fail for sonic service is unavailable!");
         }
         return null;
     }
@@ -220,8 +247,11 @@ public class SonicEngine {
     }
 
     /**
+     * Create sonic session internal
      *
-     * @param sessionId
+     * @param sessionId session id
+     * @param url origin url
+     * @param sessionConfig session config
      * @return Return new SonicSession if there was no mapping for the sessionId in {@link #runningSessionHashMap}
      */
     private SonicSession internalCreateSession(String sessionId, String url, SonicSessionConfig sessionConfig) {
@@ -247,7 +277,7 @@ public class SonicEngine {
 
     /**
      * If the server fails or specifies HTTP pattern, SonicSession won't use Sonic pattern Within {@link com.tencent.sonic.sdk.SonicConfig#SONIC_UNAVAILABLE_TIME} ms
-     * @param sessionId
+     * @param sessionId session id
      * @return Test if the sessionId is available.
      */
     private boolean isSessionAvailable(String sessionId) {
@@ -316,9 +346,7 @@ public class SonicEngine {
      * if the last time of check sonic cache exceed {@link SonicConfig#SONIC_CACHE_CHECK_TIME_INTERVAL}.
      */
     public void trimSonicCache() {
-        if (SonicFileUtils.isNeedCheckSizeOfCache()) {
-            SonicFileUtils.checkAndTrimCache();
-        }
+        SonicFileUtils.checkAndTrimCache();
     }
 
     /**

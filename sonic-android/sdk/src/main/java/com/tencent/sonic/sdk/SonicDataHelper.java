@@ -13,9 +13,23 @@
 
 package com.tencent.sonic.sdk;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_CACHE_HIT_COUNT;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_ETAG;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_HTML_SHA1;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_HTML_SIZE;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_SESSION_ID;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_EAG;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME;
+import static com.tencent.sonic.sdk.SonicDBHelper.SESSION_DATA_COLUMN_UNAVAILABLE_TIME;
 /**
  *
  * SonicDataHelper provides sonic data such as eTag, templateTag, etc.
@@ -29,72 +43,16 @@ class SonicDataHelper {
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicDataHelper";
 
     /**
-     * The SharedPreferences file name
-     */
-
-    private static final String SP_FILE_SONIC = "sp_sonic_db";
-
-    /**
-     * The SharedPreferences file version
-     */
-    private static final String SP_KEY_VERSION_NUM = "versionNum";
-
-    /**
-     * The key of eTag
-     */
-    private static final String SP_KEY_ETAG = "etag_";
-
-    /**
-     * The key of templateTag
-     */
-    private static final String SP_KEY_TEMPLATE_TAG = "templateTag_";
-
-    /**
-     * The key of html sha1
-     */
-    private static final String SP_KEY_HTML_SHA1 = "htmlSha1_";
-
-    /**
-     * The key of html size
-     */
-    private static final String SP_KEY_HTML_SIZE = "htmlSize_";
-
-    /**
-     * The key of template update time
-     */
-    private static final String SP_KEY_TEMPLATE_UPDATE_TIME = "templateUpdateTime_";
-
-    /**
-     * The key of Unavailable Time
-     */
-    private static final String SP_KEY_UNAVAILABLE_TIME = "UnavailableTime_";
-
-    /**
-     * The key of Content-Security-Policy
-     */
-    private static final String SP_KEY_CSP = "csp_";
-
-    /**
-     * The key of Content-Security-Policy-Report-Only
-     */
-    private static final String SP_KEY_CSP_REPORT_ONLY = "cspReportOnly_";
-
-    /**
-     * The key of last clear cache time.
-     */
-    private static final String SP_KEY_LAST_CLEAR_CACHE_TIME = "last_clear_cache_time";
-
-    private static SharedPreferences sSharedPreferences;
-
-    /**
      * Sonic data structure
      */
     static class SessionData {
 
+        String sessionId;
+
         /**
-         * The etag of html
+         * The eTag of html
          */
-        String etag;
+        String eTag;
 
         /**
          * Template tag
@@ -117,43 +75,34 @@ class SonicDataHelper {
         long templateUpdateTime;
 
         /**
-         * The content of Content-Security-Policy
+         * Indicates when local sonic cache is expired.
+         * If It is expired, the record of database and file on SDCard will be removed.
          */
-        String cspContent;
+        long expiredTime;
 
         /**
-         * The content of Content-Security-Policy-Report-Only
+         * Indicates when sonic session is unavailable.
          */
-        String cspReportOnlyContent;
+        long unAvailableTime;
+
+        /**
+         * Indicates this cache  how many times to be used.
+         */
+        int cacheHitCount;
 
         /**
          * Reset data
          */
         public void reset() {
-            etag = "";
+            eTag = "";
             templateTag = "";
             htmlSha1 = "";
             htmlSize = 0;
             templateUpdateTime = 0;
-            cspContent = "";
-            cspReportOnlyContent = "";
+            expiredTime = 0;
+            cacheHitCount = 0;
+            unAvailableTime = 0;
         }
-    }
-
-    private static synchronized SharedPreferences getSonicSharedPref() {
-        if (null == sSharedPreferences) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-                sSharedPreferences = SonicEngine.getInstance().getRuntime().getContext().getSharedPreferences(SP_FILE_SONIC, Context.MODE_MULTI_PROCESS);
-            } else {
-                sSharedPreferences = SonicEngine.getInstance().getRuntime().getContext().getSharedPreferences(SP_FILE_SONIC, Context.MODE_PRIVATE);
-            }
-            String oldVersionNum = sSharedPreferences.getString(SP_KEY_VERSION_NUM, "");
-            String newVersionNum = SonicConstants.SONIC_VERSION_NUM;
-            if (!newVersionNum.equals(oldVersionNum)) {
-                sSharedPreferences.edit().putString(SP_KEY_VERSION_NUM, newVersionNum).apply();
-            }
-        }
-        return sSharedPreferences;
     }
     
     /**
@@ -162,39 +111,129 @@ class SonicDataHelper {
      * @param sessionId a unique session id
      * @return SessionData
      */
-    static SessionData getSessionData(String sessionId) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        SessionData sessionData = new SessionData();
-        sessionData.etag = sharedPreferences.getString(SP_KEY_ETAG + sessionId, "");
-        sessionData.templateTag = sharedPreferences.getString(SP_KEY_TEMPLATE_TAG + sessionId, "");
-        sessionData.htmlSha1 = sharedPreferences.getString(SP_KEY_HTML_SHA1 + sessionId, "");
-        sessionData.templateUpdateTime = sharedPreferences.getLong(SP_KEY_TEMPLATE_UPDATE_TIME + sessionId, 0L);
-        sessionData.htmlSize = sharedPreferences.getLong(SP_KEY_HTML_SIZE + sessionId, 0L);
-        sessionData.cspContent = sharedPreferences.getString(SP_KEY_CSP + sessionId, "");
-        sessionData.cspReportOnlyContent = sharedPreferences.getString(SP_KEY_CSP_REPORT_ONLY + sessionId, "");
+    @NonNull static SessionData getSessionData(String sessionId) {
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        SessionData sessionData = getSessionData(db, sessionId);
+        if (null == sessionData) {
+            sessionData = new SessionData();
+        }
         return sessionData;
     }
 
     /**
-     * Save sonic sessionData with a unique session id
+     * Get sonic sessionData by unique session id
+     *
+     * @param db The database.
+     * @param sessionId a unique session id
+     * @return SessionData
+     */
+    private static SessionData getSessionData(SQLiteDatabase db, String sessionId) {
+        Cursor cursor = db.query(SonicDBHelper.Sonic_SESSION_TABLE_NAME,
+                SonicDBHelper.getAllSessionDataColumn(),
+                SESSION_DATA_COLUMN_SESSION_ID + "=?",
+                new String[] {sessionId},
+                null, null, null);
+
+        SessionData sessionData = null;
+        if (cursor != null && cursor.moveToFirst()) {
+            sessionData = querySessionData(cursor);
+        }
+        if(cursor != null){
+            cursor.close();
+        }
+        return sessionData;
+    }
+
+    /**
+     * translate cursor to session data.
+     * @param cursor db cursor
+     */
+    private static SessionData querySessionData(Cursor cursor) {
+        SessionData sessionData = new SessionData();
+        sessionData.sessionId = cursor.getString(cursor.getColumnIndex(SESSION_DATA_COLUMN_SESSION_ID));
+        sessionData.eTag = cursor.getString(cursor.getColumnIndex(SESSION_DATA_COLUMN_ETAG));
+        sessionData.htmlSha1 = cursor.getString(cursor.getColumnIndex(SESSION_DATA_COLUMN_HTML_SHA1));
+        sessionData.htmlSize = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_HTML_SIZE));
+        sessionData.templateTag = cursor.getString(cursor.getColumnIndex(SESSION_DATA_COLUMN_TEMPLATE_EAG));
+        sessionData.templateUpdateTime = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME));
+        sessionData.expiredTime = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME));
+        sessionData.unAvailableTime = cursor.getLong(cursor.getColumnIndex(SESSION_DATA_COLUMN_UNAVAILABLE_TIME));
+        sessionData.cacheHitCount = cursor.getInt(cursor.getColumnIndex(SESSION_DATA_COLUMN_CACHE_HIT_COUNT));
+        return sessionData;
+    }
+
+    /**
+     *
+     * @return all of the session data order by HitCount decrease.
+     */
+    static List<SessionData> getAllSessionByHitCount() {
+        List<SessionData> sessionDatas = new ArrayList<SessionData>();
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        Cursor cursor = db.query(SonicDBHelper.Sonic_SESSION_TABLE_NAME,
+                SonicDBHelper.getAllSessionDataColumn(),
+                null,null,null, null, SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " ASC");
+        while(cursor != null && cursor.moveToNext()) {
+            sessionDatas.add(querySessionData(cursor));
+        }
+
+        return sessionDatas;
+    }
+
+    /**
+     * Save or update sonic sessionData with a unique session id
      *
      * @param sessionId   a unique session id
      * @param sessionData SessionData
      */
     static void saveSessionData(String sessionId, SessionData sessionData) {
-        if (sessionData != null && sessionId != null) {
-            SharedPreferences sharedPreferences = getSonicSharedPref();
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(SP_KEY_ETAG + sessionId, sessionData.etag);
-            editor.putString(SP_KEY_TEMPLATE_TAG + sessionId, sessionData.templateTag);
-            editor.putString(SP_KEY_HTML_SHA1 + sessionId, sessionData.htmlSha1);
-            editor.putLong(SP_KEY_TEMPLATE_UPDATE_TIME + sessionId, sessionData.templateUpdateTime);
-            editor.putLong(SP_KEY_HTML_SIZE + sessionId, sessionData.htmlSize);
-            editor.putString(SP_KEY_CSP + sessionId, sessionData.cspContent);
-            editor.putString(SP_KEY_CSP_REPORT_ONLY + sessionId, sessionData.cspReportOnlyContent);
-            editor.apply();
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        saveSessionData(db, sessionId, sessionData);
+    }
+
+    /**
+     * Save or update sonic sessionData with a unique session id
+     *
+     * @param db The database.
+     * @param sessionId   a unique session id
+     * @param sessionData SessionData
+     */
+    private static void saveSessionData(SQLiteDatabase db, String sessionId, SessionData sessionData) {
+        sessionData.sessionId = sessionId;
+        SessionData storedSessionData = getSessionData(db, sessionId);
+        if (storedSessionData != null) {
+            sessionData.cacheHitCount = storedSessionData.cacheHitCount;
+            updateSessionData(db, sessionId, sessionData);
+        } else {
+            insertSessionData(db, sessionId, sessionData);
         }
     }
+
+    private static void insertSessionData(SQLiteDatabase db, String sessionId, SessionData sessionData) {
+        ContentValues contentValues = getContentValues(sessionId, sessionData);
+        db.insert(SonicDBHelper.Sonic_SESSION_TABLE_NAME, null, contentValues);
+    }
+
+    private static void updateSessionData(SQLiteDatabase db, String sessionId, SessionData sessionData) {
+        ContentValues contentValues = getContentValues(sessionId, sessionData);
+        db.update(SonicDBHelper.Sonic_SESSION_TABLE_NAME, contentValues, SESSION_DATA_COLUMN_SESSION_ID + "=?",
+                new String[] {sessionId});
+    }
+
+    @NonNull
+    private static ContentValues getContentValues(String sessionId, SessionData sessionData) {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(SESSION_DATA_COLUMN_SESSION_ID, sessionId);
+        contentValues.put(SESSION_DATA_COLUMN_ETAG, sessionData.eTag);
+        contentValues.put(SESSION_DATA_COLUMN_HTML_SHA1, sessionData.htmlSha1);
+        contentValues.put(SESSION_DATA_COLUMN_HTML_SIZE, sessionData.htmlSize);
+        contentValues.put(SESSION_DATA_COLUMN_TEMPLATE_EAG, sessionData.templateTag);
+        contentValues.put(SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME, sessionData.templateUpdateTime);
+        contentValues.put(SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME, sessionData.expiredTime);
+        contentValues.put(SESSION_DATA_COLUMN_UNAVAILABLE_TIME, sessionData.unAvailableTime);
+        contentValues.put(SESSION_DATA_COLUMN_CACHE_HIT_COUNT, sessionData.cacheHitCount);
+        return contentValues;
+    }
+
 
     /**
      * Remove a unique session data
@@ -202,10 +241,9 @@ class SonicDataHelper {
      * @param sessionId A unique session id
      */
     static void removeSessionData(String sessionId) {
-        SharedPreferences.Editor editor = getSonicSharedPref().edit();
-        editor.remove(SP_KEY_ETAG + sessionId).remove(SP_KEY_TEMPLATE_TAG + sessionId);
-        editor.remove(SP_KEY_HTML_SHA1 + sessionId).remove(SP_KEY_TEMPLATE_UPDATE_TIME + sessionId);
-        editor.remove(SP_KEY_HTML_SIZE + sessionId).apply();
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, SESSION_DATA_COLUMN_SESSION_ID + "=?",
+                new String[] {sessionId});
     }
 
     /**
@@ -216,17 +254,21 @@ class SonicDataHelper {
      * @return The result of save unavailable time
      */
     static boolean setSonicUnavailableTime(String sessionId, long unavailableTime) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        return sharedPreferences.edit().putLong(SP_KEY_UNAVAILABLE_TIME + sessionId, unavailableTime).commit();
-    }
-
-    /**
-     * Set the latest time when check and clear the sonic cache.
-     * @param time The time when check and clear the sonic cache.
-     */
-    static void setLastClearCacheTime(long time) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        sharedPreferences.edit().putLong(SP_KEY_LAST_CLEAR_CACHE_TIME, time).apply();
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        SessionData sessionData = getSessionData(db, sessionId);
+        if (sessionData != null) {
+            sessionData.unAvailableTime = unavailableTime;
+            updateSessionData(db, sessionId, sessionData);
+            return true;
+        } else {
+            sessionData = new SessionData();
+            sessionData.sessionId = sessionId;
+            sessionData.eTag = "Unknown";
+            sessionData.htmlSha1 = "Unknown";
+            sessionData.unAvailableTime = unavailableTime;
+            insertSessionData(db, sessionId, sessionData);
+            return true;
+        }
     }
 
     /**
@@ -236,48 +278,38 @@ class SonicDataHelper {
      * @return The sonic unavailable time
      */
     static long getLastSonicUnavailableTime(String sessionId) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        return sharedPreferences.getLong(SP_KEY_UNAVAILABLE_TIME + sessionId, 0);
+        SessionData sessionData = getSessionData(sessionId);
+        return sessionData.unAvailableTime;
+    }
+
+    /**
+     * It will increase HitCount when local session cache is used.
+     * @param sessionId session id
+     */
+    static void updateSonicCacheHitCount(String sessionId) {
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        updateSonicCacheHitCount(db, sessionId);
+    }
+
+    /**
+     * It will increase HitCount when local session cache is used.
+     *
+     * @param sessionId session id
+     * @param db The database.
+     */
+    private static void updateSonicCacheHitCount(SQLiteDatabase db, String sessionId) {
+        SessionData sessionData = getSessionData(db, sessionId);
+        if (sessionData != null) {
+            sessionData.cacheHitCount += 1;
+            updateSessionData(db, sessionId, sessionData);
+        }
     }
 
     /**
      * Remove all sonic data
      */
     static synchronized void clear() {
-        if (null != sSharedPreferences) {
-            sSharedPreferences.edit().clear().apply();
-            sSharedPreferences = null;
-        }
-    }
-
-    /**
-     * Get the content of Content-Security-Policy
-     *
-     * @param sessionId A unique session id
-     * @return The content of Content-Security-Policy
-     */
-    static String getCSPContent(String sessionId) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        return sharedPreferences.getString(SP_KEY_CSP + sessionId, "");
-    }
-
-    /**
-     * Get the content of Content-Security-Policy-Report-Only
-     *
-     * @param sessionId A unique session id
-     * @return The content of Content-Security-Policy-Report-Only
-     */
-    static String getCSPReportOnlyContent(String sessionId) {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        return sharedPreferences.getString(SP_KEY_CSP_REPORT_ONLY + sessionId, "");
-    }
-
-    /**
-     *
-     * @return the last time when check or clear the sonic cache.
-     */
-    static long getLastClearCacheTime() {
-        SharedPreferences sharedPreferences = getSonicSharedPref();
-        return sharedPreferences.getLong(SP_KEY_LAST_CLEAR_CACHE_TIME, 0L);
+        SQLiteDatabase db = SonicDBHelper.getInstance().getWritableDatabase();
+        db.delete(SonicDBHelper.Sonic_SESSION_TABLE_NAME, null, null);
     }
 }

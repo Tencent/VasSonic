@@ -19,19 +19,14 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -53,13 +48,14 @@ public abstract class SonicSessionConnection {
      * HTTP header:eTag. <br>
      * This header represents SHA1 value of the whole website, including template and data.
      */
-    public final static String CUSTOM_HEAD_FILED_ETAG = "etag";
+    public final static String CUSTOM_HEAD_FILED_ETAG = "eTag";
+
 
     /**
      * HTTP header:accept-diff. <br>
      * This header represents that client accepts data incremental scene updates or not.
      */
-    private final static String CUSTOM_HEAD_FILED_ACCEPT_DIFF = "accept-diff";
+    public final static String CUSTOM_HEAD_FILED_ACCEPT_DIFF = "accept-diff";
 
     /**
      * HTTP header:template_tag. <br>
@@ -80,14 +76,6 @@ public abstract class SonicSessionConnection {
     public final static String CUSTOM_HEAD_FILED_CACHE_OFFLINE = "cache-offline";
 
     /**
-     * HTTP header:strict_mode. <br>
-     * This header indicates whether the website is user sonic strict mode which means
-     * html page supports VasSonic Specification obeyed by client and server and it can
-     * separate html into template And data cache.
-     */
-    public final static String CUSTOM_HEAD_FILED_STRICT_MODE = "strict_mode";
-
-    /**
      * HTTP header:dns-prefetch-address <br>
      * This header represents the ip address of the server. <br>
      * Sonic Connection will use this ip to connect to server to avoid the cost time of DNS resolution.
@@ -98,13 +86,19 @@ public abstract class SonicSessionConnection {
      * HTTP Header:sdk_version. <br>
      * This header represents the version of SDK.
      */
-    private final static String CUSTOM_HEAD_FILED_SDK_VERSION = "sonic-sdk-version";
+    public final static String CUSTOM_HEAD_FILED_SDK_VERSION = "sonic-sdk-version";
 
     /**
      * HTTP Header:dns-prefetch. <br>
      * This header indicates that Sonic connection has used the ip represented by {@link #DNS_PREFETCH_ADDRESS}
      */
     public final static String CUSTOM_HEAD_FILED_DNS_PREFETCH = "sonic-dns-prefetch";
+
+    /**
+     * HTTP header: . <br>
+     *
+     */
+    public final static String CUSTOM_HEAD_FILED_HTML_SHA1 = "sonic-html-sha1";
 
     /**
      * HTTP Header：Content-Security-Policy. <br>
@@ -117,6 +111,44 @@ public abstract class SonicSessionConnection {
      * This header represents the HTML Content-Security-Policy-Report-Only.
      */
     public final static String HTTP_HEAD_CSP_REPORT_ONLY = "Content-Security-Policy-Report-Only";
+
+    /**
+     * HTTP Header：Set-Cookie. <br>
+     * This header represents the HTML Set-Cookie.
+     */
+    public final static String HTTP_HEAD_FILED_SET_COOKIE = "Set-Cookie";
+
+    /**
+     * HTTP Header : Cache-Control. <br>
+     * This header represents the strategy of cache control.
+     */
+    public final static String HTTP_HEAD_FIELD_CACHE_CONTROL = "Cache-Control";
+
+    /**
+     * HTTP Header : Expires. <br>
+     */
+    public final static String HTTP_HEAD_FIELD_EXPIRES = "Expires";
+
+    /**
+     * HTTP 1.0 Header : Pragma. <br>
+     * This old header represents the old strategy of cache control.
+     */
+    public final static String HTTP_HEAD_FIELD_PRAGMA = "Pragma";    //1.0
+
+    /**
+     * HTTP Header : Content-Type. <br>
+     */
+    public final static String HTTP_HEAD_FIELD_CONTENT_TYPE = "Content-Type";
+
+    /**
+     * HTTP Request Header : Cookie. <br>
+     */
+    public final static String HTTP_HEAD_FIELD_COOKIE = "Cookie";
+
+    /**
+     * HTTP Request Header：User-Agent. <br>
+     */
+    public final static String HTTP_HEAD_FILED_USER_AGENT = "User-Agent";
 
     /**
      * SonicSession Object used by SonicSessionConnection.
@@ -179,78 +211,8 @@ public abstract class SonicSessionConnection {
         if (responseStream == null) {
             responseStream = internalGetResponseStream();
         }
+
         return responseStream;
-    }
-
-    /**
-     * Reads all of data from {@link #getResponseStream()} into byte array output stream. <br>
-     * <p><b>Note: This method blocks until the end of the input stream has been reached</b></p>
-     *
-     * @return Returns a ByteArrayOutputStream that reads from {@link #getResponseStream()}
-     */
-    public synchronized ByteArrayOutputStream getResponseData() {
-        BufferedInputStream responseStream = getResponseStream();
-        if (null != responseStream) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[session.config.READ_BUF_SIZE];
-            try {
-                int n;
-                while (-1 != (n = responseStream.read(buffer))) {
-                    outputStream.write(buffer, 0, n);
-                }
-                return outputStream;
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "getResponseData error:" + e.getMessage() + ".");
-            }
-        }
-        return null;
-    }
-
-    /**
-     * A holder caches information about the input and output stream . Meanwhile this holder indicates the end of
-     *   the input stream has been reached or not.
-     */
-    public class ResponseDataTuple {
-
-        boolean isComplete;
-
-        BufferedInputStream responseStream;
-
-        ByteArrayOutputStream outputStream;
-    }
-
-    /**
-     *  Reads all of data from {@link #getResponseStream()} into byte array output stream {@code outputStream}.
-     *  And then this method returns {@link ResponseDataTuple} object which holds the input and output stream. <br>
-     * <p><b>Note: This method blocks until the end of the input stream has been reached or {@code breakCondition} has been reset to true.</b></p>
-     *
-     * @param breakCondition This method won't read any data from {@link #getResponseStream()} if {@code breakCondition} is false.
-     * @param outputStream   This method will reuse this byte array output stream instead of creating new output stream.
-     * @return
-     *      Returns {@link ResponseDataTuple} caches information about the all of the stream and the state which indicates there is no more data.
-     */
-    public synchronized ResponseDataTuple getResponseData(AtomicBoolean breakCondition, ByteArrayOutputStream outputStream) {
-        BufferedInputStream responseStream = getResponseStream();
-        if (null != responseStream) {
-            if (null == outputStream) {
-                outputStream = new ByteArrayOutputStream();
-            }
-            byte[] buffer = new byte[session.config.READ_BUF_SIZE];
-            try {
-                int n = 0;
-                while (!breakCondition.get() && -1 != (n = responseStream.read(buffer))) {
-                    outputStream.write(buffer, 0, n);
-                }
-                ResponseDataTuple responseDataTuple = new ResponseDataTuple();
-                responseDataTuple.responseStream = responseStream;
-                responseDataTuple.outputStream = outputStream;
-                responseDataTuple.isComplete = -1 == n;
-                return responseDataTuple;
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "getResponseData error:" + e.getMessage() + ".");
-            }
-        }
-        return null;
     }
 
     protected abstract int internalConnect();
@@ -265,11 +227,7 @@ public abstract class SonicSessionConnection {
          */
         protected final URLConnection connectionImpl;
 
-        /**
-         *  Cached response headers which contains response headers from server and custom response headers from
-         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
-         */
-        protected Map<String, List<String>> cachedResponseHeaders;
+
 
         public SessionConnectionDefaultImpl(SonicSession session, Intent intent) {
             super(session, intent);
@@ -290,7 +248,7 @@ public abstract class SonicSessionConnection {
                 URL url = new URL(currentUrl);
                 String dnsPrefetchAddress = intent.getStringExtra(SonicSessionConnection.DNS_PREFETCH_ADDRESS);
                 String originHost = null;
-                /**
+                /*
                  * Use the ip value mapped by {@code SonicSessionConnection.DNS_PREFETCH_ADDRESS} to avoid the cost time of DNS resolution.
                  * Meanwhile it can reduce the risk from hijacking http session.
                  */
@@ -306,7 +264,7 @@ public abstract class SonicSessionConnection {
                     }
 
                     if (!TextUtils.isEmpty(originHost)) {
-                        /**
+                        /*
                          * If originHost is not empty, that means connection uses the ip value instead of http host.
                          * So http header need to set the Host and {@link com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_DNS_PREFETCH} request property.
                          */
@@ -314,7 +272,7 @@ public abstract class SonicSessionConnection {
 
                         connection.setRequestProperty(SonicSessionConnection.CUSTOM_HEAD_FILED_DNS_PREFETCH, url.getHost());
                         if (connection instanceof HttpsURLConnection) { // 如果属于https，需要特殊处理，比如支持sni
-                            /**
+                            /*
                              * If the scheme of url is https, then it needs extra processing, such as the sni support.
                              */
                             final String finalOriginHost = originHost;
@@ -350,7 +308,7 @@ public abstract class SonicSessionConnection {
                 SonicSessionConfig config = session.config;
                 connection.setConnectTimeout(config.CONNECT_TIMEOUT_MILLIS);
                 connection.setReadTimeout(config.READ_TIMEOUT_MILLIS);
-                /**
+                /*
                  *  {@link SonicSessionConnection#CUSTOM_HEAD_FILED_ACCEPT_DIFF} is need to be set If client accepts incrementally updates. <br>
                  *  <p><b>Note: It doesn't support incrementally updated for template file.</b><p/>
                  */
@@ -358,16 +316,15 @@ public abstract class SonicSessionConnection {
 
                 String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
                 if (null == eTag) eTag = "";
-                connection.setRequestProperty("if-none-match", eTag);
+                connection.setRequestProperty("If-None-Match", eTag);
 
                 String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                 if (null == templateTag) templateTag = "";
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_TEMPLATE_TAG, templateTag);
 
                 connection.setRequestProperty("method", "GET");
-                connection.setRequestProperty("accept-Charset", "utf-8");
-                connection.setRequestProperty("accept-Encoding", "gzip");
-                connection.setRequestProperty("accept-Language", "zh-CN,zh;");
+                connection.setRequestProperty("Accept-Encoding", "gzip");
+                connection.setRequestProperty("Accept-Language", "zh-CN,zh;");
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_SDK_VERSION, "Sonic/" + SonicConstants.SONIC_VERSION_NUM);
 
                 // set custom request headers
@@ -377,20 +334,14 @@ public abstract class SonicSessionConnection {
                     }
                 }
 
-                SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
-                String cookie = runtime.getCookie(session.srcUrl);
+                String cookie = intent.getStringExtra(HTTP_HEAD_FIELD_COOKIE);
                 if (!TextUtils.isEmpty(cookie)) {
-                    connection.setRequestProperty("cookie", cookie);
+                    connection.setRequestProperty(HTTP_HEAD_FIELD_COOKIE, cookie);
                 } else {
                     SonicUtils.log(TAG, Log.ERROR, "create UrlConnection cookie is empty");
                 }
-                String userAgent = runtime.getUserAgent();
-                if (!TextUtils.isEmpty(userAgent)) {
-                    userAgent += " Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                } else {
-                    userAgent = "Sonic/" + SonicConstants.SONIC_VERSION_NUM;
-                }
-                connection.setRequestProperty("User-Agent", userAgent);
+
+                connection.setRequestProperty(HTTP_HEAD_FILED_USER_AGENT, intent.getStringExtra(HTTP_HEAD_FILED_USER_AGENT));
 
                 return true;
             }
@@ -499,52 +450,13 @@ public abstract class SonicSessionConnection {
             return SonicConstants.ERROR_CODE_UNKNOWN;
         }
 
-        /**
-         *  return response headers which contains response headers from server and custom response headers from
-         *  {@code com.tencent.sonic.sdk.SonicSessionConfig}
-         *  note: server response headers have high priority than custom headers!
-         */
         @Override
         public Map<String, List<String>> getResponseHeaderFields() {
             if (null == connectionImpl) {
                 return null;
             }
 
-            if (null == cachedResponseHeaders) {
-                // condition branch:more like to [null == session.config.customResponseHeaders]
-                if (null == session.config.customResponseHeaders || 0 == session.config.customResponseHeaders.size()) {
-                    cachedResponseHeaders = connectionImpl.getHeaderFields();
-                } else {
-                    // new cachedResponseHeaders
-                    cachedResponseHeaders = new HashMap<String, List<String>>();
-                    // fill custom headers
-                    List<String> tmpHeaderList;
-                    for (Map.Entry<String, String> entry : session.config.customResponseHeaders.entrySet()) {
-                        String key = entry.getKey();
-                        if (!TextUtils.isEmpty(key)) {
-                            tmpHeaderList = cachedResponseHeaders.get(key.toLowerCase());
-                            if (null == tmpHeaderList) {
-                                tmpHeaderList = new ArrayList<String>(1);
-                                cachedResponseHeaders.put(key.toLowerCase(), tmpHeaderList);
-                            }
-                            tmpHeaderList.add(entry.getValue());
-                        }
-                    }
-                    // fill real response headers
-                    Map<String,List<String>> headersFromServer = connectionImpl.getHeaderFields();
-                    Set<Map.Entry<String,List<String>>> entrySet = headersFromServer.entrySet();
-                    for(Map.Entry<String,List<String>> entry : entrySet) {
-                        String key = entry.getKey();
-                        if (!TextUtils.isEmpty(key)) {
-                            cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
-                        } else {
-                            cachedResponseHeaders.put(key, entry.getValue());
-                        }
-                    }
-
-                }
-            }
-            return cachedResponseHeaders;
+            return connectionImpl.getHeaderFields();
         }
 
         @Override

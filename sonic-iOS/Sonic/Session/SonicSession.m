@@ -329,9 +329,15 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             NSArray *cookiesFromResp = [NSHTTPCookie cookiesWithResponseHeaderFields:response.allHeaderFields forURL:response.URL];
             [[NSHTTPCookieStorage sharedHTTPCookieStorage] setCookies:cookiesFromResp forURL:response.URL mainDocumentURL:self.sonicServer.request.mainDocumentURL];
         });
-        self.cacheResponseHeaders = response.allHeaderFields;
         if (self.isFirstLoad) {
             [self firstLoadRecieveResponse:response];
+        }else{
+            if ([self.sonicServer isSonicResponse] && !self.configuration.enableLocalServer) {
+                self.cacheResponseHeaders = response.allHeaderFields;
+            }
+            if (self.configuration.enableLocalServer) {
+                self.cacheResponseHeaders = response.allHeaderFields;
+            }
         }
     };
     NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);

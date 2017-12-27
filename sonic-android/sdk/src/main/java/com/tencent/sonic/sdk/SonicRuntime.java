@@ -171,7 +171,7 @@ public abstract class SonicRuntime {
     public abstract String getCookie(String url);
 
     /**
-     * Det cookies to webview after session connection response with cookies in it's headers.
+     * Set cookies to webview after session connection response with cookies in it's headers.
      *
      * @param url The url which need to set cookies
      * @param cookies The cookies for current input url
@@ -181,7 +181,7 @@ public abstract class SonicRuntime {
 
     /**
      * Get user agent of current runtime, this method will be called before sonic session make a
-     * session connection to request data.(sonic sdk info such like "sonic-sdk-version/1.0" will
+     * session connection to request data.(sonic sdk info such like "sonic-sdk-version/2.0.0" will
      * be added to this user agent.)
      * @return The user agent
      */

@@ -24,9 +24,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.tencent.sonic.sdk.download.SonicDownloadCache;
+import com.tencent.sonic.sdk.download.SonicDownloadEngine;
+
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -36,16 +38,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.tencent.sonic.sdk.download.SonicDownloadCache;
-import com.tencent.sonic.sdk.download.SonicDownloadClient;
-import com.tencent.sonic.sdk.download.SonicDownloadEngine;
-import com.tencent.sonic.sdk.download.SonicDownloadClient.DownloadTask;
 
 /**
  * In Sonic, <code>SonicSession</code>s are used to manage the entire process,include

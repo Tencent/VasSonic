@@ -14,7 +14,6 @@
 package com.tencent.sonic.sdk;
 
 import android.os.Bundle;
-import android.webkit.WebView;
 
 import java.util.HashMap;
 

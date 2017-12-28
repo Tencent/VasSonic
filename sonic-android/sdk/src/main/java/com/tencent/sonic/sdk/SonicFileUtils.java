@@ -258,7 +258,7 @@ public class SonicFileUtils {
                 n = reader.read(buffer);
                 rtn = new String(buffer, 0, n);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             SonicUtils.log(TAG, Log.ERROR, "readFile error:(" + file.getName() + ") " + e.getMessage());
         } finally {
             if (bis != null) {
@@ -308,7 +308,7 @@ public class SonicFileUtils {
                 rtn = new byte[size];
                 n = bis.read(rtn);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             SonicUtils.log(TAG, Log.ERROR, "readFile error:(" + file.getName() + ") " + e.getMessage());
         } finally {
             if (bis != null) {

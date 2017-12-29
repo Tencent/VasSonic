@@ -126,7 +126,7 @@
         if (self.isComplete) {
             [self.lock lock];
             rspItem = [SonicUtil protocolActionItem:SonicURLProtocolActionRecvResponse param:self.originResponse];
-            dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
+            dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.responseData];
             [self.lock unlock];
             finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
             NSLog(@"resource read from network:%@",self.url);
@@ -138,7 +138,7 @@
                 [actions addObject:rspItem];
             }
             if (self.responseData.length> 0) {
-                dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
+                dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.responseData];
                 [actions addObject:dataItem];
             }
             [self.lock unlock];

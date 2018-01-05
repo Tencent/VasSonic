@@ -444,7 +444,7 @@ public abstract class SonicSession implements Handler.Callback {
 
         if (!TextUtils.isEmpty(htmlString)) {
             long startTime = System.currentTimeMillis();
-            doSaveSonicCache(htmlString);
+            doSaveSonicCache(sonicServer, htmlString);
             SonicUtils.log(TAG, Log.INFO, "session(" + sId + ") onClose:separate And save ache finish, cost " + (System.currentTimeMillis() - startTime) + " ms.");
         }
 
@@ -474,7 +474,7 @@ public abstract class SonicSession implements Handler.Callback {
 
                     case FILE_THREAD_SAVE_CACHE_ON_SESSION_FINISHED: {
                         final String htmlString = (String)msg.obj;
-                        doSaveSonicCache(htmlString);
+                        doSaveSonicCache(server, htmlString);
                         return true;
                     }
                 }
@@ -1016,27 +1016,27 @@ public abstract class SonicSession implements Handler.Callback {
         fileHandler.sendMessageDelayed(msg, 1500);
     }
 
-    protected void doSaveSonicCache(String htmlString) {
+    protected void doSaveSonicCache(SonicServer sonicServer, String htmlString) {
         // if the session has been destroyed, exit directly
-        if(isDestroyedOrWaitingForDestroy()) {
+        if(isDestroyedOrWaitingForDestroy() || server == null) {
             SonicUtils.log(TAG, Log.ERROR, "session(" + sId + ") doSaveSonicCache: save session files fail. Current session is destroy!");
             return;
         }
 
         long startTime = System.currentTimeMillis();
-        String template = server.getTemplate();
-        String updatedData = server.getUpdatedData();
+        String template = sonicServer.getTemplate();
+        String updatedData = sonicServer.getUpdatedData();
 
         if (!TextUtils.isEmpty(htmlString) && !TextUtils.isEmpty(template)) {
-            String newHtmlSha1 = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1);
+            String newHtmlSha1 = sonicServer.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1);
             if (TextUtils.isEmpty(newHtmlSha1)) {
                 newHtmlSha1 = SonicUtils.getSHA1(htmlString);
             }
 
-            String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-            String templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
+            String eTag = sonicServer.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            String templateTag = sonicServer.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
-            Map<String, List<String>> headers = server.getResponseHeaderFields();
+            Map<String, List<String>> headers = sonicServer.getResponseHeaderFields();
             for (WeakReference<SonicSessionCallback> ref : sessionCallbackList) {
                 SonicSessionCallback callback = ref.get();
                 if (callback != null) {

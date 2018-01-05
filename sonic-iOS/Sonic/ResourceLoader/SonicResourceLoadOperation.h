@@ -18,7 +18,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "sonicSession.h"
+#import "SonicSession.h"
 
 @interface SonicResourceLoadOperation : NSOperation
 

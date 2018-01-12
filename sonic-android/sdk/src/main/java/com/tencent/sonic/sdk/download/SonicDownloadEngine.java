@@ -218,6 +218,7 @@ public class SonicDownloadEngine implements Handler.Callback {
      * When the webview initiates a sub resource interception, the client invokes this method to retrieve the data
      *
      * @param url The url of sub resource
+     * @param session current sonic session
      * @return Return the data to kernel
      */
     public Object onRequestSubResource(String url, SonicSession session) {
@@ -268,6 +269,7 @@ public class SonicDownloadEngine implements Handler.Callback {
 
     /**
      * preload the sub resource in the "sonic-link" header.
+     * @param preloadLinks The links which need to be preloaded.
      */
     public void addSubResourcePreloadTask(List<String> preloadLinks) {
 

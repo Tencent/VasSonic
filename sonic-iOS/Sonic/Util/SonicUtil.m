@@ -235,7 +235,7 @@ NSString * getDataSha1(NSData *data)
     return @{kSonicProtocolAction:@(action),kSonicProtocolData:param};
 }
 
-unsigned long long currentTimeStamp()
+unsigned long long currentTimeStamp(void)
 {
     return (unsigned long long)([[NSDate date] timeIntervalSince1970]);
 }

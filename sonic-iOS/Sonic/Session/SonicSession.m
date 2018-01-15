@@ -30,6 +30,7 @@
 #import "SonicUtil.h"
 #import "SonicEngine.h"
 #import "SonicResourceLoader.h"
+#import "SonicEventStatistics.h"
 
 @interface SonicSession ()
 
@@ -119,6 +120,9 @@
         self.cacheConfigHeaders = cacheItem.config;
         self.cacheResponseHeaders = cacheItem.cacheResponseHeaders;
         self.localRefreshTime = cacheItem.lastRefreshTime;
+        
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionDidLoadLocalCache withEventInfo:@{@"sessionID":self.sessionID,@"url":self.url,@"dataLength":@(self.cacheFileData.length)}];
+        
         //load sub resource if need
         [self preloadSubResourceWithResponseHeaders:self.cacheResponseHeaders];
     }
@@ -255,6 +259,10 @@
     self.isFirstLoad = self.cacheConfigHeaders.count > 0 ? NO:YES;
     [self setupRequestHeaders];
     [self start];
+    
+    //event
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionRefresh withEventInfo:@{@"url":self.url,@"sessionID":self.sessionID}];
+    
     return YES;
 }
 
@@ -323,7 +331,10 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 {
   [self preloadSubResourceWithResponseHeaders:response.allHeaderFields];
   dispatch_block_t opBlock = ^{
-        
+      
+      NSInteger resposneCode = response.statusCode;
+      [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionRecvResponse withEventInfo:@{@"statusCode":@(resposneCode),@"headers":response.allHeaderFields,@"url":self.url,@"sessionID":self.sessionID}];
+      
         //sync cookie to NSHTTPCookieStorage
         dispatchToMain(^{
             NSArray *cookiesFromResp = [NSHTTPCookie cookiesWithResponseHeaderFields:response.allHeaderFields forURL:response.URL];
@@ -358,6 +369,11 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 - (void)server:(SonicServer *)server didCompleteWithError:(NSError *)error
 {
     dispatch_block_t opBlock = ^{
+        
+        //event
+        NSInteger errorCode = error.code;
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionHttpError withEventInfo:@{@"code":@(errorCode),@"msg":error.debugDescription,@"url":self.url,@"sessionID":self.sessionID}];
+        
         self.isCompletion = YES;
         if (self.isFirstLoad) {
             [self firstLoadDidFaild:error];
@@ -435,6 +451,8 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         
         if ([policy isEqualToString:SonicHeaderValueCacheOfflineDisable]) {
             
+            [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionUnavilable withEventInfo:@{@"msg":@"Cache-Offline:Http",@"url":self.url,@"sessionID":self.sessionID}];
+            
             [[SonicCache shareCache] saveServerDisableSonicTimeNow:self.sessionID];
             
             self.isDataFetchFinished = YES;
@@ -458,6 +476,9 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
                 NSLog(@"Sonic first load item for cache nil");
                 return;
             }
+            
+            NSString *htmlString = [serverResult[kSonicHtmlFieldName] length]> 0? serverResult[kSonicHtmlFieldName]:@"";
+            [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionFirstLoad withEventInfo:@{@"htmlString":htmlString,@"url":self.url,@"sessionID":self.sessionID}];
             
             SonicCacheItem *cacheItem = [[SonicCache shareCache] saveHtmlString:serverResult[kSonicHtmlFieldName] templateString:serverResult[kSonicTemplateFieldName] dynamicData:serverResult[kSonicDataFieldName] responseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
             
@@ -659,6 +680,8 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     switch (self.sonicServer.response.statusCode) {
         case 304:
         {
+            [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionHitCache withEventInfo:@{@"msg":@"Server 304!",@"url":self.url,@"sessionID":self.sessionID}];
+            
             self.sonicStatusCode = SonicStatusCodeAllCached;
             self.sonicStatusFinalCode = SonicStatusCodeAllCached;
             //update headers
@@ -695,6 +718,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
                 }
                 
                 if ([policy isEqualToString:SonicHeaderValueCacheOfflineDisable]) {
+                    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionUnavilable withEventInfo:@{@"msg":@"Cache-Offline:Http",@"url":self.url,@"sessionID":self.sessionID}];
                     [[SonicCache shareCache] saveServerDisableSonicTimeNow:self.sessionID];
                 }
             }
@@ -744,6 +768,12 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
     SonicCacheItem *cacheItem = [[SonicCache shareCache] saveHtmlString:serverResult[kSonicHtmlFieldName] templateString:serverResult[kSonicTemplateFieldName] dynamicData:serverResult[kSonicDataFieldName] responseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
     
+    
+    //statistics
+    NSString  *htmlString = @"";
+    htmlString = htmlString.length > 0? htmlString:[[[NSString alloc]initWithData:self.sonicServer.responseData encoding:NSUTF8StringEncoding]autorelease];
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionTemplateChanged withEventInfo:@{@"htmlString":htmlString,@"url":self.url,@"sessionID":self.sessionID}];
+    
     if (cacheItem) {
         
         self.sonicStatusCode = SonicStatusCodeTemplateUpdate;
@@ -778,6 +808,11 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
         htmlString = serverResult[kSonicHtmlFieldName];
     }
+    
+    //statistics
+    NSString *htmlLog = @"";
+    htmlLog = htmlString.length > 0? htmlString:[[[NSString alloc]initWithData:self.sonicServer.responseData encoding:NSUTF8StringEncoding]autorelease];
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionDataUpdated withEventInfo:@{@"htmlString":htmlLog,@"url":self.url,@"sessionID":self.sessionID}];
     
     SonicCacheItem *cacheItem = [[SonicCache shareCache] updateWithJsonData:self.sonicServer.responseData withHtmlString:htmlString withResponseHeaders:self.sonicServer.response.allHeaderFields withUrl:self.url];
     

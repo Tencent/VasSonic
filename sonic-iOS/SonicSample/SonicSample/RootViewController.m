@@ -20,6 +20,7 @@
 #import "RootViewController.h"
 #import "SonicWebViewController.h"
 #import "SonicOfflineCacheConnection.h"
+#import "SonicEventObserver.h"
 
 @import Sonic;
 
@@ -48,6 +49,10 @@
     
     //Subclass the SonicConnection to return offline cache
     [SonicSession registerSonicConnection:[SonicOfflineCacheConnection class]];
+    
+    //add event observer
+    SonicEventObserver *observer = [SonicEventObserver new];
+    [[SonicEventStatistics shareStatistics] addEventObserver:observer];
 
     //header
     UIImageView *header = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"header.png"]];
@@ -138,7 +143,7 @@ static CGFloat SizeFitHeightPlus(CGFloat value)
 
 - (void)sonicResourcePreloadAction
 {
-    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://10.66.149.196:3000/demo" useSonicMode:YES unStrictMode:NO];
+    SonicWebViewController *webVC = [[SonicWebViewController alloc]initWithUrl:@"http://www.kgc.cn/zhuanti/bigca.shtml?jump=1" useSonicMode:YES unStrictMode:YES];
     [self.navigationController pushViewController:webVC animated:YES];
 }
 

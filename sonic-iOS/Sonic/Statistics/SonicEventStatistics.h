@@ -1,5 +1,5 @@
 //
-//  Sonic.h
+//  SonicEventStatistics.h
 //  Sonic
 //
 //  Tencent is pleased to support the open source community by making VasSonic available.
@@ -17,27 +17,32 @@
 //  Copyright © 2017年 Tencent. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
-
-//! Project version number for Sonic.
-FOUNDATION_EXPORT double SonicVersionNumber;
-
-//! Project version string for Sonic.
-FOUNDATION_EXPORT const unsigned char SonicVersionString[];
-
-// In this header, you should import all the public headers of your framework using statements like #import <Sonic/PublicHeader.h>
-
 #import <Foundation/Foundation.h>
+#import "SonicEventConstants.h"
 
-#import "SonicConfiguration.h"
-#import "SonicSessionConfiguration.h"
-#import "SonicProtocol.h"
-#import "SonicConstants.h"
-#import "SonicSession.h"
-#import "SonicEngine.h"
-#import "SonicUtil.h"
-#import "SonicConnection.h"
-#import "SonicURLProtocol.h"
-#import "SonicCache.h"
-#import "SonicCacheItem.h"
-#import "SonicEventStatistics.h"
+@protocol SonicEventStatisticsObserver <NSObject>
+
+- (void)handleEvent:(SonicStatisticsEvent)event withEventInfo:(NSDictionary *)info;
+
+@end
+
+@interface SonicEventStatistics : NSObject
+
++ (SonicEventStatistics *)shareStatistics;
+
+/**
+ * Add an observer to handle the events
+ */
+- (void)addEventObserver:(id<SonicEventStatisticsObserver>)eventObserver;
+
+/**
+ * remove the observer
+ */
+- (void)removeEventObserver:(id<SonicEventStatisticsObserver>)eventObserver;
+
+/**
+ * add an event with info
+ */
+- (void)addEvent:(SonicStatisticsEvent)event withEventInfo:(NSDictionary *)info;
+
+@end

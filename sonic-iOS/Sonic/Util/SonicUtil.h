@@ -83,6 +83,6 @@ NSMutableDictionary * queryComponents(NSString *aUrlStr);
 /**
  * Get the current timestamp.
  */
-unsigned long long currentTimeStamp();
+unsigned long long currentTimeStamp(void);
 
 @end

@@ -21,11 +21,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		4F9ED2AF1F9F1E820074DF5E /* SonicServer.h in Headers */ = {isa = PBXBuildFile; fileRef = 4F9ED2AD1F9F1E820074DF5E /* SonicServer.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4F9ED2B01F9F1E820074DF5E /* SonicServer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F9ED2AE1F9F1E820074DF5E /* SonicServer.m */; };
-		542F99F51FE769A000598258 /* SonicResourceLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 542F99F31FE769A000598258 /* SonicResourceLoader.h */; };
+		542F99F51FE769A000598258 /* SonicResourceLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 542F99F31FE769A000598258 /* SonicResourceLoader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		542F99F61FE769A000598258 /* SonicResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 542F99F41FE769A000598258 /* SonicResourceLoader.m */; };
-		542F99F91FE7701B00598258 /* SonicResourceLoadOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 542F99F71FE7701B00598258 /* SonicResourceLoadOperation.h */; };
+		542F99F91FE7701B00598258 /* SonicResourceLoadOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 542F99F71FE7701B00598258 /* SonicResourceLoadOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		542F99FA1FE7701B00598258 /* SonicResourceLoadOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 542F99F81FE7701B00598258 /* SonicResourceLoadOperation.m */; };
 		545D61C61F623BED00DA8F3A /* SonicConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = 545D61C41F623BED00DA8F3A /* SonicConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		545D61C71F623BED00DA8F3A /* SonicConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 545D61C51F623BED00DA8F3A /* SonicConfiguration.m */; };
@@ -38,15 +36,20 @@
 		546B782D1F0105F6003F08AE /* SonicSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B781D1F0105F6003F08AE /* SonicSession.m */; };
 		546B782E1F0105F6003F08AE /* SonicUtil.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B781E1F0105F6003F08AE /* SonicUtil.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B782F1F0105F6003F08AE /* SonicUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B781F1F0105F6003F08AE /* SonicUtil.m */; };
-		546B78301F0105F6003F08AE /* SonicURLProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B78201F0105F6003F08AE /* SonicURLProtocol.m */; };
 		546B78311F0105F6003F08AE /* SonicCache.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78211F0105F6003F08AE /* SonicCache.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78321F0105F6003F08AE /* SonicCacheItem.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78221F0105F6003F08AE /* SonicCacheItem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78331F0105F6003F08AE /* SonicEngine.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78231F0105F6003F08AE /* SonicEngine.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		546B78341F0105F6003F08AE /* SonicConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78241F0105F6003F08AE /* SonicConnection.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		546B78351F0105F6003F08AE /* SonicConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B78251F0105F6003F08AE /* SonicConnection.m */; };
 		546B78361F0105F6003F08AE /* SonicSession.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78261F0105F6003F08AE /* SonicSession.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		546B78371F0105F6003F08AE /* SonicURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B78271F0105F6003F08AE /* SonicURLProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		546B78801F01F91D003F08AE /* Sonic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 546B780D1F0105AA003F08AE /* Sonic.framework */; };
+		54BF62E7200858B6007129D5 /* SonicEventStatistics.h in Headers */ = {isa = PBXBuildFile; fileRef = 54BF62E5200858B6007129D5 /* SonicEventStatistics.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		54BF62E8200858B6007129D5 /* SonicEventStatistics.m in Sources */ = {isa = PBXBuildFile; fileRef = 54BF62E6200858B6007129D5 /* SonicEventStatistics.m */; };
+		54BF62EB20085918007129D5 /* SonicEventConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 54BF62E920085918007129D5 /* SonicEventConstants.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		54BF62F42008E252007129D5 /* SonicConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = 54BF62EE2008E251007129D5 /* SonicConnection.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		54BF62F52008E252007129D5 /* SonicConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 54BF62EF2008E251007129D5 /* SonicConnection.m */; };
+		54BF62F62008E252007129D5 /* SonicServer.h in Headers */ = {isa = PBXBuildFile; fileRef = 54BF62F02008E251007129D5 /* SonicServer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		54BF62F72008E252007129D5 /* SonicServer.m in Sources */ = {isa = PBXBuildFile; fileRef = 54BF62F12008E251007129D5 /* SonicServer.m */; };
+		54BF62F82008E252007129D5 /* SonicURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 54BF62F22008E251007129D5 /* SonicURLProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		54BF62F92008E252007129D5 /* SonicURLProtocol.m in Sources */ = {isa = PBXBuildFile; fileRef = 54BF62F32008E251007129D5 /* SonicURLProtocol.m */; };
 		54C2E2D21F6B79CF003EC647 /* SonicDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = 54C2E2D01F6B79CF003EC647 /* SonicDatabase.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		54C2E2D31F6B79CF003EC647 /* SonicDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = 54C2E2D11F6B79CF003EC647 /* SonicDatabase.m */; };
 		E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */ = {isa = PBXBuildFile; fileRef = E43E03441F618182000F30ED /* SonicSessionConfiguration.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -64,8 +67,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4F9ED2AD1F9F1E820074DF5E /* SonicServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicServer.h; sourceTree = "<group>"; };
-		4F9ED2AE1F9F1E820074DF5E /* SonicServer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicServer.m; sourceTree = "<group>"; };
 		542F99F31FE769A000598258 /* SonicResourceLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicResourceLoader.h; sourceTree = "<group>"; };
 		542F99F41FE769A000598258 /* SonicResourceLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicResourceLoader.m; sourceTree = "<group>"; };
 		542F99F71FE7701B00598258 /* SonicResourceLoadOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicResourceLoadOperation.h; sourceTree = "<group>"; };
@@ -83,15 +84,20 @@
 		546B781D1F0105F6003F08AE /* SonicSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicSession.m; sourceTree = "<group>"; };
 		546B781E1F0105F6003F08AE /* SonicUtil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicUtil.h; sourceTree = "<group>"; };
 		546B781F1F0105F6003F08AE /* SonicUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicUtil.m; sourceTree = "<group>"; };
-		546B78201F0105F6003F08AE /* SonicURLProtocol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicURLProtocol.m; sourceTree = "<group>"; };
 		546B78211F0105F6003F08AE /* SonicCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicCache.h; sourceTree = "<group>"; };
 		546B78221F0105F6003F08AE /* SonicCacheItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicCacheItem.h; sourceTree = "<group>"; };
 		546B78231F0105F6003F08AE /* SonicEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicEngine.h; sourceTree = "<group>"; };
-		546B78241F0105F6003F08AE /* SonicConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicConnection.h; sourceTree = "<group>"; };
-		546B78251F0105F6003F08AE /* SonicConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicConnection.m; sourceTree = "<group>"; };
 		546B78261F0105F6003F08AE /* SonicSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicSession.h; sourceTree = "<group>"; };
-		546B78271F0105F6003F08AE /* SonicURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicURLProtocol.h; sourceTree = "<group>"; };
 		546B787B1F01F91D003F08AE /* SonicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SonicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		54BF62E5200858B6007129D5 /* SonicEventStatistics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicEventStatistics.h; sourceTree = "<group>"; };
+		54BF62E6200858B6007129D5 /* SonicEventStatistics.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicEventStatistics.m; sourceTree = "<group>"; };
+		54BF62E920085918007129D5 /* SonicEventConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicEventConstants.h; sourceTree = "<group>"; };
+		54BF62EE2008E251007129D5 /* SonicConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicConnection.h; sourceTree = "<group>"; };
+		54BF62EF2008E251007129D5 /* SonicConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicConnection.m; sourceTree = "<group>"; };
+		54BF62F02008E251007129D5 /* SonicServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicServer.h; sourceTree = "<group>"; };
+		54BF62F12008E251007129D5 /* SonicServer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicServer.m; sourceTree = "<group>"; };
+		54BF62F22008E251007129D5 /* SonicURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicURLProtocol.h; sourceTree = "<group>"; };
+		54BF62F32008E251007129D5 /* SonicURLProtocol.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicURLProtocol.m; sourceTree = "<group>"; };
 		54C2E2D01F6B79CF003EC647 /* SonicDatabase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicDatabase.h; sourceTree = "<group>"; };
 		54C2E2D11F6B79CF003EC647 /* SonicDatabase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicDatabase.m; sourceTree = "<group>"; };
 		54E535A11F694A3A00A98AFE /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
@@ -119,19 +125,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		542F99ED1FE768A900598258 /* Network */ = {
-			isa = PBXGroup;
-			children = (
-				546B78201F0105F6003F08AE /* SonicURLProtocol.m */,
-				546B78271F0105F6003F08AE /* SonicURLProtocol.h */,
-				546B78241F0105F6003F08AE /* SonicConnection.h */,
-				546B78251F0105F6003F08AE /* SonicConnection.m */,
-				4F9ED2AD1F9F1E820074DF5E /* SonicServer.h */,
-				4F9ED2AE1F9F1E820074DF5E /* SonicServer.m */,
-			);
-			path = Network;
-			sourceTree = "<group>";
-		};
 		542F99EE1FE768B400598258 /* Session */ = {
 			isa = PBXGroup;
 			children = (
@@ -209,17 +202,41 @@
 		546B780F1F0105AA003F08AE /* Sonic */ = {
 			isa = PBXGroup;
 			children = (
+				54BF62ED2008E251007129D5 /* Network */,
+				54BF62E0200857DE007129D5 /* Statistics */,
 				542F99F21FE7695E00598258 /* ResourceLoader */,
 				542F99F11FE768F900598258 /* Util */,
 				542F99F01FE768C200598258 /* Engine */,
 				542F99EF1FE768BB00598258 /* Cache */,
 				542F99EE1FE768B400598258 /* Session */,
-				542F99ED1FE768A900598258 /* Network */,
 				546B78101F0105AA003F08AE /* Sonic.h */,
 				546B781B1F0105F6003F08AE /* SonicConstants.h */,
 				546B781C1F0105F6003F08AE /* SonicProtocol.h */,
 			);
 			path = Sonic;
+			sourceTree = "<group>";
+		};
+		54BF62E0200857DE007129D5 /* Statistics */ = {
+			isa = PBXGroup;
+			children = (
+				54BF62E5200858B6007129D5 /* SonicEventStatistics.h */,
+				54BF62E6200858B6007129D5 /* SonicEventStatistics.m */,
+				54BF62E920085918007129D5 /* SonicEventConstants.h */,
+			);
+			path = Statistics;
+			sourceTree = "<group>";
+		};
+		54BF62ED2008E251007129D5 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				54BF62EE2008E251007129D5 /* SonicConnection.h */,
+				54BF62EF2008E251007129D5 /* SonicConnection.m */,
+				54BF62F02008E251007129D5 /* SonicServer.h */,
+				54BF62F12008E251007129D5 /* SonicServer.m */,
+				54BF62F22008E251007129D5 /* SonicURLProtocol.h */,
+				54BF62F32008E251007129D5 /* SonicURLProtocol.m */,
+			);
+			path = Network;
 			sourceTree = "<group>";
 		};
 		54E535A01F694A3A00A98AFE /* Frameworks */ = {
@@ -239,20 +256,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				546B782B1F0105F6003F08AE /* SonicConstants.h in Headers */,
-				546B78341F0105F6003F08AE /* SonicConnection.h in Headers */,
-				546B78371F0105F6003F08AE /* SonicURLProtocol.h in Headers */,
 				546B782E1F0105F6003F08AE /* SonicUtil.h in Headers */,
 				546B78361F0105F6003F08AE /* SonicSession.h in Headers */,
 				546B782C1F0105F6003F08AE /* SonicProtocol.h in Headers */,
 				546B78331F0105F6003F08AE /* SonicEngine.h in Headers */,
-				542F99F91FE7701B00598258 /* SonicResourceLoadOperation.h in Headers */,
 				546B78321F0105F6003F08AE /* SonicCacheItem.h in Headers */,
+				54BF62F42008E252007129D5 /* SonicConnection.h in Headers */,
+				54BF62EB20085918007129D5 /* SonicEventConstants.h in Headers */,
+				542F99F91FE7701B00598258 /* SonicResourceLoadOperation.h in Headers */,
+				54BF62E7200858B6007129D5 /* SonicEventStatistics.h in Headers */,
+				54BF62F82008E252007129D5 /* SonicURLProtocol.h in Headers */,
+				54BF62F62008E252007129D5 /* SonicServer.h in Headers */,
+				542F99F51FE769A000598258 /* SonicResourceLoader.h in Headers */,
 				546B78311F0105F6003F08AE /* SonicCache.h in Headers */,
 				E43E03461F618182000F30ED /* SonicSessionConfiguration.h in Headers */,
 				54C2E2D21F6B79CF003EC647 /* SonicDatabase.h in Headers */,
-				4F9ED2AF1F9F1E820074DF5E /* SonicServer.h in Headers */,
 				545D61C61F623BED00DA8F3A /* SonicConfiguration.h in Headers */,
-				542F99F51FE769A000598258 /* SonicResourceLoader.h in Headers */,
 				546B78121F0105AA003F08AE /* Sonic.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -302,7 +321,7 @@
 		546B78041F0105AA003F08AE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0820;
+				LastUpgradeCheck = 0920;
 				ORGANIZATIONNAME = Tencent;
 				TargetAttributes = {
 					541AD0351F151C0E00E2BDEC = {
@@ -377,18 +396,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				546B782F1F0105F6003F08AE /* SonicUtil.m in Sources */,
+				54BF62F92008E252007129D5 /* SonicURLProtocol.m in Sources */,
 				54C2E2D31F6B79CF003EC647 /* SonicDatabase.m in Sources */,
 				545D61C71F623BED00DA8F3A /* SonicConfiguration.m in Sources */,
 				542F99FA1FE7701B00598258 /* SonicResourceLoadOperation.m in Sources */,
 				546B782A1F0105F6003F08AE /* SonicEngine.m in Sources */,
-				546B78301F0105F6003F08AE /* SonicURLProtocol.m in Sources */,
+				54BF62E8200858B6007129D5 /* SonicEventStatistics.m in Sources */,
 				546B782D1F0105F6003F08AE /* SonicSession.m in Sources */,
 				546B78291F0105F6003F08AE /* SonicCacheItem.m in Sources */,
+				54BF62F52008E252007129D5 /* SonicConnection.m in Sources */,
 				542F99F61FE769A000598258 /* SonicResourceLoader.m in Sources */,
+				54BF62F72008E252007129D5 /* SonicServer.m in Sources */,
 				546B78281F0105F6003F08AE /* SonicCache.m in Sources */,
-				4F9ED2B01F9F1E820074DF5E /* SonicServer.m in Sources */,
 				E43E03471F618182000F30ED /* SonicSessionConfiguration.m in Sources */,
-				546B78351F0105F6003F08AE /* SonicConnection.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,7 +453,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -441,7 +463,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -484,7 +510,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -492,7 +520,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -526,6 +558,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer: Ming Huang (RMP465DM7N)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				CONFIGURATION_TEMP_DIR = "$(PROJECT_TEMP_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				DEFINES_MODULE = YES;
@@ -555,6 +588,7 @@
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer: Ming Huang (RMP465DM7N)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				CONFIGURATION_TEMP_DIR = "$(PROJECT_TEMP_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				DEFINES_MODULE = YES;

@@ -23,6 +23,7 @@
 #import "SonicCache.h"
 #import "SonicUtil.h"
 #import "SonicConfiguration.h"
+#import "SonicEventStatistics.h"
 
 #if  __has_feature(objc_arc)
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
@@ -78,6 +79,11 @@
                 NSString *sha1 = self.config[@"sha1"];
                 if ([cacheFileSha1 isEqualToString:sha1]) {
                     self.cacheResponseHeaders = [[SonicCache shareCache] responseHeadersWithSessionID:self.sessionID];
+                    //event
+                    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SubResourceLoadLocalCache withEventInfo:@{
+                                                                                                                                    @"url":self.url,
+                                                                                                                        @"dataLength":@(self.cacheFileData.length)
+                                                                                                                                    }];
                 }else{
                     self.cacheFileData = nil;
                     self.config = nil;
@@ -231,6 +237,12 @@
 
     [self disaptchProtocolAction:SonicURLProtocolActionDidFaild withParam:error];
     self.isComplete = YES;
+    
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SubResourceDidFail withEventInfo:@{
+                                                                                                             @"msg":@"config create fail to save resource!",
+                                                                                                             @"url":self.url,
+                                                                                                             @"error":error.debugDescription
+                                                                                                             }];
 }
 
 - (void)connectionDidCompleteWithoutError:(SonicConnection *)connection
@@ -242,6 +254,14 @@
         NSDictionary *config = [self createConfig];
         if (config) {
            [[SonicCache shareCache] saveSubResourceData:self.responseData withConfig:config withResponseHeaders:self.originResponse.allHeaderFields withSessionID:self.sessionID];
+            
+            NSDictionary *headersLog = self.originResponse.allHeaderFields? self.originResponse.allHeaderFields:[NSDictionary dictionary];
+            [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SubResourceDidSave withEventInfo:@{
+                                                                                                                     @"url":self.url,
+                                                                                                                     @"resourceID":self.sessionID,
+                                                                                                                     @"dataLength":@(self.responseData.length),
+                                                                                                                     @"reseponse":headersLog
+                                                                                                                     }];
         }else{
             NSLog(@"config create fail to save resource:%@",self.url);
         }

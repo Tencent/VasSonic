@@ -24,6 +24,7 @@
 #import "SonicEngine.h"
 #import "SonicCache.h"
 #import "SonicUtil.h"
+#import "SonicEventStatistics.h"
 
 @interface SonicEngine ()
 
@@ -185,10 +186,12 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
 {
     //If there is preload Sonic, the aWebDelegate may be nil, so we need't checkup aWebDelegate
     if (url.length == 0 || ![NSURL URLWithString:url]) {
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionCreateFaild withEventInfo:@{@"msg":@"url not validate!"}];
         return;
     }
     
     if ([[SonicCache shareCache] isServerDisableSonic:sonicSessionID(url)]) {
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionCreateFaild withEventInfo:@{@"msg":@"server disable!"}];
         return;
     }
     
@@ -197,6 +200,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     if (existSession && existSession.delegate != nil) {
         //session can only owned by one delegate
         [self.lock unlock];
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionCreateFaild withEventInfo:@{@"msg":@"same url session existed!"}];
         return;
     }
     
@@ -300,6 +304,7 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
     }
     
     if (findSession) {
+        [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionDestroy withEventInfo:@{@"url":findSession.url,@"sessionID":findSession.sessionID}];
         [findSession cancel];
         [self.tasks removeObjectForKey:findSession.sessionID];
     }

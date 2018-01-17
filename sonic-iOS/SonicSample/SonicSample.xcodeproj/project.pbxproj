@@ -19,6 +19,7 @@
 		546B78711F010710003F08AE /* RootViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B786C1F010710003F08AE /* RootViewController.m */; };
 		546B78721F010710003F08AE /* SonicJSContext.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B786E1F010710003F08AE /* SonicJSContext.m */; };
 		546B78731F010710003F08AE /* SonicWebViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 546B78701F010710003F08AE /* SonicWebViewController.m */; };
+		546F47F1200C87C10086CCF1 /* SonicEventObserver.m in Sources */ = {isa = PBXBuildFile; fileRef = 546F47F0200C87C10086CCF1 /* SonicEventObserver.m */; };
 		54DEED511F0D06C2007E9A7F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 54DEED501F0D06C2007E9A7F /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -54,6 +55,8 @@
 		546B786E1F010710003F08AE /* SonicJSContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicJSContext.m; sourceTree = "<group>"; };
 		546B786F1F010710003F08AE /* SonicWebViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SonicWebViewController.h; sourceTree = "<group>"; };
 		546B78701F010710003F08AE /* SonicWebViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SonicWebViewController.m; sourceTree = "<group>"; };
+		546F47EF200C87C10086CCF1 /* SonicEventObserver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SonicEventObserver.h; sourceTree = "<group>"; };
+		546F47F0200C87C10086CCF1 /* SonicEventObserver.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SonicEventObserver.m; sourceTree = "<group>"; };
 		54DEED501F0D06C2007E9A7F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -157,6 +160,8 @@
 				546B78701F010710003F08AE /* SonicWebViewController.m */,
 				5436964C1F166A4200579BA5 /* SonicOfflineCacheConnection.h */,
 				5436964D1F166A4200579BA5 /* SonicOfflineCacheConnection.m */,
+				546F47EF200C87C10086CCF1 /* SonicEventObserver.h */,
+				546F47F0200C87C10086CCF1 /* SonicEventObserver.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -213,7 +218,7 @@
 		546B78391F0106C8003F08AE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0820;
+				LastUpgradeCheck = 0920;
 				ORGANIZATIONNAME = Tencent;
 				TargetAttributes = {
 					546B78401F0106C8003F08AE = {
@@ -280,6 +285,7 @@
 				546B78711F010710003F08AE /* RootViewController.m in Sources */,
 				546B78731F010710003F08AE /* SonicWebViewController.m in Sources */,
 				5436964E1F166A4200579BA5 /* SonicOfflineCacheConnection.m in Sources */,
+				546F47F1200C87C10086CCF1 /* SonicEventObserver.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -311,7 +317,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -319,7 +327,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
@@ -360,7 +372,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
@@ -368,7 +382,11 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;

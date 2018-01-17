@@ -27,6 +27,7 @@
 #import <UIKit/UIKit.h>
 #import <CommonCrypto/CommonDigest.h>
 #import "SonicDatabase.h"
+#import "SonicEventStatistics.h"
 
 #define SonicRootCacheDirName      @"SonicCache"
 
@@ -260,6 +261,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 
 - (void)saveServerDisableSonicTimeNow:(NSString *)sessionID
 {
+    
     [self removeCacheBySessionID:sessionID];
     
     NSNumber *timeNow = @([[NSDate date] timeIntervalSince1970]);
@@ -387,6 +389,21 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
     cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
+    //event
+    NSString *htmlLog = [[[NSString alloc]initWithData:cacheItem.htmlData encoding:NSUTF8StringEncoding]autorelease];
+    NSDictionary *diff = cacheItem.diffData ? cacheItem.diffData:[NSDictionary dictionary];
+    NSString *tempLog = cacheItem.templateString.length > 0? cacheItem.templateString:@"";
+    NSDictionary *dynamic = cacheItem.dynamicData? cacheItem.dynamicData:[NSDictionary dictionary];
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionDidSaveCache withEventInfo:@{
+                                                                                                              @"htmlString":htmlLog,
+                                                                                                              @"template":tempLog,
+                                                                                                              @"dynamic":dynamic,
+                                                                                                              @"diff":diff,
+                                                                                                              @"sessionID":cacheItem.sessionID,
+                                                                                                              @"url":url
+                                                                                                              }];
+    
+    
     dealInFileQueue(^{
         [self saveHtmlData:htmlData withConfig:config withTemplate:cacheItem.templateString dynamicData:dynamicData withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:YES];
     });
@@ -418,6 +435,19 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSDictionary *filterResponseHeaders = [self filterResponseHeaders:headers];
     cacheItem.cacheResponseHeaders = filterResponseHeaders;
     
+    //event
+    NSString *htmlLog = [[[NSString alloc]initWithData:cacheItem.htmlData encoding:NSUTF8StringEncoding]autorelease];
+    NSDictionary *diff = cacheItem.diffData ? cacheItem.diffData:[NSDictionary dictionary];
+    NSString *tempLog = cacheItem.templateString.length > 0? cacheItem.templateString:@"";
+    NSDictionary *dynamic = cacheItem.dynamicData? cacheItem.dynamicData:[NSDictionary dictionary];
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_SessionDidSaveCache withEventInfo:@{
+                                                                                                              @"htmlString":htmlLog,
+                                                                                                              @"template":tempLog,
+                                                                                                              @"dynamic":dynamic,
+                                                                                                              @"diff":diff,
+                                                                                                              @"sessionID":cacheItem.sessionID,
+                                                                                                              @"url":url
+                                                                                                              }];
     dealInFileQueue(^{
         [self saveHtmlData:htmlData withConfig:config withTemplate:templateString dynamicData:dataDict withResponseHeaders:filterResponseHeaders withSessionID:sessionID isUpdate:NO];
     });
@@ -888,7 +918,7 @@ void dealInFileQueue(dispatch_block_t block)
     NSString *configPath = [self createDirectoryIfNotExist:_rootCachePath withSubPath:SonicRootCacheConfigDirName];
     _rootResourceConfigCachePath = [[self createDirectoryIfNotExist:configPath withSubPath:SonicResourceConfigDirName] copy];
     
-    return _rootResourceConfigCachePath;
+    return _rootResourceConfigCachePath.length > 0;
 }
 
 - (BOOL)setupSubResourceCacheDirectory
@@ -983,7 +1013,8 @@ void dealInFileQueue(dispatch_block_t block)
         NSLog(@"Trim resource cache in duration!");
         return;
     }
-    NSLog(@"Trim resource cache start !");
+    //event
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_TrimCache withEventInfo:@{@"msg":@"Trim resource cache start !"}];
     [self checkAndTrimCacheAtDirPath:SonicResourceCacheDirName unIncludeSubDir:nil withMaxDirectorySize:[SonicConfiguration defaultConfiguration].resourcCacheMaxDirectorySize withWarningPercent:[SonicConfiguration defaultConfiguration].cacheDirectorySizeWarningPercent];
     [[NSUserDefaults standardUserDefaults] setObject:[@(currentTimeStamp()) stringValue] forKey:kSonicResourceCacheTrimTimestampUDF];
 }

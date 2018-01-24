@@ -25,6 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -468,7 +469,12 @@ public abstract class SonicSessionConnection {
                 return null;
             }
 
-            return connectionImpl.getHeaderFields();
+            try {
+                return connectionImpl.getHeaderFields();
+            } catch (Throwable e) {
+                SonicUtils.log(TAG, Log.ERROR, "getHeaderFields error:" + e.getMessage());
+                return new HashMap<String, List<String>>();
+            }
         }
 
         @Override

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_HTTP;
@@ -246,7 +247,7 @@ public class SonicServer implements SonicSessionStream.Callback {
     public  Map<String, List<String>> getResponseHeaderFields() {
         if (null == cachedResponseHeaders) {
             // new cachedResponseHeaders
-            cachedResponseHeaders = new HashMap<String, List<String>>();
+            cachedResponseHeaders = new ConcurrentHashMap<String, List<String>>();
             // fill custom headers
             List<String> tmpHeaderList;
             if (session.config.customResponseHeaders != null && session.config.customResponseHeaders.size() > 0) {
@@ -271,8 +272,6 @@ public class SonicServer implements SonicSessionStream.Callback {
                     String key = entry.getKey();
                     if (!TextUtils.isEmpty(key)) {
                         cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
-                    } else {
-                        cachedResponseHeaders.put(key, entry.getValue());
                     }
                 }
             }

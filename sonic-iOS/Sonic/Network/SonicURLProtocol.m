@@ -50,8 +50,6 @@
     if (session.resourceLoader && [session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
         NSLog(@"SonicURLProtocol resource should intercept:%@",request.debugDescription);
         return YES;
-    }else{
-        NSLog(@"SonicURLProtocol resource can't intercept:%@ resourceLoader:%@",request.debugDescription,session.resourceLoader.debugDescription);
     }
     
     return NO;

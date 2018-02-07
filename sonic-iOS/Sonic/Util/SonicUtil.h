@@ -21,6 +21,7 @@
 #import "SonicConnection.h"
 #import "SonicConstants.h"
 #import "SonicSession.h"
+#import "SonicEventStatistics.h"
 
 @interface SonicUtil : NSObject
 

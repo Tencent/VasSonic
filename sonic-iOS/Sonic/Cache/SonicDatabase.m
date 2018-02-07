@@ -19,6 +19,7 @@
 
 #import "SonicDatabase.h"
 #import "sqlite3.h"
+#import "SonicEventStatistics.h"
 
 #if  __has_feature(objc_arc)
 #error This file must be compiled without ARC. Use -fno-objc-arc flag.
@@ -47,7 +48,7 @@
         
         if (ret != SQLITE_OK) {
             
-            NSLog(@"database open db faild :%@ code:%d",dbPath,ret);
+            SonicLogEvent(@"database open db faild :%@ code:%d",dbPath,ret);
         }
         
         [self createConfigTableIfNotExist];
@@ -80,7 +81,7 @@
     
     int ret = sqlite3_exec(_db, sql.UTF8String, NULL, NULL, NULL);
     if (ret != SQLITE_OK) {
-        NSLog(@"sql error:%@",sql);
+        SonicLogEvent(@"sql error:%@",sql);
     }
     return ret == SQLITE_OK;
 }

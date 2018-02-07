@@ -72,7 +72,7 @@
             }
             if (isCacheExpire) {
                 self.config = nil;
-                NSLog(@"resource expire:%@",self.url);
+                SonicLogEvent(@"resource expire:%@",self.url);
             }else{
                 self.cacheFileData = [[SonicCache shareCache] resourceCacheWithSessionID:self.sessionID];
                 NSString *cacheFileSha1 = getDataSha1(self.cacheFileData);
@@ -87,7 +87,7 @@
                 }else{
                     self.cacheFileData = nil;
                     self.config = nil;
-                    NSLog(@"resource sha1 wrong:%@",self.url);
+                    SonicLogEvent(@"resource sha1 wrong:%@",self.url);
                 }
             }
         }
@@ -126,7 +126,7 @@
         dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.cacheFileData];
         [self.lock unlock];
         finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
-        NSLog(@"resource read from cache:%@",self.url);
+        SonicLogEvent(@"resource read from cache:%@",self.url);
         [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
     }else{
         if (self.isComplete) {
@@ -135,7 +135,7 @@
             dataItem = [SonicUtil protocolActionItem:SonicURLProtocolActionLoadData param:self.responseData];
             [self.lock unlock];
             finishItem = [SonicUtil protocolActionItem:SonicURLProtocolActionDidSuccess param:nil];
-            NSLog(@"resource read from network:%@",self.url);
+            SonicLogEvent(@"resource read from network:%@",self.url);
             [actions addObjectsFromArray:@[rspItem,dataItem,finishItem]];
         }else{
             [self.lock lock];
@@ -148,7 +148,7 @@
                 [actions addObject:dataItem];
             }
             [self.lock unlock];
-            NSLog(@"resource read from network preload:%@",self.url);
+            SonicLogEvent(@"resource read from network preload:%@",self.url);
         }
     }
     self.protocolCallBack = callBack;
@@ -233,7 +233,7 @@
 
 - (void)connection:(SonicConnection *)connection didCompleteWithError:(NSError *)error
 {
-    NSLog(@"resource recieve error:%@",error.debugDescription);
+    SonicLogEvent(@"resource recieve error:%@",error.debugDescription);
 
     [self disaptchProtocolAction:SonicURLProtocolActionDidFaild withParam:error];
     self.isComplete = YES;
@@ -263,7 +263,7 @@
                                                                                                                      @"reseponse":headersLog
                                                                                                                      }];
         }else{
-            NSLog(@"config create fail to save resource:%@",self.url);
+            SonicLogEvent(@"config create fail to save resource:%@",self.url);
         }
     }];
     [[SonicCache subResourceQueue] addOperation:block];

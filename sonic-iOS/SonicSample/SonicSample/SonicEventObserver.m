@@ -33,8 +33,12 @@
 
 - (void)handleEvent:(SonicStatisticsEvent)event withEventInfo:(NSDictionary *)info
 {
-    NSString *eventString = [SonicEventObserver eventTypeToString:event];
-    NSLog(@"event :%@ info:%@",eventString,info.debugDescription);
+    if (event == SonicStatisticsEvent_EventLog) {
+        NSLog(@"%@",info[@"logMsg"]);
+    }else{
+        NSString *eventString = [SonicEventObserver eventTypeToString:event];
+        SonicLogEvent(@"event :%@ info:%@",eventString,info.debugDescription);
+    }
 }
 
 @end

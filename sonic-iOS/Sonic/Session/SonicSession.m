@@ -184,7 +184,7 @@
     if (self.configuration.supportCacheControl) {
         SonicCacheItem *cacheItem = [[SonicCache shareCache] cacheForSession:self.sessionID];
         if (![cacheItem isCacheExpired]) {
-            NSLog(@"SonicSession.start finish:session(%@) is under cache expired.", self.sessionID);
+            SonicLogEvent(@"SonicSession.start finish:session(%@) is under cache expired.", self.sessionID);
             return;
         }
     }
@@ -435,7 +435,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     if (200 == self.sonicServer.response.statusCode) {
         [self dealWithFirstLoad];
     } else {
-        NSLog(@"firstLoadDidSuccess warning:statusCode[%ld] miss!", (long)self.sonicServer.response.statusCode);
+        SonicLogEvent(@"firstLoadDidSuccess warning:statusCode[%ld] miss!", (long)self.sonicServer.response.statusCode);
     }
     
     [self checkAutoCompletionAction];
@@ -464,7 +464,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         if (self.configuration.supportCacheControl) {
             NSString *cacheControl = [self.sonicServer responseHeaderForKey:SonicHeaderValueCacheControl];
             if ([cacheControl isEqualToString:@"no-cache"] || [cacheControl isEqualToString:@"no-store"] || [cacheControl isEqualToString:@"must-revalidate"]) {
-                NSLog(@"cache control need't cache!");
+                SonicLogEvent(@"cache control need't cache!");
                 return;
             }
         }
@@ -473,7 +473,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
             
             NSDictionary *serverResult = [self.sonicServer sonicItemForCache];
             if (!serverResult) {
-                NSLog(@"Sonic first load item for cache nil");
+                SonicLogEvent(@"Sonic first load item for cache nil");
                 return;
             }
             
@@ -668,7 +668,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
     NSDictionary *extra = @{@"template-tag":templateTag,@"eTag":etag,@"isReload":isRefresh,@"cache-offline":cacheOffline};
     [resultDict setObject:extra forKey:@"extra"];
 
-    NSLog(@"sonic diff result :%@",resultDict);
+    SonicLogEvent(@"sonic diff result :%@",resultDict);
     
     return resultDict;
 }
@@ -692,7 +692,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
         {
             if (![self.sonicServer isSonicResponse]) {
                 [[SonicCache shareCache] removeCacheBySessionID:self.sessionID];
-                NSLog(@"Clear cache because while not sonic repsonse!");
+                SonicLogEvent(@"Clear cache because while not sonic repsonse!");
                 break;
             }
             
@@ -742,7 +742,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
                 self.webviewCallBack(resultDict);
             }
         }else{
-            NSLog(@"There is no webViewCallBack!");
+            SonicLogEvent(@"There is no webViewCallBack!");
         }
     }
     
@@ -758,7 +758,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
                 self.updateCallBack(resultDict);
             }
         }else{
-            NSLog(@"There is no updateCallBack!");
+            SonicLogEvent(@"There is no updateCallBack!");
         }
     }
 }
@@ -845,7 +845,7 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block)
 {
     NSString *linkValue = responseHeaders[SonicHeaderKeyLink];
     if (linkValue.length == 0) {
-        NSLog(@"no preload link exist!");
+        SonicLogEvent(@"no preload link exist!");
         return;
     }
     NSArray *linkArray = [linkValue componentsSeparatedByString:@";"];

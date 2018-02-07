@@ -40,7 +40,7 @@
             if (session && [sessionID isEqualToString:session.sessionID]) {
                 return YES;
             }
-            NSLog(@"SonicURLProtocol.canInitWithRequest error:Cannot find sonic session!");
+            SonicLogEvent(@"SonicURLProtocol.canInitWithRequest error:Cannot find sonic session!");
         }
     }
     
@@ -48,7 +48,7 @@
     NSString * sessionID = sonicSessionID(request.mainDocumentURL.absoluteString);
     SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
     if (session.resourceLoader && [session.resourceLoader canInterceptResourceWithUrl:request.URL.absoluteString]) {
-        NSLog(@"SonicURLProtocol resource should intercept:%@",request.debugDescription);
+        SonicLogEvent(@"SonicURLProtocol resource should intercept:%@",request.debugDescription);
         return YES;
     }
     
@@ -71,7 +71,7 @@
     
     if ([session.resourceLoader canInterceptResourceWithUrl:self.request.URL.absoluteString]) {
         
-        NSLog(@"protocol resource did start loading :%@",self.request.debugDescription);
+        SonicLogEvent(@"protocol resource did start loading :%@",self.request.debugDescription);
 
         SonicSession *session = [[SonicEngine sharedEngine] sessionById:sessionID];
         
@@ -118,14 +118,14 @@
             NSData *recvData = params[kSonicProtocolData];
             if (recvData.length > 0) {
                 [self.client URLProtocol:self didLoadData:recvData];
-                NSLog(@"protocol did load data length:%ld",recvData.length);
+                SonicLogEvent(@"protocol did load data length:%ld",recvData.length);
             }
         }
             break;
         case SonicURLProtocolActionDidSuccess:
         {
             [self.client URLProtocolDidFinishLoading:self];
-            NSLog(@"protocol did finish loading request:%@",self.request.debugDescription);
+            SonicLogEvent(@"protocol did finish loading request:%@",self.request.debugDescription);
         }
             break;
         case SonicURLProtocolActionDidFaild:

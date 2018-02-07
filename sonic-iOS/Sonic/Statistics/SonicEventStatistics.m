@@ -63,6 +63,16 @@
     [super dealloc];
 }
 
+- (void)addLog:(NSString *)format, ...
+{
+    va_list args;
+    va_start(args,format);
+    NSString *logString = [[[NSString alloc]initWithFormat:format arguments:args]autorelease];
+    va_end(args);
+    logString = [NSString stringWithFormat:@"#SonicEventLog# %@",logString];
+    [[SonicEventStatistics shareStatistics] addEvent:SonicStatisticsEvent_EventLog withEventInfo:@{@"logMsg":logString}];
+}
+
 - (void)addEventObserver:(id<SonicEventStatisticsObserver>)eventObserver
 {
     if (![eventObserver conformsToProtocol:@protocol(SonicEventStatisticsObserver)]) {

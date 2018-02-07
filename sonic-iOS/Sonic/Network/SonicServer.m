@@ -299,7 +299,7 @@ static NSLock *sonicRequestClassLock;
         }
         return nil;
     }
-    NSLog(@"sonicItemForCache warning:Should never call this function before connection did completion!");
+    SonicLogEvent(@"sonicItemForCache warning:Should never call this function before connection did completion!");
     return nil;
 }
 
@@ -407,7 +407,7 @@ static NSLock *sonicRequestClassLock;
             
             //if http status is 304, there is nothing changed
             if (self.response.statusCode == 304) {
-                NSLog(@"response status 304!");
+                SonicLogEvent(@"Response status 304!");
                 break;
             }
             

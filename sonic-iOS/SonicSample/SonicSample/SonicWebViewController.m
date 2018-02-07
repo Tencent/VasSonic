@@ -43,7 +43,7 @@
                 SonicSessionConfiguration *configuration = [SonicSessionConfiguration new];
                 NSString *linkValue = @"http://assets.kgc.cn/ff7f069b/css/common-min.www.kgc.css?v=e4ecfe82;http://assets.kgc.cn/ff7f069b/css/themes.www.kgc.css?v=612eb426;http://assets.kgc.cn/ff7f069b/css/style.www.kgc.css?v=05d94f84";
                 configuration.customResponseHeaders = @{
-                                                        SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStoreRefresh,
+                                                        SonicHeaderKeyCacheOffline:SonicHeaderValueCacheOfflineStore,
                                                         SonicHeaderKeyLink:linkValue
                                                         };
                 configuration.enableLocalServer = YES;

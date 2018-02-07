@@ -24,6 +24,9 @@
  *  Sonic Event Type
  */
 typedef NS_ENUM(NSUInteger, SonicStatisticsEvent) {
+    
+    //Throw all step log 
+    SonicStatisticsEvent_EventLog,
 
     //Session create faild
     SonicStatisticsEvent_SessionCreateFaild,

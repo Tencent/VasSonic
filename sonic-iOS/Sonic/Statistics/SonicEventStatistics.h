@@ -20,6 +20,8 @@
 #import <Foundation/Foundation.h>
 #import "SonicEventConstants.h"
 
+#define SonicLogEvent(format,...) [[SonicEventStatistics shareStatistics]addLog:format,##__VA_ARGS__]
+
 @protocol SonicEventStatisticsObserver <NSObject>
 
 - (void)handleEvent:(SonicStatisticsEvent)event withEventInfo:(NSDictionary *)info;
@@ -29,6 +31,8 @@
 @interface SonicEventStatistics : NSObject
 
 + (SonicEventStatistics *)shareStatistics;
+
+- (void)addLog:(NSString *)format, ...;
 
 /**
  * Add an observer to handle the events

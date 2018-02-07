@@ -382,7 +382,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 #if DEBUG
         NSAssert(sha1.length>0, errMsg);
 #endif
-        NSLog(@"%@",errMsg);
+        SonicLogEvent(@"%@",errMsg);
     }
     [config setObject:sha1 forKey:kSonicSha1];
     cacheItem.config = config;
@@ -799,10 +799,10 @@ void dealInFileQueue(dispatch_block_t block)
     unsigned long long lastTrimStamp = [[[NSUserDefaults standardUserDefaults] objectForKey:kSonicRootCacheTrimTimestampUDF] longLongValue];
     unsigned long long duration = currentTimeStamp() - lastTrimStamp;
     if (duration < [SonicConfiguration defaultConfiguration].rootCacheSizeCheckDuration) {
-        NSLog(@"Trim root cache in duration!");
+        SonicLogEvent(@"Trim root cache in duration!");
         return;
     }
-    NSLog(@"Trim root cache start !");
+    SonicLogEvent(@"Trim root cache start !");
     [self checkAndTrimCacheAtDirPath:_rootCachePath unIncludeSubDir:SonicRootCacheConfigDirName withMaxDirectorySize:[SonicConfiguration defaultConfiguration].cacheMaxDirectorySize withWarningPercent:[SonicConfiguration defaultConfiguration].cacheDirectorySizeWarningPercent];
     [[NSUserDefaults standardUserDefaults] setObject:[@(currentTimeStamp()) stringValue] forKey:kSonicRootCacheTrimTimestampUDF];
 }
@@ -876,7 +876,7 @@ void dealInFileQueue(dispatch_block_t block)
                 
                 [SonicFileManager removeItemAtPath:subDir error:nil];
                 
-                NSLog(@"trim clear cache at subDir :%@",subDir);
+                SonicLogEvent(@"trim clear cache at subDir :%@",subDir);
             }
         }
         
@@ -927,7 +927,7 @@ void dealInFileQueue(dispatch_block_t block)
     
     _rootResourceCachePath = [[self createDirectoryIfNotExist:[paths objectAtIndex:0] withSubPath:SonicResourceCacheDirName] copy];
     
-    NSLog(@"resource cache path:%@",_rootResourceCachePath);
+    SonicLogEvent(@"resource cache path:%@",_rootResourceCachePath);
     
     [self setupSubResourceConfigDirectory];
 
@@ -971,7 +971,7 @@ void dealInFileQueue(dispatch_block_t block)
         [SonicFileManager removeItemAtPath:cacheFilePath error:nil];
     }
     
-    NSLog(@"resource save state:%d sessionID:%@",isSuccess,sessionID);
+    SonicLogEvent(@"resource save state:%d sessionID:%@",isSuccess,sessionID);
     
     return isSuccess;
 }
@@ -1010,7 +1010,7 @@ void dealInFileQueue(dispatch_block_t block)
     unsigned long long lastTrimStamp = [[[NSUserDefaults standardUserDefaults] objectForKey:kSonicResourceCacheTrimTimestampUDF] longLongValue];
     unsigned long long duration = currentTimeStamp() - lastTrimStamp;
     if (duration < [SonicConfiguration defaultConfiguration].resourceCacheSizeCheckDuration) {
-        NSLog(@"Trim resource cache in duration!");
+        SonicLogEvent(@"Trim resource cache in duration!");
         return;
     }
     //event

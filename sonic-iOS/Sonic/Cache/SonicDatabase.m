@@ -212,11 +212,10 @@
                 [dataPart appendFormat:@"'%@',",value];
             }else{
                 if ([key rangeOfString:@"-"].location != NSNotFound) {
-                    [keySort appendFormat:@"\"%@\",",key];
+                    [keySort appendFormat:@"\"%@\")",key];
                 }else{
-                    [keySort appendFormat:@"'%@',",key];
+                    [keySort appendFormat:@"'%@')",key];
                 }
-                [keySort appendFormat:@"'%@')",key];
                 [dataPart appendFormat:@"'%@')",value];
             }
         }

@@ -47,6 +47,7 @@
                                                         SonicHeaderKeyLink:linkValue
                                                         };
                 configuration.enableLocalServer = YES;
+                configuration.supportCacheControl = YES;
                 [[SonicEngine sharedEngine] createSessionWithUrl:self.url withWebDelegate:self withConfiguration:configuration];
             }else{
                 self.isStandSonic = YES;

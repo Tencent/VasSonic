@@ -190,16 +190,32 @@
 
         if (isUpdate) {
             if (index != keyValues.count - 1 && keyValues.count > 0) {
-                [updateValues appendFormat:@"set %@ = '%@',",key,value];
+                if ([key rangeOfString:@"-"].location != NSNotFound) {
+                    [updateValues appendFormat:@"set \"%@\" = '%@',",key,value];
+                }else{
+                    [updateValues appendFormat:@"set %@ = '%@',",key,value];
+                }
             }else{
-                [updateValues appendFormat:@"set %@ = '%@'",key,value];
+                if ([key rangeOfString:@"-"].location != NSNotFound) {
+                    [updateValues appendFormat:@"set \"%@\" = '%@'",key,value];
+                }else{
+                    [updateValues appendFormat:@"set %@ = '%@'",key,value];
+                }
             }
         }else{
             if (index != keyValues.count-1 && keyValues.count > 0) {
-                [keySort appendFormat:@"'%@',",key];
+                if ([key rangeOfString:@"-"].location != NSNotFound) {
+                    [keySort appendFormat:@"\"%@\",",key];
+                }else{
+                    [keySort appendFormat:@"'%@',",key];
+                }
                 [dataPart appendFormat:@"'%@',",value];
             }else{
-                [keySort appendFormat:@"'%@')",key];
+                if ([key rangeOfString:@"-"].location != NSNotFound) {
+                    [keySort appendFormat:@"\"%@\")",key];
+                }else{
+                    [keySort appendFormat:@"'%@')",key];
+                }
                 [dataPart appendFormat:@"'%@')",value];
             }
         }

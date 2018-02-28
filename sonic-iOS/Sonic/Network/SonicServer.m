@@ -53,6 +53,12 @@ static NSLock *sonicRequestClassLock;
 
 @property (nonatomic,retain)NSDictionary *data;
 
+/**
+ * Use to hold all block operation in sonic session queue
+ * We need to cancel before the SonicSession dealloc
+ */
+@property (nonatomic,retain)NSMutableArray *sonicQueueOperationIdentifiers;
+
 @end
 
 @implementation SonicServer
@@ -62,6 +68,7 @@ static NSLock *sonicRequestClassLock;
     if (self == [super init]) {
         self.delegate = delegate;
         self.delegateQueue = queue;
+        self.sonicQueueOperationIdentifiers = [NSMutableArray array];
         _request = [[NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]] retain];
     }
     return self;
@@ -75,6 +82,24 @@ static NSLock *sonicRequestClassLock;
         [self.connection stopLoading];
         self.connection = nil;
     }
+    
+    //remove operation relation this session in SonicSessionQueue and mainQueue
+    NSMutableArray *opNeedCancel = [NSMutableArray array];
+    
+    //cancel operation from sonic session queue
+    for (NSString *opIdentifier in self.sonicQueueOperationIdentifiers) {
+        for (NSOperation *op in [SonicSession sonicSessionQueue].operations) {
+            if (op.hash == [opIdentifier integerValue]) {
+                [opNeedCancel addObject:op];
+            }
+        }
+    }
+    
+    //cancel op now
+    [opNeedCancel enumerateObjectsUsingBlock:^(NSOperation *op, NSUInteger idx, BOOL * _Nonnull stop) {
+        [op cancel];
+    }];
+    self.sonicQueueOperationIdentifiers = nil;
     
     if (nil != _request) {
         [_request release];
@@ -343,36 +368,40 @@ static NSLock *sonicRequestClassLock;
  */
 - (void)connection:(SonicConnection *)connection didReceiveResponse:(NSHTTPURLResponse *)response
 {
-    // Make field names to lowercase string as Field names are case-insensitive.[https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2]
-    NSMutableDictionary *headers = [[[NSMutableDictionary alloc] init] autorelease];
-    if (self.customResponseHeaders.count > 0) {
-        for (NSString *key in self.customResponseHeaders.allKeys) {
-            [headers setValue:[self.customResponseHeaders objectForKey:key] forKey:[key lowercaseString]];
+    dispatch_block_t opBlock = ^{
+        // Make field names to lowercase string as Field names are case-insensitive.[https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2]
+        NSMutableDictionary *headers = [[[NSMutableDictionary alloc] init] autorelease];
+        if (self.customResponseHeaders.count > 0) {
+            for (NSString *key in self.customResponseHeaders.allKeys) {
+                [headers setValue:[self.customResponseHeaders objectForKey:key] forKey:[key lowercaseString]];
+            }
         }
-    }
-    for (NSString *key in response.allHeaderFields.allKeys) {
-        [headers setObject:[response.allHeaderFields objectForKey:key] forKey:[key lowercaseString]];
-    }
-    
-    // fix Weak-Etag case like -> etag: W/"66f0-m2UmCBEh78dNYPv+boO5ETXk4FU".[https://github.com/Tencent/VasSonic/issues/128]
-    NSString *eTag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
-    if ([eTag hasPrefix:@"W/"] && eTag.length > 3) {
-        [headers setValue:[eTag substringWithRange:NSMakeRange(2, eTag.length - 3)] forKey:[SonicHeaderKeyETag lowercaseString]];
-    }
-    
-    NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:response.URL statusCode:response.statusCode HTTPVersion:nil headerFields:headers]autorelease];
-    
-    _response = [newResponse retain];
-    
-    // Not sonic response and enabel local-server
-    if ((response.statusCode == 304 || ![self isValidateSonicResponse:response]) && self.enableLocalSever) {
-        _isInLocalServerMode = true;
-        if (![self isFirstLoadRequest]) {
-            return; // not first load request just return util all data are received.
+        for (NSString *key in response.allHeaderFields.allKeys) {
+            [headers setObject:[response.allHeaderFields objectForKey:key] forKey:[key lowercaseString]];
         }
-    }
-    
-    [self.delegate server:self didRecieveResponse:newResponse];
+        
+        // fix Weak-Etag case like -> etag: W/"66f0-m2UmCBEh78dNYPv+boO5ETXk4FU".[https://github.com/Tencent/VasSonic/issues/128]
+        NSString *eTag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
+        if ([eTag hasPrefix:@"W/"] && eTag.length > 3) {
+            [headers setValue:[eTag substringWithRange:NSMakeRange(2, eTag.length - 3)] forKey:[SonicHeaderKeyETag lowercaseString]];
+        }
+        
+        NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:response.URL statusCode:response.statusCode HTTPVersion:nil headerFields:headers]autorelease];
+        
+        _response = [newResponse retain];
+        
+        // Not sonic response and enabel local-server
+        if ((response.statusCode == 304 || ![self isValidateSonicResponse:response]) && self.enableLocalSever) {
+            _isInLocalServerMode = true;
+            if (![self isFirstLoadRequest]) {
+                return; // not first load request just return util all data are received.
+            }
+        }
+        
+        [self.delegate server:self didRecieveResponse:newResponse];
+    };
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 /**
@@ -380,19 +409,23 @@ static NSLock *sonicRequestClassLock;
  */
 - (void)connection:(SonicConnection *)connection didReceiveData:(NSData *)data
 {
-    if (data) {
-        
-        if (nil == _responseData) {
-            _responseData = [[NSMutableData data] retain];
+    dispatch_block_t opBlock = ^{
+        if (data) {
+            
+            if (nil == _responseData) {
+                _responseData = [[NSMutableData data] retain];
+            }
+            NSData *copyData = [data copy];
+            [_responseData appendData:copyData];
+            [copyData release];
+            
+            if ([self isFirstLoadRequest] || !self.isInLocalServerMode) {
+                [self.delegate server:self didReceiveData:data];
+            }
         }
-        NSData *copyData = [data copy];
-        [_responseData appendData:copyData];
-        [copyData release];
-        
-        if ([self isFirstLoadRequest] || !self.isInLocalServerMode) {
-            [self.delegate server:self didReceiveData:data];
-        }
-    }
+    };
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 /**
@@ -400,96 +433,100 @@ static NSLock *sonicRequestClassLock;
  */
 - (void)connectionDidCompleteWithoutError:(SonicConnection *)connection
 {
-    self.isCompletion = YES;
-    if (self.isInLocalServerMode) {
-        
-        do {
+    dispatch_block_t opBlock = ^{
+        self.isCompletion = YES;
+        if (self.isInLocalServerMode) {
             
-            //if http status is 304, there is nothing changed
-            if (self.response.statusCode == 304) {
-                SonicLogEvent(@"Response status 304!");
-                break;
-            }
-            
-            self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
-            NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
-            if (splitResult) {
-                self.templateString = splitResult[kSonicTemplateFieldName];
-                self.data = splitResult[kSonicDataFieldName];
-            }
-            
-            NSMutableDictionary *headers = [[_response.allHeaderFields mutableCopy]autorelease];
-            
-            if (![headers objectForKey:SonicHeaderKeyCacheOffline]) { // refresh this time
-                [headers setValue:@"true" forKey:[SonicHeaderKeyCacheOffline lowercaseString]];
-            }
-            NSString *htmlSha1 = nil;
-            NSString *responseEtag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
-            if (!responseEtag) {
-                responseEtag = htmlSha1 = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
-                [headers setObject:responseEtag forKey:[SonicHeaderKeyETag lowercaseString]];
-            }
-            NSString *requestEtag = [self.request.allHTTPHeaderFields objectForKey:HTTPHeaderKeyIfNoneMatch];
-            if ([responseEtag isEqualToString:requestEtag]) { // Case:hit 304
-                [headers setValue:@"false" forKey:[SonicHeaderKeyTemplateChange lowercaseString]];
-                NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:304 HTTPVersion:nil headerFields:headers]autorelease];
-                // Update response data
-                [_response release];
-                _response = nil;
-                _response = [newResponse retain];
-                [_responseData release];
-                _responseData = nil;
-                break;
-            }
-            
-            NSString *responseTemplateTag = [headers objectForKey:[SonicHeaderKeyTemplate lowercaseString]];
-            if (!responseTemplateTag) {
-                responseTemplateTag = getDataSha1([self.templateString dataUsingEncoding:NSUTF8StringEncoding]);
-                [headers setValue:responseTemplateTag forKey:[SonicHeaderKeyTemplate lowercaseString]];
-            }
-            NSString *requestTemplateTag = [self.request.allHTTPHeaderFields objectForKey:SonicHeaderKeyTemplate];
-            if ([responseTemplateTag isEqualToString:requestTemplateTag]) { // Case:data update
-                NSError *jsonError = nil;
-                NSMutableDictionary *jsonDict = [NSMutableDictionary dictionaryWithDictionary:self.data];
-                if (!htmlSha1) {
-                    htmlSha1 = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
+            do {
+                
+                //if http status is 304, there is nothing changed
+                if (self.response.statusCode == 304) {
+                    SonicLogEvent(@"Response status 304!");
+                    break;
                 }
-                [jsonDict setObject:htmlSha1 forKey:SonicHeaderKeyHtmlSha1];
-                NSData *jsonData = [NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingPrettyPrinted error:&jsonError];
-                if (!jsonError) {
+                
+                self.htmlString = [[[NSString alloc]initWithData:self.responseData encoding:[self encodingFromHeaders]] autorelease];
+                NSDictionary *splitResult = [SonicUtil splitTemplateAndDataFromHtmlData:self.htmlString];
+                if (splitResult) {
+                    self.templateString = splitResult[kSonicTemplateFieldName];
+                    self.data = splitResult[kSonicDataFieldName];
+                }
+                
+                NSMutableDictionary *headers = [[_response.allHeaderFields mutableCopy]autorelease];
+                
+                if (![headers objectForKey:SonicHeaderKeyCacheOffline]) { // refresh this time
+                    [headers setValue:@"true" forKey:[SonicHeaderKeyCacheOffline lowercaseString]];
+                }
+                NSString *htmlSha1 = nil;
+                NSString *responseEtag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
+                if (!responseEtag) {
+                    responseEtag = htmlSha1 = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
+                    [headers setObject:responseEtag forKey:[SonicHeaderKeyETag lowercaseString]];
+                }
+                NSString *requestEtag = [self.request.allHTTPHeaderFields objectForKey:HTTPHeaderKeyIfNoneMatch];
+                if ([responseEtag isEqualToString:requestEtag]) { // Case:hit 304
                     [headers setValue:@"false" forKey:[SonicHeaderKeyTemplateChange lowercaseString]];
-                    NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:200 HTTPVersion:nil headerFields:headers]autorelease];
+                    NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:304 HTTPVersion:nil headerFields:headers]autorelease];
                     // Update response data
                     [_response release];
                     _response = nil;
                     _response = [newResponse retain];
                     [_responseData release];
                     _responseData = nil;
-                    NSMutableData *mJsonData = [jsonData mutableCopy];
-                    _responseData = [mJsonData retain];
-                    [mJsonData release];
                     break;
                 }
+                
+                NSString *responseTemplateTag = [headers objectForKey:[SonicHeaderKeyTemplate lowercaseString]];
+                if (!responseTemplateTag) {
+                    responseTemplateTag = getDataSha1([self.templateString dataUsingEncoding:NSUTF8StringEncoding]);
+                    [headers setValue:responseTemplateTag forKey:[SonicHeaderKeyTemplate lowercaseString]];
+                }
+                NSString *requestTemplateTag = [self.request.allHTTPHeaderFields objectForKey:SonicHeaderKeyTemplate];
+                if ([responseTemplateTag isEqualToString:requestTemplateTag]) { // Case:data update
+                    NSError *jsonError = nil;
+                    NSMutableDictionary *jsonDict = [NSMutableDictionary dictionaryWithDictionary:self.data];
+                    if (!htmlSha1) {
+                        htmlSha1 = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
+                    }
+                    [jsonDict setObject:htmlSha1 forKey:SonicHeaderKeyHtmlSha1];
+                    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingPrettyPrinted error:&jsonError];
+                    if (!jsonError) {
+                        [headers setValue:@"false" forKey:[SonicHeaderKeyTemplateChange lowercaseString]];
+                        NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:200 HTTPVersion:nil headerFields:headers]autorelease];
+                        // Update response data
+                        [_response release];
+                        _response = nil;
+                        _response = [newResponse retain];
+                        [_responseData release];
+                        _responseData = nil;
+                        NSMutableData *mJsonData = [jsonData mutableCopy];
+                        _responseData = [mJsonData retain];
+                        [mJsonData release];
+                        break;
+                    }
+                }
+                
+                // Case:template-change
+                [headers setValue:@"true" forKey:[SonicHeaderKeyTemplateChange lowercaseString]];
+                NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:200 HTTPVersion:nil headerFields:headers]autorelease];
+                [_response release];
+                _response = nil;
+                _response = [newResponse retain];
+                break;
+                
+            } while (true);
+            
+            //First request need't to load again
+            if (![self isFirstLoadRequest]) {
+                [self.delegate server:self didRecieveResponse:self.response];
+                [self.delegate server:self didReceiveData:self.responseData];
             }
-            
-            // Case:template-change
-            [headers setValue:@"true" forKey:[SonicHeaderKeyTemplateChange lowercaseString]];
-            NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:_response.URL statusCode:200 HTTPVersion:nil headerFields:headers]autorelease];
-            [_response release];
-            _response = nil;
-            _response = [newResponse retain];
-            break;
-            
-        } while (true);
-        
-        //First request need't to load again
-        if (![self isFirstLoadRequest]) {
-            [self.delegate server:self didRecieveResponse:self.response];
-            [self.delegate server:self didReceiveData:self.responseData];
         }
-    }
-    [self.delegate serverDidCompleteWithoutError:self];
-    _isRuning = NO;
+        [self.delegate serverDidCompleteWithoutError:self];
+        _isRuning = NO;
+    };
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 /**
@@ -497,14 +534,18 @@ static NSLock *sonicRequestClassLock;
  */
 - (void)connection:(SonicConnection *)connection didCompleteWithError:(NSError *)error
 {
-    _error = [error retain]; // update error
-    self.isCompletion = YES;
-    if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
-        [self.delegate server:self didRecieveResponse:self.response];
-        [self.delegate server:self didReceiveData:self.responseData];
-    }
-    [self.delegate server:self didCompleteWithError:error];
-    _isRuning = NO;
+    dispatch_block_t opBlock = ^{
+        _error = [error retain]; // update error
+        self.isCompletion = YES;
+        if (self.isInLocalServerMode && ![self isFirstLoadRequest]) {
+            [self.delegate server:self didRecieveResponse:self.response];
+            [self.delegate server:self didReceiveData:self.responseData];
+        }
+        [self.delegate server:self didCompleteWithError:error];
+        _isRuning = NO;
+    };
+    NSString *opIdentifier = dispatchToSonicSessionQueue(opBlock);
+    [self.sonicQueueOperationIdentifiers addObject:opIdentifier];
 }
 
 @end

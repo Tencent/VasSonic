@@ -8,7 +8,7 @@
 
 Add VasSonic gradle plugin as a dependency in your module's build.gradle
 ```gradle
-compile 'com.tencent.sonic:sdk:3.0.0-beta'
+compile 'com.tencent.sonic:sdk:3.0.0'
 ```
 
 ## Implement sonic interface:

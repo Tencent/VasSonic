@@ -9,7 +9,7 @@
 
 1)Apache Tomcat
 
-2)Download VasSonic-1.1.jar and put it in your Java project. If you are familiar with Maven, you can get VasSonic-1.1.jar from Maven repository [http://search.maven.org/](http://search.maven.org/).
+2)Download VasSonic-1.1.jar and put it in your Java project. If you are familiar with Maven, you can get VasSonic-1.1.jar from [Maven repository](http://search.maven.org/#search%7Cga%7C1%7CVasSonic).
 
 3)Configure the Application Deployment Descriptor - "web.xml" in your project. put the following code in web.xml before any other filter or servlet config. 
 

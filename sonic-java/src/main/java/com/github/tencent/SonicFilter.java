@@ -17,23 +17,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.gson.*;
 
-class TemplateReplace extends AbstractReplaceCallBack{
-    public static boolean shoudSonicDiffBodyReplace = false; // 判断是否成功替换sonicdiffbody
+class TemplateReplace extends AbstractReplaceCallBack {
+    public static boolean shoudSonicDiffBodyReplace = false; 
     public static int diffIndex = 0;
     public static String tagPrefix = "auto";
-    public static HashMap<String, String> diffTagNames = new HashMap<String, String>(); // 数据块
+    public static HashMap<String, String> diffTagNames = new HashMap<String, String>(); 
 
-    public String doReplace(String text, int index, Matcher matcher)
-    {
+    public String doReplace(String text, int index, Matcher matcher) {
         StringBuilder tagBuilder = new StringBuilder();
         String tagName;
         shoudSonicDiffBodyReplace = true;
-        if(matcher.groupCount() == 1)
-        {
+        if(matcher.groupCount() == 1) {
             tagName = matcher.group(1);
         }
-        else
-        {
+        else {
             StringBuilder sb = new StringBuilder();
             sb.append(tagPrefix).append(diffIndex++);
             tagName = sb.toString();
@@ -42,8 +39,7 @@ class TemplateReplace extends AbstractReplaceCallBack{
         return tagBuilder.append("{").append(tagName).append("}").toString();
     }
 
-    public static void reset()
-    {
+    public static void reset() {
         shoudSonicDiffBodyReplace = false;
         diffIndex = 0;
         diffTagNames.clear();
@@ -67,13 +63,9 @@ public class SonicFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         Map<String,String> headerMap = SonicUtil.getAllHttpHeaders(httpRequest);
-        //客户端本地缓存的HTML摘要
         String etag = "";
-        //服务端最新内容
         String htmlContent;
-        //服务端最新内容摘要
-        String htmlContentSha1 ="";
-        //如果客户端支持diff能力，不使用缓存
+        String htmlContentSha1 =""; 
         String value = headerMap.get("accept-diff");
         if (headerMap.containsKey("accept-diff") && value.equals("true")) {
             httpResponse.addHeader("Cache-Control", "no-cache");
@@ -90,8 +82,8 @@ public class SonicFilter implements Filter {
         } finally {
             String contentType = responseCopier.getContentType();
             byte[] copy = responseCopier.getCopy();
-            if(contentType == null || !contentType.contains("text"))
-            {
+            //sonic only filter out text
+            if(contentType == null || !contentType.contains("text")){
                 ServletOutputStream out =  httpResponse.getOutputStream();
                 out.write(copy);
                 out.close();
@@ -100,26 +92,30 @@ public class SonicFilter implements Filter {
             htmlContent = new String(copy, "UTF-8");
             htmlContentSha1 = SonicUtil.encrypt(htmlContent, "sha-1");
         }
-        // if html not change,return 304
-        if(etag.equalsIgnoreCase(htmlContentSha1)){
+        // if not modified, return 304
+        if(etag.equalsIgnoreCase(htmlContentSha1)) {
             httpResponse.addHeader("Cache-Offline", "store");
             httpResponse.addHeader("Content-Length", "0");
             httpResponse.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
             return;
         }
+
         httpResponse.setHeader("Etag", htmlContentSha1);
         String htmlTitle;
         String clientTemplateTag ="";
-        if(headerMap.containsKey("template-tag")){
+        if(headerMap.containsKey("template-tag")) {
             clientTemplateTag = headerMap.get("template-tag");
         }
+        
         String stringTitlePattern = "<title(.*?)<\\/title>";
         htmlTitle = SonicUtil.pregMatch(htmlContent, stringTitlePattern);
         String htmlTemplate= htmlContent.replaceAll(stringTitlePattern,"{title}");
+        //replace data with template
         String stringTemplatePattern = "<!--sonicdiff-?(\\w*)-->[\\s\\S]+?<!--sonicdiff-?\\w*-end-->";
         TemplateReplace templateReplace = new TemplateReplace();
         Pattern pattern = Pattern.compile(stringTemplatePattern, Pattern.CASE_INSENSITIVE);
         htmlTemplate = SonicUtil.replaceAllCallBack(htmlTemplate, pattern, templateReplace);
+
         String templateMd5 = SonicUtil.encrypt(htmlTemplate, "sha-1");
         httpResponse.addHeader("template-tag", templateMd5);
         Map<String, Object> result = new HashMap<String, Object>();
@@ -130,30 +126,28 @@ public class SonicFilter implements Filter {
             strKey.append("{").append(entry.getKey()).append("}");
             dataMap.put(strKey.toString(), entry.getValue());
         }
+
         TemplateReplace.reset();
         result.put("data", dataMap);
         result.put("template-tag", templateMd5);
         result.put("html-sha1", htmlContentSha1);
         String resultStr="";
-        if(templateMd5.equals(clientTemplateTag))
-        {
+        if(templateMd5.equals(clientTemplateTag)) {
             httpResponse.addHeader("template-change", "false");
-            //离线模板没有差异，不用更新
             result.put("diff", "");
             Gson gson = new Gson();
             resultStr = gson.toJson(result);
         }
-        else
-        {
+        else {
             httpResponse.addHeader("template-change", "true");
-            //客户端没有带离线版本，直接全量即可
             resultStr = htmlContent;
         }
-        ServletOutputStream out =  httpResponse.getOutputStream();
+        ServletOutputStream out = httpResponse.getOutputStream();
         out.write(resultStr.getBytes("UTF-8"));
         httpResponse.addHeader("Content-Length", String.valueOf(resultStr.getBytes("UTF-8").length));
         out.close();
     }
+
     @Override
     public void init(FilterConfig config) throws ServletException {
         this.filterConfig = config;

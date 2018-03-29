@@ -18,9 +18,11 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.*;
 
 class TemplateReplace extends AbstractReplaceCallBack {
+    // 判断是否成功替换sonicdiffbody
     public static boolean shoudSonicDiffBodyReplace = false; 
     public static int diffIndex = 0;
     public static String tagPrefix = "auto";
+    // 数据块
     public static HashMap<String, String> diffTagNames = new HashMap<String, String>(); 
 
     public String doReplace(String text, int index, Matcher matcher) {
@@ -135,12 +137,14 @@ public class SonicFilter implements Filter {
         result.put("html-sha1", htmlContentSha1);
         String resultStr="";
         if(templateMd5.equals(clientTemplateTag)) {
+            //离线模板没有差异，不用更新
             httpResponse.addHeader("template-change", "false");
             result.put("diff", "");
             Gson gson = new Gson();
             resultStr = gson.toJson(result);
         }
         else {
+            //客户端没有带离线版本，直接全量即可
             httpResponse.addHeader("template-change", "true");
             resultStr = htmlContent;
         }

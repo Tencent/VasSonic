@@ -24,14 +24,12 @@ public class ServletOutputStreamCopier extends ServletOutputStream {
     }
 
     @Override
-    public boolean isReady()
-    {
+    public boolean isReady() {
         return this.isReady();
     }
 
     @Override
-    public void setWriteListener(WriteListener writeListener)
-    {
+    public void setWriteListener(WriteListener writeListener) {
         this.setWriteListener(writeListener);
     }
 

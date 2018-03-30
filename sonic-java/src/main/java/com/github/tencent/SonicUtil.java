@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 public class SonicUtil {
 
     /**
-     * 返回十六进制字符串
+     * get hex string
      *
      * @param arr
      * @return
@@ -27,7 +27,7 @@ public class SonicUtil {
     }
 
     /**
-     *
+     * encrypt string
      * @param inputText
      * @param algorithmName
      * @return
@@ -44,7 +44,6 @@ public class SonicUtil {
             MessageDigest m = MessageDigest.getInstance(algorithmName);
             m.update(inputText.getBytes("UTF8"));
             byte s[] = m.digest();
-            // m.digest(inputText.getBytes("UTF8"));
             return hex(s);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -55,14 +54,10 @@ public class SonicUtil {
     }
 
     /**
-     * 将String中的所有pattern匹配的字符串替换掉
-     *
+     * replace string which match the pattern with callback
      * @param string
-     *            待替换的字符串
      * @param pattern
-     *            替换查找的正则表达式对象
      * @param replacement
-     *            替换函数
      * @return
      */
     public static String replaceAllCallBack(String string, Pattern pattern, ReplaceCallBack replacement) {
@@ -85,22 +80,27 @@ public class SonicUtil {
         return string;
     }
 
-    public static String pregMatch(String strContent, String strPattern)
-    {
+    /**
+     * get matched string
+     * @param strContent
+     * @param strPattern
+     * @return
+     */
+    public static String pregMatch(String strContent, String strPattern) {
         Pattern titlePattern = Pattern.compile(strPattern, Pattern.CASE_INSENSITIVE);
         Matcher titleMatcher = titlePattern.matcher(strContent);
-        if(titleMatcher.find()){
+        if(titleMatcher.find()) {
             return titleMatcher.group(0);
         }
         return "";
     }
 
     /**
-     * 获取HTTP所有的请求头
+     * get http headers
      * @param httpRequest
      * @return
      */
-    public static Map<String,String> getAllHttpHeaders(HttpServletRequest httpRequest ){
+    public static Map<String,String> getAllHttpHeaders(HttpServletRequest httpRequest) {
         Map<String, String> headerMap = new HashMap<String, String>();
         Enumeration<String> headerNames = httpRequest.getHeaderNames();
         if (headerNames != null) {

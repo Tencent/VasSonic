@@ -443,7 +443,7 @@ public class SonicFileUtils {
     static void checkAndTrimResourceCache() {
         HashMap<String, List<String>> currentCacheFileMap = new HashMap<String, List<String>>();
         long startTime = System.currentTimeMillis();
-        long cacheFileSize = calcCacheSize(getSonicCacheDirPath(), currentCacheFileMap);
+        long cacheFileSize = calcCacheSize(getSonicResourceCachePath(), currentCacheFileMap);
 
         final long MAX_CACHE_SIZE = SonicEngine.getInstance().getConfig().SONIC_RESOURCE_CACHE_MAX_SIZE;
 

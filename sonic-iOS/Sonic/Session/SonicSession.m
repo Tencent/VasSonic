@@ -266,6 +266,16 @@
     return YES;
 }
 
+- (NSString *)cachedHTMLString
+{
+    if (!self.cacheFileData) {
+        return @"";
+    }
+    
+    return [[[NSString alloc]initWithData:self.cacheFileData encoding:NSUTF8StringEncoding] autorelease];
+}
+
+
 - (void)syncCookies
 {
     NSURL *cUrl = [NSURL URLWithString:self.url];

@@ -359,6 +359,12 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
     NSMutableDictionary *dynamicData = [NSMutableDictionary dictionaryWithDictionary:cacheItem.dynamicData];
     NSDictionary *mergeResult = [SonicUtil mergeDynamicData:dataDict[kSonicDataFieldName] withOriginData:dynamicData];
     
+    if ([mergeResult[@"diff"] count] == 0) {
+        NSMutableDictionary *tmpResult = [[mergeResult mutableCopy]autorelease];
+        [tmpResult setObject:dataDict[kSonicDataFieldName] forKey:@"diff"];
+        mergeResult = tmpResult;
+    }
+    
     NSData *htmlData = nil;
     if (htmlString.length > 0) {
         htmlData = [htmlString dataUsingEncoding:NSUTF8StringEncoding];

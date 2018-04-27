@@ -154,4 +154,9 @@ NSString * dispatchToSonicSessionQueue(dispatch_block_t block);
  */
 - (void)getResultWithCallBack:(SonicWebviewCallBack)webviewCallback;
 
+/**
+ * cached html string
+ */
+- (NSString *)cachedHTMLString;
+
 @end

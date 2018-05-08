@@ -423,16 +423,20 @@ public class SonicUtils {
         HashMap<String, String> headers = new HashMap<String, String>();
         if (null != srcHeaders) {
             List<String> headerValues;
-            for (Map.Entry<String, List<String>> entry : srcHeaders.entrySet()) {
-                if ("Set-Cookie".equalsIgnoreCase(entry.getKey()) || "Cache-Control".equalsIgnoreCase(entry.getKey()) ||
-                        "Expires".equalsIgnoreCase(entry.getKey()) || "Etag".equalsIgnoreCase(entry.getKey())) {
-                    // forbid webview kernel to run cache related logic
-                    continue;
+            try {
+                for (Map.Entry<String, List<String>> entry : srcHeaders.entrySet()) {
+                    if ("Set-Cookie".equalsIgnoreCase(entry.getKey()) || "Cache-Control".equalsIgnoreCase(entry.getKey()) ||
+                            "Expires".equalsIgnoreCase(entry.getKey()) || "Etag".equalsIgnoreCase(entry.getKey())) {
+                        // forbid webview kernel to run cache related logic
+                        continue;
+                    }
+                    headerValues = entry.getValue();
+                    if (null != headerValues && 1 == headerValues.size()) {
+                        headers.put(entry.getKey(), headerValues.get(0));
+                    }
                 }
-                headerValues = entry.getValue();
-                if (null != headerValues && 1 == headerValues.size()) {
-                    headers.put(entry.getKey(), headerValues.get(0));
-                }
+            } catch (Throwable e) {
+                SonicUtils.log(TAG, Log.ERROR, "getFilteredHeaders error! " + e.getMessage());
             }
         }
         return headers;

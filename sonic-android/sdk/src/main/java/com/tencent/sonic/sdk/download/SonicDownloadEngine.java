@@ -275,7 +275,7 @@ public class SonicDownloadEngine implements Handler.Callback {
 
         SonicRuntime runtime = SonicEngine.getInstance().getRuntime();
         for (final String link : preloadLinks) {
-            if (!resourceTasks.containsKey(link)) {
+            if (!resourceTasks.containsKey(link) && runtime.canWriteFile()) {
                 resourceTasks.put(link,
                         download(link,
                                 runtime.getHostDirectAddress(link),

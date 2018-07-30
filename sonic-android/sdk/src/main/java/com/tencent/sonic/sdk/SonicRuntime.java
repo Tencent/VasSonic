@@ -349,4 +349,9 @@ public abstract class SonicRuntime {
      * @param errorCode Error code
      */
     public abstract void notifyError(SonicSessionClient client, String url, int errorCode);
+
+    /**
+     * @return have permissions to write file
+     */
+    public abstract boolean canWriteFile();
 }

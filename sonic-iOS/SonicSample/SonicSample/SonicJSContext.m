@@ -26,6 +26,7 @@
 {
     JSValue *callback = self.owner.jscontext.globalObject;
     
+    __weak typeof(self) weakSelf = self;
     [[SonicEngine sharedEngine] sonicUpdateDiffDataByWebDelegate:self.owner completion:^(NSDictionary *result) {
        
         if (result) {
@@ -35,7 +36,8 @@
             
             [callback invokeMethod:@"getDiffDataCallback" withArguments:@[jsonStr]];
         }
-        
+        //fix:https://github.com/Tencent/VasSonic/issues/251
+        weakSelf.owner = nil;
     }];
 }
 

@@ -383,7 +383,12 @@ static NSLock *sonicRequestClassLock;
         // fix Weak-Etag case like -> etag: W/"66f0-m2UmCBEh78dNYPv+boO5ETXk4FU".[https://github.com/Tencent/VasSonic/issues/128]
         NSString *eTag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
         if ([eTag hasPrefix:@"W/"] && eTag.length > 3) {
-            [headers setValue:[eTag substringWithRange:NSMakeRange(2, eTag.length - 3)] forKey:[SonicHeaderKeyETag lowercaseString]];
+            // fix Weak-Etag get value length error
+            NSString *eTagValue = [eTag substringFromIndex:2];
+            if ([eTagValue hasPrefix:@"\""] && [eTagValue hasSuffix:@"\""] && eTagValue.length > 3) {
+                eTagValue = [eTagValue substringWithRange:NSMakeRange(1, eTagValue.length - 2)];
+            }
+            [headers setValue:eTagValue forKey:[SonicHeaderKeyETag lowercaseString]];
         }
         
         NSHTTPURLResponse *newResponse = [[[NSHTTPURLResponse alloc]initWithURL:response.URL statusCode:response.statusCode HTTPVersion:nil headerFields:headers]autorelease];

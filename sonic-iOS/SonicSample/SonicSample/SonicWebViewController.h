@@ -25,7 +25,7 @@
 @property (nonatomic,strong)NSString *url;
 @property (nonatomic,strong)UIWebView *webView;
 @property (nonatomic,assign)long long clickTime;
-@property (nonatomic,strong)JSContext *jscontext;
+@property (nonatomic,weak)JSContext *jscontext;
 
 - (instancetype)initWithUrl:(NSString *)aUrl useSonicMode:(BOOL)isSonic unStrictMode:(BOOL)state;
 

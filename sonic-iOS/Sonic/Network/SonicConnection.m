@@ -75,6 +75,10 @@
 - (void)stopLoading
 {
     self.delegate = nil;
+    //fix:https://github.com/Tencent/VasSonic/issues/253
+    for (NSOperation *operation in self.delegateQueue.operations) {
+        [operation cancel];
+    }
     self.delegateQueue = nil;
     
     if (self.dataTask && self.dataTask.state == NSURLSessionTaskStateRunning) {

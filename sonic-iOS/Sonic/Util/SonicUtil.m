@@ -26,6 +26,21 @@
 #import <Foundation/Foundation.h>
 #import <CommonCrypto/CommonDigest.h>
 
+@interface SonicMatchPair: NSObject
+@property (nonatomic, assign) NSRange range;
+@property (nonatomic, copy) NSString *key;
+@end
+
+@implementation SonicMatchPair
+
+- (void)dealloc {
+    self.key = nil;
+    [super dealloc];
+}
+
+@end
+
+
 @implementation SonicUtil
 
 NSString *sonicSessionID(NSString *url)
@@ -187,19 +202,26 @@ NSString * getDataSha1(NSData *data)
         NSMutableString *templateString = nil;
         NSMutableDictionary *data = [NSMutableDictionary dictionary];
         //create dynamic data
-        NSArray *metchs = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
-        [metchs enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSArray *matches = [reg matchesInString:html options:NSMatchingReportCompletion range:NSMakeRange(0, html.length)];
+        NSMutableArray<SonicMatchPair *> *pairs = [NSMutableArray arrayWithCapacity:matches.count];
+        [matches enumerateObjectsUsingBlock:^(NSTextCheckingResult *obj, NSUInteger idx, BOOL * _Nonnull stop) {
             NSString *matchStr = [html substringWithRange:obj.range];
-            NSArray *seprateArr = [matchStr componentsSeparatedByString:@"<!--sonicdiff-"];
-            NSString *itemName = [[[seprateArr lastObject]componentsSeparatedByString:@"-end-->"]firstObject];
-            NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
-            [data setObject:matchStr forKey:formatKey];
+            if ([obj numberOfRanges] == 4) {
+                NSString *itemName = [html substringWithRange:[obj rangeAtIndex:1]];
+                NSString *formatKey = [NSString stringWithFormat:@"{%@}",itemName];
+                [data setObject:matchStr forKey:formatKey];
+                SonicMatchPair *pair = [[SonicMatchPair alloc] init];
+                pair.range = [obj rangeAtIndex:2];
+                pair.key = formatKey;
+                [pairs addObject:pair];
+                [pair release];
+            }
         }];
         
         //create template
         templateString = [NSMutableString stringWithString:html];
-        [data enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
-            [templateString replaceOccurrencesOfString:value withString:key options:NSCaseInsensitiveSearch range:NSMakeRange(0, templateString.length)];
+        [pairs enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(SonicMatchPair * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            [templateString replaceCharactersInRange:obj.range withString:obj.key];
         }];
         
        return @{kSonicDataFieldName:data,kSonicTemplateFieldName:templateString};

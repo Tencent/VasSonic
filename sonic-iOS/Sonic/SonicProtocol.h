@@ -20,7 +20,7 @@
 #import <Foundation/Foundation.h>
 
 /**
- * @brief Use this protocal to trasfer data to sonic session, when you provide custom SonicConnection.
+ * @brief Use this protocol to trasfer data to sonic session, when you provide custom SonicConnection.
  */
 
 @class SonicConnection;

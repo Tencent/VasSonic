@@ -39,7 +39,7 @@
 
 - (instancetype)initWithRequest:(NSURLRequest *)aRequest delegate:(id<SonicConnectionDelegate>)delegate delegateQueue:(NSOperationQueue *)queue
 {
-    if (self == [super init]) {
+    if (self = [super init]) {
         self.request = aRequest;
         self.delegate = delegate;
         self.delegateQueue = queue;

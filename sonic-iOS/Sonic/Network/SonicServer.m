@@ -65,7 +65,7 @@ static NSLock *sonicRequestClassLock;
 
 - (instancetype)initWithUrl:(NSString *)url delegate:(id<SonicServerDelegate>) delegate delegateQueue:(NSOperationQueue *) queue
 {
-    if (self == [super init]) {
+    if (self = [super init]) {
         self.delegate = delegate;
         self.delegateQueue = queue;
         self.sonicQueueOperationIdentifiers = [NSMutableArray array];

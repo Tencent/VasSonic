@@ -30,7 +30,7 @@
 /** Current request. */
 @property (nonatomic,retain)NSURLRequest *request;
 
-/** Use this protocal to transfer data to sonic session. */
+/** Use this protocol to transfer data to sonic session. */
 @property (nonatomic,assign)id<SonicConnectionDelegate> delegate;
 
 /** Queue for connection delegate operation. */

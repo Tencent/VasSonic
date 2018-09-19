@@ -19,7 +19,6 @@
 
 #import <Foundation/Foundation.h>
 #import "SonicProtocol.h"
-#import "SonicConnection.h"
 
 /**
  * Subclass this class to request the network data from custom connection.

@@ -101,7 +101,7 @@
     if (self = [super init]) {
         self.delegate = aWebDelegate;
         self.delegateId = [NSString stringWithFormat:@"%ld", (long)aWebDelegate.hash];
-        self.url = aUrl;
+        _url = [aUrl copy];
         _configuration = [aConfiguration retain];
         _sessionID = [sonicSessionID(aUrl) copy];
         [self setupSonicServer];
@@ -168,7 +168,7 @@
     
     [self cancel];
     
-    self.url = nil;
+    [_url release];
     
     [_sessionID release];
     _sessionID = nil;

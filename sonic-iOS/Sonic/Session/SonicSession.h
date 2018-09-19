@@ -60,7 +60,7 @@ typedef void(^SonicSessionCompleteCallback) (NSString *sessionID);
 @property (nonatomic,assign)BOOL isFirstLoad;
 
 /** Url for current session */
-@property (nonatomic ,copy)NSString *url;
+@property (nonatomic,copy,readonly)NSString *url;
 
 /** Generated from MD5 of URL. */
 @property (nonatomic,readonly)NSString *sessionID;

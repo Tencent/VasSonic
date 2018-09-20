@@ -37,8 +37,6 @@
 
 @property (nonatomic,retain)NSDictionary *cacheResponseHeaders;
 
-@property (nonatomic,retain)NSDictionary *config;
-
 @property (nonatomic,retain)NSMutableData *responseData;
 
 @property (nonatomic,retain)NSHTTPURLResponse *originResponse;
@@ -62,21 +60,20 @@
         self.lock = tmpLock;
         [tmpLock release];
     
-        self.config = [[SonicCache shareCache] resourceConfigWithSessionID:self.sessionID];
-        if (self.config) {
-            long long cacheExpire = [self.config[@"cache-expire-time"] longLongValue];
+        NSDictionary *config = [[SonicCache shareCache] resourceConfigWithSessionID:self.sessionID];
+        if (config) {
+            long long cacheExpire = [config[@"cache-expire-time"] longLongValue];
             BOOL isCacheExpire = NO;
             if (cacheExpire > 0) {
                 long long now = (long long)[[NSDate date] timeIntervalSince1970];
                 isCacheExpire = cacheExpire <= now;
             }
             if (isCacheExpire) {
-                self.config = nil;
                 SonicLogEvent(@"resource expire:%@",self.url);
             }else{
                 self.cacheFileData = [[SonicCache shareCache] resourceCacheWithSessionID:self.sessionID];
                 NSString *cacheFileSha1 = getDataSha1(self.cacheFileData);
-                NSString *sha1 = self.config[@"sha1"];
+                NSString *sha1 = config[@"sha1"];
                 if ([cacheFileSha1 isEqualToString:sha1]) {
                     self.cacheResponseHeaders = [[SonicCache shareCache] responseHeadersWithSessionID:self.sessionID];
                     //event
@@ -86,7 +83,6 @@
                                                                                                                                     }];
                 }else{
                     self.cacheFileData = nil;
-                    self.config = nil;
                     SonicLogEvent(@"resource sha1 wrong:%@",self.url);
                 }
             }
@@ -107,6 +103,13 @@
     self.originResponse = nil;
     self.protocolCallBack = nil;
     self.cacheResponseHeaders = nil;
+    
+    if (nil != self.connection) {
+        [_connection stopLoading];
+        [_connection release];
+        _connection = nil;
+    }
+    
     [super dealloc];
 }
 
@@ -202,7 +205,7 @@
     
     //Allow custom class to intercept the request
     Class connectionClass = [SonicServer connectionClassForRequest:request];
-    self.connection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[NSOperationQueue currentQueue]];
+    self.connection = [[[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[NSOperationQueue currentQueue]] autorelease];
     self.connection.supportHTTPRedirection = YES;
     [self.connection startLoading];
     [request release];

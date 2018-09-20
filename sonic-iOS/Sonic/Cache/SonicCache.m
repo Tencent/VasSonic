@@ -514,6 +514,7 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
         NSDateFormatter *dateFormatter = [NSDateFormatter new];
         [dateFormatter setDateFormat:@"EEE, dd MMM yyyy HH:mm:ss zzz"];
         NSDate *date = [dateFormatter dateFromString:expire];
+        [dateFormatter release];
         unsigned long long expireTime = (unsigned long long)[date timeIntervalSince1970];
         
         if (!date) {

@@ -56,6 +56,7 @@
     
     self.dataTask = nil;
     self.dataSession = nil;
+    self.delegateQueue = nil;
     
     [super dealloc];
 }
@@ -87,6 +88,8 @@
     }else{
         [self.dataSession invalidateAndCancel];
     }
+    self.dataTask = nil;
+    self.dataSession = nil;
 }
 
 #pragma mark - NSURLSessionDelegate

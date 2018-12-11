@@ -63,7 +63,7 @@ module.exports = function (ctx, buffer) {
 
 		let now3 = Date.now();
 
-		let templateMd5 = crypto.createHash('sha1').update(Buffer.from(templateHtml)).digest('hex');
+		let templateMd5 = crypto.createHash('sha1').update(new Buffer(templateHtml)).digest('hex');
 
 		console.info(`获取sonic diff耗时${Date.now() - now3}`);
 

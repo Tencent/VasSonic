@@ -670,7 +670,7 @@ public class QuickSonicSession extends SonicSession implements Handler.Callback 
             }
 
 
-            final String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            final String eTag = server.getResponseHeaderField(getCustomHeadFieldEtagKey());
             final String templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
             String cacheOffline = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE);

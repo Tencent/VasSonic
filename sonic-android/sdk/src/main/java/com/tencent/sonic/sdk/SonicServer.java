@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_HTTP;
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_TRUE;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE;
-import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG;
@@ -113,15 +112,15 @@ public class SonicServer implements SonicSessionStream.Callback {
         }
 
         // fix issue for Weak ETag case [https://github.com/Tencent/VasSonic/issues/128]
-        String eTag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String eTag = getResponseHeaderField(getCustomHeadFieldEtagKey());
         if (!TextUtils.isEmpty(eTag) && eTag.toLowerCase().startsWith("w/")) {
             eTag = eTag.toLowerCase().replace("w/", "");
             eTag = eTag.replace("\"", "");
-            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
+            addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
         }
 
-        String requestETag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
-        String responseETag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String requestETag = requestIntent.getStringExtra(getCustomHeadFieldEtagKey());
+        String responseETag = getResponseHeaderField(getCustomHeadFieldEtagKey());
         if (!TextUtils.isEmpty(requestETag) && requestETag.equals(responseETag)) {
             responseCode = HttpURLConnection.HTTP_NOT_MODIFIED; // fix 304 case
             return SonicConstants.ERROR_CODE_SUCCESS;
@@ -150,7 +149,7 @@ public class SonicServer implements SonicSessionStream.Callback {
             readServerResponse(null);
             if (!TextUtils.isEmpty(serverRsp)) {
                 eTag = SonicUtils.getSHA1(serverRsp);
-                addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
+                addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
             } else {
                 return SonicConstants.ERROR_CODE_CONNECT_IOE;
@@ -207,7 +206,7 @@ public class SonicServer implements SonicSessionStream.Callback {
     }
 
     private boolean isFirstLoadRequest() {
-        return TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG)) ||
+        return TextUtils.isEmpty(requestIntent.getStringExtra(getCustomHeadFieldEtagKey())) ||
                 TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG));
     }
 
@@ -418,12 +417,12 @@ public class SonicServer implements SonicSessionStream.Callback {
                 data = dataStringBuilder.toString();
             }
 
-            String eTag = getResponseHeaderField(CUSTOM_HEAD_FILED_ETAG);
+            String eTag = getResponseHeaderField(getCustomHeadFieldEtagKey());
             String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
             String newHtmlSha1 = null;
             if (TextUtils.isEmpty(eTag)) { // When eTag is empty, fill eTag with Sha1
                 newHtmlSha1 = eTag = SonicUtils.getSHA1(serverRsp);
-                addResponseHeaderFields(CUSTOM_HEAD_FILED_ETAG, eTag);
+                addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, newHtmlSha1);
             }
 
@@ -450,6 +449,10 @@ public class SonicServer implements SonicSessionStream.Callback {
                 }
             }
         }
+    }
+
+    public String getCustomHeadFieldEtagKey() {
+        return connectionImpl != null ? connectionImpl.getCustomHeadFieldEtagKey() : SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
     }
 
     @Override

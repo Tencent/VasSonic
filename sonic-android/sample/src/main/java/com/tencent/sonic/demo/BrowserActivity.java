@@ -236,6 +236,11 @@ public class BrowserActivity extends Activity {
         }
 
         @Override
+        protected String internalGetCustomHeadFieldEtag() {
+            return SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
+        }
+
+        @Override
         public void disconnect() {
             if (null != responseStream) {
                 try {

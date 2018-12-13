@@ -11,7 +11,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 25
         versionCode 3
-        versionName "3.0.0"
+        versionName "3.1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -43,7 +43,7 @@ dependencies {
 
 
 // sdk info
-version = "3.0.0" // sdk version num
+version = "3.1.0" // sdk version num
 group = "com.tencent.sonic" // maven group id for the artifact
 def SITE_URL = "https://github.com/Tencent/VasSonic" // web site url
 def GIT_URL = "https://github.com/Tencent/VasSonic.git" // git url

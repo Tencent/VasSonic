@@ -619,7 +619,7 @@ public abstract class SonicSession implements Handler.Callback {
     protected Intent createConnectionIntent(SonicDataHelper.SessionData sessionData) {
         Intent connectionIntent = new Intent();
         SonicUtils.log(TAG, Log.INFO, String.format("Session (%s) send sonic request, etag=(%s), templateTag=(%s)", id, sessionData.eTag, sessionData.templateTag));
-        connectionIntent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, sessionData.eTag);
+        connectionIntent.putExtra(getCustomHeadFieldEtagKey(), sessionData.eTag);
         connectionIntent.putExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, sessionData.templateTag);
 
         String hostDirectAddress = SonicEngine.getInstance().getRuntime().getHostDirectAddress(srcUrl);
@@ -758,7 +758,7 @@ public abstract class SonicSession implements Handler.Callback {
         }
 
 
-        String eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String eTag = server.getResponseHeaderField(getCustomHeadFieldEtagKey());
         String templateChange = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE);
 
         // When eTag is empty, run fix logic
@@ -785,11 +785,11 @@ public abstract class SonicSession implements Handler.Callback {
             //get sessionData from last connection
             if (server != null) {
                 sessionData = new SonicDataHelper.SessionData();
-                sessionData.eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+                sessionData.eTag = server.getResponseHeaderField(getCustomHeadFieldEtagKey());
                 sessionData.templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                 if ((TextUtils.isEmpty(sessionData.eTag) || TextUtils.isEmpty(sessionData.templateTag)) && config.SUPPORT_LOCAL_SERVER) {
                     server.separateTemplateAndData();
-                    sessionData.eTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+                    sessionData.eTag = server.getResponseHeaderField(getCustomHeadFieldEtagKey());
                     sessionData.templateTag = server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                 }
                 sessionData.sessionId = id;
@@ -1033,7 +1033,7 @@ public abstract class SonicSession implements Handler.Callback {
                 newHtmlSha1 = SonicUtils.getSHA1(htmlString);
             }
 
-            String eTag = sonicServer.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+            String eTag = sonicServer.getResponseHeaderField(getCustomHeadFieldEtagKey());
             String templateTag = sonicServer.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG);
 
             Map<String, List<String>> headers = sonicServer.getResponseHeaderFields();
@@ -1138,7 +1138,7 @@ public abstract class SonicSession implements Handler.Callback {
 
             final JSONObject extraJson = new JSONObject();
             if (server != null) {
-                extraJson.put(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG));
+                extraJson.put(getCustomHeadFieldEtagKey(), server.getResponseHeaderField(getCustomHeadFieldEtagKey()));
                 extraJson.put(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG, server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG));
                 extraJson.put(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE, server.getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE));
             }
@@ -1370,6 +1370,10 @@ public abstract class SonicSession implements Handler.Callback {
 
     public SonicSessionClient getSessionClient() {
         return sessionClient;
+    }
+
+    protected String getCustomHeadFieldEtagKey() {
+        return server != null ? server.getCustomHeadFieldEtagKey() : SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
     }
 
     public void destroy() {

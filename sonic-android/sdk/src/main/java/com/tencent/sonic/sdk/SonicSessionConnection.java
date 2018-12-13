@@ -46,11 +46,16 @@ public abstract class SonicSessionConnection {
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicSessionConnection";
 
     /**
+     * HTTP header:sonic-etag-key. <br>
+     * This header represents that the "eTag" key can be modified by service.
+     */
+    public final static String CUSTOM_HEAD_FILED_SONIC_ETAG_KEY = "sonic-etag-key";
+
+    /**
      * HTTP header:eTag. <br>
      * This header represents SHA1 value of the whole website, including template and data.
      */
     public final static String CUSTOM_HEAD_FILED_ETAG = "eTag";
-
 
     /**
      * HTTP header:accept-diff. <br>
@@ -179,6 +184,11 @@ public abstract class SonicSessionConnection {
     protected BufferedInputStream responseStream;
 
     /**
+     * The field that reads from the headerFields of this open connection.
+     */
+    protected String mCustomHeadFieldEtagKey;
+
+    /**
      * Constructor
      * @param session The SonicSession instance
      * @param intent The intent
@@ -231,6 +241,15 @@ public abstract class SonicSessionConnection {
     protected abstract int internalConnect();
 
     protected abstract BufferedInputStream internalGetResponseStream();
+
+    public String getCustomHeadFieldEtagKey() {
+        if (TextUtils.isEmpty(mCustomHeadFieldEtagKey)) {
+            mCustomHeadFieldEtagKey = internalGetCustomHeadFieldEtag();
+        }
+        return mCustomHeadFieldEtagKey;
+    }
+
+    protected abstract String internalGetCustomHeadFieldEtag();
 
 
     public static class SessionConnectionDefaultImpl extends SonicSessionConnection {
@@ -327,7 +346,8 @@ public abstract class SonicSessionConnection {
                  */
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_ACCEPT_DIFF, config.ACCEPT_DIFF_DATA ? "true" : "false");
 
-                String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
+//                String eTag = intent.getStringExtra(getCustomHeadFieldEtagKey());
+                String eTag = intent.getStringExtra(!TextUtils.isEmpty(mCustomHeadFieldEtagKey) ? mCustomHeadFieldEtagKey : CUSTOM_HEAD_FILED_ETAG);
                 if (null == eTag) eTag = "";
                 connection.setRequestProperty(HTTP_HEAD_FILED_IF_NOT_MATCH, eTag);
 
@@ -492,6 +512,13 @@ public abstract class SonicSessionConnection {
                 }
             }
             return null;
+        }
+
+        @Override
+        protected String internalGetCustomHeadFieldEtag() {
+            String sonicEtagValue = getResponseHeaderField(CUSTOM_HEAD_FILED_SONIC_ETAG_KEY);
+            SonicUtils.log(TAG, Log.INFO, "internalGetCustomHeadFieldEtag ~ sonicEtag:" + sonicEtagValue);
+            return !TextUtils.isEmpty(sonicEtagValue) ? sonicEtagValue : CUSTOM_HEAD_FILED_ETAG;
         }
     }
 }

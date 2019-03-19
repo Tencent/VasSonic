@@ -18,9 +18,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.text.TextUtils;
-import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -124,16 +122,6 @@ public class BrowserActivity extends Activity {
         // runtime、init configs....
         setContentView(R.layout.activity_browser);
 
-        FloatingActionButton btnFab = (FloatingActionButton) findViewById(R.id.btn_refresh);
-        btnFab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (sonicSession != null) {
-                    sonicSession.refresh();
-                }
-            }
-        });
-
         // init webview
         WebView webView = (WebView) findViewById(R.id.webview);
         webView.setWebViewClient(new WebViewClient() {
@@ -233,11 +221,6 @@ public class BrowserActivity extends Activity {
         @Override
         protected BufferedInputStream internalGetResponseStream() {
             return responseStream;
-        }
-
-        @Override
-        protected String internalGetCustomHeadFieldEtag() {
-            return SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
         }
 
         @Override

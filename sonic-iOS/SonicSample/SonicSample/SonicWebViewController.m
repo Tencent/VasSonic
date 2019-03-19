@@ -60,7 +60,9 @@
 
 - (void)dealloc
 {
+    self.sonicContext.owner = nil;
     self.sonicContext = nil;
+    self.jscontext = nil;
     [[SonicEngine sharedEngine] removeSessionWithWebDelegate:self];
 }
 

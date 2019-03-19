@@ -43,7 +43,7 @@ public class SonicSessionStatistics {
     public long sonicStartTime;
 
     /**
-     * Sonic flow start{@link SonicSession#runSonicFlow(boolean)} time
+     * Sonic flow start{@link SonicSession#runSonicFlow()} time
      */
     public long sonicFlowStartTime;
 
@@ -76,11 +76,4 @@ public class SonicSessionStatistics {
      * Is IP direct
      */
     public boolean isDirectAddress;
-
-
-    /**
-     * The time when website try get diff data.
-     */
-    public long diffDataCallbackTime;
-
 }

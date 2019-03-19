@@ -30,7 +30,7 @@ import java.lang.ref.WeakReference;
  * <code>memStream</code>is read data from network, <code>netStream</code>is unread data from network.
  *
  */
-public class SonicSessionStream extends InputStream {
+class SonicSessionStream extends InputStream {
 
     /**
      * Log filter

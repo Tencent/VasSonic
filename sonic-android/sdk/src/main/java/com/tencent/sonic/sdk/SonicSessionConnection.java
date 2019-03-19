@@ -25,7 +25,6 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -46,16 +45,11 @@ public abstract class SonicSessionConnection {
     private static final String TAG = SonicConstants.SONIC_SDK_LOG_PREFIX + "SonicSessionConnection";
 
     /**
-     * HTTP header:sonic-etag-key. <br>
-     * This header represents that the "eTag" key can be modified by service.
-     */
-    public final static String CUSTOM_HEAD_FILED_SONIC_ETAG_KEY = "sonic-etag-key";
-
-    /**
      * HTTP header:eTag. <br>
      * This header represents SHA1 value of the whole website, including template and data.
      */
     public final static String CUSTOM_HEAD_FILED_ETAG = "eTag";
+
 
     /**
      * HTTP header:accept-diff. <br>
@@ -147,11 +141,6 @@ public abstract class SonicSessionConnection {
     public final static String HTTP_HEAD_FIELD_CONTENT_TYPE = "Content-Type";
 
     /**
-     * HTTP Header : Content-Length. <br>
-     */
-    public final static String HTTP_HEAD_FIELD_CONTENT_LENGTH = "Content-Length";
-
-    /**
      * HTTP Request Header : Cookie. <br>
      */
     public final static String HTTP_HEAD_FIELD_COOKIE = "Cookie";
@@ -160,13 +149,6 @@ public abstract class SonicSessionConnection {
      * HTTP Request Header：User-Agent. <br>
      */
     public final static String HTTP_HEAD_FILED_USER_AGENT = "User-Agent";
-
-    public final static String HTTP_HEAD_FILED_IF_NOT_MATCH = "If-None-Match";
-
-    /**
-     * HTTP Response Header: Link. <br>
-     */
-    public final static String CUSTOM_HEAD_FILED_LINK = "sonic-link";
 
     /**
      * SonicSession Object used by SonicSessionConnection.
@@ -182,11 +164,6 @@ public abstract class SonicSessionConnection {
      * The input stream that reads from this open connection.
      */
     protected BufferedInputStream responseStream;
-
-    /**
-     * The field that reads from the headerFields of this open connection.
-     */
-    protected String mCustomHeadFieldEtagKey;
 
     /**
      * Constructor
@@ -241,15 +218,6 @@ public abstract class SonicSessionConnection {
     protected abstract int internalConnect();
 
     protected abstract BufferedInputStream internalGetResponseStream();
-
-    public String getCustomHeadFieldEtagKey() {
-        if (TextUtils.isEmpty(mCustomHeadFieldEtagKey)) {
-            mCustomHeadFieldEtagKey = internalGetCustomHeadFieldEtag();
-        }
-        return mCustomHeadFieldEtagKey;
-    }
-
-    protected abstract String internalGetCustomHeadFieldEtag();
 
 
     public static class SessionConnectionDefaultImpl extends SonicSessionConnection {
@@ -346,10 +314,9 @@ public abstract class SonicSessionConnection {
                  */
                 connection.setRequestProperty(CUSTOM_HEAD_FILED_ACCEPT_DIFF, config.ACCEPT_DIFF_DATA ? "true" : "false");
 
-//                String eTag = intent.getStringExtra(getCustomHeadFieldEtagKey());
-                String eTag = intent.getStringExtra(!TextUtils.isEmpty(mCustomHeadFieldEtagKey) ? mCustomHeadFieldEtagKey : CUSTOM_HEAD_FILED_ETAG);
+                String eTag = intent.getStringExtra(CUSTOM_HEAD_FILED_ETAG);
                 if (null == eTag) eTag = "";
-                connection.setRequestProperty(HTTP_HEAD_FILED_IF_NOT_MATCH, eTag);
+                connection.setRequestProperty("If-None-Match", eTag);
 
                 String templateTag = intent.getStringExtra(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
                 if (null == templateTag) templateTag = "";
@@ -489,12 +456,7 @@ public abstract class SonicSessionConnection {
                 return null;
             }
 
-            try {
-                return connectionImpl.getHeaderFields();
-            } catch (Throwable e) {
-                SonicUtils.log(TAG, Log.ERROR, "getHeaderFields error:" + e.getMessage());
-                return new HashMap<String, List<String>>();
-            }
+            return connectionImpl.getHeaderFields();
         }
 
         @Override
@@ -512,13 +474,6 @@ public abstract class SonicSessionConnection {
                 }
             }
             return null;
-        }
-
-        @Override
-        protected String internalGetCustomHeadFieldEtag() {
-            String sonicEtagValue = getResponseHeaderField(CUSTOM_HEAD_FILED_SONIC_ETAG_KEY);
-            SonicUtils.log(TAG, Log.INFO, "internalGetCustomHeadFieldEtag ~ sonicEtag:" + sonicEtagValue);
-            return !TextUtils.isEmpty(sonicEtagValue) ? sonicEtagValue : CUSTOM_HEAD_FILED_ETAG;
         }
     }
 }

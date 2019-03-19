@@ -35,19 +35,9 @@ public class SonicConfig {
     long SONIC_CACHE_MAX_SIZE = 30 * 1024 * 1024;
 
     /**
-     * The max size of sonic resource cache, default is 60M.
-     */
-    long SONIC_RESOURCE_CACHE_MAX_SIZE = 60 * 1024 * 1024;
-
-    /**
      * The time interval between check sonic cache, default is 24 hours.
      */
     long SONIC_CACHE_CHECK_TIME_INTERVAL = 24 * 60 * 60 * 1000L;
-
-    /**
-     * The max number of tasks which is downloading in the same time.
-     */
-    public int SONIC_MAX_NUM_OF_DOWNLOADING_TASK = 3;
 
     /**
      * The max age of sonic cache before expired.
@@ -58,7 +48,7 @@ public class SonicConfig {
      * Whether verify file by compare SHA1. If this value is false, sonic will verify file by file's size.
      * Verify the file size is less time consuming than checking SHA1.
      */
-    public boolean VERIFY_CACHE_FILE_WITH_SHA1 = true;
+    boolean VERIFY_CACHE_FILE_WITH_SHA1 = true;
 
     /**
      * Whether auto call init db when create sonicEngine or not, default is true.
@@ -108,18 +98,8 @@ public class SonicConfig {
             return this;
         }
 
-        public Builder setResourceCacheMaxSize(long maxSize) {
-            target.SONIC_RESOURCE_CACHE_MAX_SIZE = maxSize;
-            return this;
-        }
-
         public Builder setCacheCheckTimeInterval(long time) {
             target.SONIC_CACHE_CHECK_TIME_INTERVAL = time;
-            return this;
-        }
-
-        public Builder setMaxNumOfDownloadingTasks(int num) {
-            target.SONIC_MAX_NUM_OF_DOWNLOADING_TASK = num;
             return this;
         }
 

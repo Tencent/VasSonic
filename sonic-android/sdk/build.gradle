@@ -10,10 +10,11 @@ android {
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 25
-        versionCode 3
-        versionName "3.1.0"
+        versionCode 2
+        versionName "2.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -29,21 +30,13 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-
     testCompile 'junit:junit:4.12'
-
-
-    // Required for instrumented tests
-    androidTestCompile 'com.android.support:support-annotations:24.0.0'
-    androidTestCompile 'com.android.support.test:runner:0.5'
-
     compile 'com.android.support:support-annotations:25.2.0'
-    androidTestCompile 'com.squareup.okhttp3:mockwebserver:3.9.1'
 }
 
 
 // sdk info
-version = "3.1.0" // sdk version num
+version = "2.0.0-beta" // sdk version num
 group = "com.tencent.sonic" // maven group id for the artifact
 def SITE_URL = "https://github.com/Tencent/VasSonic" // web site url
 def GIT_URL = "https://github.com/Tencent/VasSonic.git" // git url

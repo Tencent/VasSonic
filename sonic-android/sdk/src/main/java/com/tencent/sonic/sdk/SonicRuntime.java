@@ -14,11 +14,8 @@
 package com.tencent.sonic.sdk;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
@@ -49,10 +46,6 @@ public abstract class SonicRuntime {
      */
     protected final Context context;
 
-    /**
-     * This handle thread use to save sonic cache.
-     */
-    protected volatile static HandlerThread fileHandlerThread;
 
     public SonicRuntime(Context context) {
         if (null == context) {
@@ -211,30 +204,6 @@ public abstract class SonicRuntime {
     }
 
     /**
-     * The resource cache root dir which resource cache will be storage.
-     * it's expected to be a dir in /sdcard dir for security.
-     *
-     * @return The root cache dir.
-     */
-    public File getSonicResourceCacheDir() {
-        File file = new File(Environment.getExternalStorageDirectory(), "/SonicResource/");
-        if (!file.exists() && !file.mkdir()) {
-            log(TAG, Log.ERROR, "getSonicResourceCacheDir error:make dir(" + file.getAbsolutePath() + ") fail!");
-            notifyError(null, file.getAbsolutePath(), SonicConstants.ERROR_CODE_MAKE_DIR_ERROR);
-        }
-        return file;
-    }
-
-    /**
-     * get SharedPreferences of sonic.
-     *
-     * @return the sp
-     */
-    public SharedPreferences getSonicSharedPreferences() {
-        return context.getSharedPreferences("sonic", Context.MODE_PRIVATE);
-    }
-
-    /**
      * Get the current user account, this method will be called when makeSessionId's params is
      * account related.
      *
@@ -325,20 +294,6 @@ public abstract class SonicRuntime {
      */
     public void postTaskToMainThread(Runnable task, long delayMillis) {
         new Handler(Looper.getMainLooper()).postDelayed(task, delayMillis);
-    }
-
-    /**
-     * Return the looper of HandleThread which use to save sonic cache.
-     *
-     * @return The looper of HandleThread which use to save sonic cache.
-     */
-    public Looper getFileThreadLooper() {
-        if (fileHandlerThread == null) {
-            fileHandlerThread = new HandlerThread("SonicSdk_FileThread");
-            fileHandlerThread.start();
-        }
-
-        return fileHandlerThread.getLooper();
     }
 
     /**

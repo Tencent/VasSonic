@@ -33,13 +33,9 @@ Pic 1: Before Using VasSonic |  Pic 2: After Using VasSonic
 
 [Getting started with iOS](https://github.com/Tencent/VasSonic/blob/master/sonic-iOS/README.md)
 
-[Getting started with Java](https://github.com/Tencent/VasSonic/blob/dev/sonic-java/README.md)
-
 [Getting started with Node.js](https://github.com/Tencent/VasSonic/blob/master/sonic-nodejs/README.md)
 
 [Getting started with PHP](https://github.com/Tencent/VasSonic/blob/master/sonic-php/README.md)
-
-[Getting started with React](https://github.com/Tencent/VasSonic/blob/master/sonic-react/README.md)
 
 ## Demo Downloads
 1. [Here](https://github.com/Tencent/VasSonic/releases) are the latest sample demo for Android and iOS.
@@ -51,18 +47,14 @@ Any problem?
 1. Learn more from the following sample. </br>
 [Android sample](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sample)  </br>
 [iOS sample](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/SonicSample) </br>
-[Java sample](https://github.com/Tencent/VasSonic/tree/dev/sonic-java/sample/webapp) </br>
 [Node.js sample](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs) </br>
 [PHP sample](https://github.com/Tencent/VasSonic/tree/master/sonic-php/sample) </br>
-[React sample](https://github.com/Tencent/VasSonic/tree/master/sonic-react) </br>
 
 2. Read the following source code </br>
 [Android source code](https://github.com/Tencent/VasSonic/tree/master/sonic-android/sdk) </br>
 [iOS source code](https://github.com/Tencent/VasSonic/tree/master/sonic-iOS/Sonic)  </br>
-[Java source code](https://github.com/Tencent/VasSonic/tree/dev/sonic-java/src/main/java/com/github/tencent)
 [Node.js source code](https://github.com/Tencent/VasSonic/tree/master/sonic-nodejs) </br>
 [PHP source code](https://github.com/Tencent/VasSonic/tree/master/sonic-php/sdk) </br>
-[React source code](https://github.com/Tencent/VasSonic/tree/master/sonic-react) </br>
 
 3. Read the [wiki](https://github.com/Tencent/VasSonic/wiki) for help.
 

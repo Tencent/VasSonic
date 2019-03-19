@@ -29,12 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_HTTP;
 import static com.tencent.sonic.sdk.SonicSession.OFFLINE_MODE_TRUE;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_CACHE_OFFLINE;
+import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_HTML_SHA1;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_CHANGE;
 import static com.tencent.sonic.sdk.SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG;
@@ -112,15 +112,15 @@ public class SonicServer implements SonicSessionStream.Callback {
         }
 
         // fix issue for Weak ETag case [https://github.com/Tencent/VasSonic/issues/128]
-        String eTag = getResponseHeaderField(getCustomHeadFieldEtagKey());
+        String eTag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         if (!TextUtils.isEmpty(eTag) && eTag.toLowerCase().startsWith("w/")) {
             eTag = eTag.toLowerCase().replace("w/", "");
             eTag = eTag.replace("\"", "");
-            addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
+            addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
         }
 
-        String requestETag = requestIntent.getStringExtra(getCustomHeadFieldEtagKey());
-        String responseETag = getResponseHeaderField(getCustomHeadFieldEtagKey());
+        String requestETag = requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
+        String responseETag = getResponseHeaderField(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG);
         if (!TextUtils.isEmpty(requestETag) && requestETag.equals(responseETag)) {
             responseCode = HttpURLConnection.HTTP_NOT_MODIFIED; // fix 304 case
             return SonicConstants.ERROR_CODE_SUCCESS;
@@ -149,7 +149,7 @@ public class SonicServer implements SonicSessionStream.Callback {
             readServerResponse(null);
             if (!TextUtils.isEmpty(serverRsp)) {
                 eTag = SonicUtils.getSHA1(serverRsp);
-                addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
+                addResponseHeaderFields(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG, eTag);
                 addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
             } else {
                 return SonicConstants.ERROR_CODE_CONNECT_IOE;
@@ -206,7 +206,7 @@ public class SonicServer implements SonicSessionStream.Callback {
     }
 
     private boolean isFirstLoadRequest() {
-        return TextUtils.isEmpty(requestIntent.getStringExtra(getCustomHeadFieldEtagKey())) ||
+        return TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG)) ||
                 TextUtils.isEmpty(requestIntent.getStringExtra(SonicSessionConnection.CUSTOM_HEAD_FILED_TEMPLATE_TAG));
     }
 
@@ -246,7 +246,7 @@ public class SonicServer implements SonicSessionStream.Callback {
     public  Map<String, List<String>> getResponseHeaderFields() {
         if (null == cachedResponseHeaders) {
             // new cachedResponseHeaders
-            cachedResponseHeaders = new ConcurrentHashMap<String, List<String>>();
+            cachedResponseHeaders = new HashMap<String, List<String>>();
             // fill custom headers
             List<String> tmpHeaderList;
             if (session.config.customResponseHeaders != null && session.config.customResponseHeaders.size() > 0) {
@@ -271,6 +271,8 @@ public class SonicServer implements SonicSessionStream.Callback {
                     String key = entry.getKey();
                     if (!TextUtils.isEmpty(key)) {
                         cachedResponseHeaders.put(key.toLowerCase(), entry.getValue());
+                    } else {
+                        cachedResponseHeaders.put(key, entry.getValue());
                     }
                 }
             }
@@ -407,7 +409,7 @@ public class SonicServer implements SonicSessionStream.Callback {
         return true;
     }
 
-    protected void separateTemplateAndData() {
+    private void separateTemplateAndData() {
         if (!TextUtils.isEmpty(serverRsp)) {
             StringBuilder templateStringBuilder = new StringBuilder();
             StringBuilder dataStringBuilder = new StringBuilder();
@@ -417,13 +419,12 @@ public class SonicServer implements SonicSessionStream.Callback {
                 data = dataStringBuilder.toString();
             }
 
-            String eTag = getResponseHeaderField(getCustomHeadFieldEtagKey());
+            String eTag = getResponseHeaderField(CUSTOM_HEAD_FILED_ETAG);
             String templateTag = getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG);
-            String newHtmlSha1 = null;
             if (TextUtils.isEmpty(eTag)) { // When eTag is empty, fill eTag with Sha1
-                newHtmlSha1 = eTag = SonicUtils.getSHA1(serverRsp);
-                addResponseHeaderFields(getCustomHeadFieldEtagKey(), eTag);
-                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, newHtmlSha1);
+                eTag = SonicUtils.getSHA1(serverRsp);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_ETAG, eTag);
+                addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, eTag);
             }
 
             if (TextUtils.isEmpty(templateString)) { // The same with htmlString
@@ -437,10 +438,6 @@ public class SonicServer implements SonicSessionStream.Callback {
                 try {
                     JSONObject object = new JSONObject();
                     object.put("data", new JSONObject(data));
-                    if (TextUtils.isEmpty(newHtmlSha1)) {
-                        newHtmlSha1 = SonicUtils.getSHA1(serverRsp);
-                        addResponseHeaderFields(CUSTOM_HEAD_FILED_HTML_SHA1, newHtmlSha1);
-                    }
                     object.put("html-sha1", getResponseHeaderField(CUSTOM_HEAD_FILED_HTML_SHA1));
                     object.put("template-tag", getResponseHeaderField(CUSTOM_HEAD_FILED_TEMPLATE_TAG));
                     dataString = object.toString();
@@ -449,10 +446,6 @@ public class SonicServer implements SonicSessionStream.Callback {
                 }
             }
         }
-    }
-
-    public String getCustomHeadFieldEtagKey() {
-        return connectionImpl != null ? connectionImpl.getCustomHeadFieldEtagKey() : SonicSessionConnection.CUSTOM_HEAD_FILED_ETAG;
     }
 
     @Override

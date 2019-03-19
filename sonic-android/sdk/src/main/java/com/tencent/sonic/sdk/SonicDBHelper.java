@@ -37,14 +37,59 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     private static final String SONIC_DATABASE_NAME = "sonic.db";
 
     /**
-     * the first version code of database
+     * number of the database (starting at 1)
      */
-    private static final int SONIC_DATABASE_FIRST_VERSION = 1;
+    private static final int SONIC_DATABASE_VERSION = 1;
 
     /**
-     * current version code of the database (starting at <code>SONIC_DATABASE_FIRST_VERSION</code>)
+     * table name of the SessionData
      */
-    private static final int SONIC_DATABASE_VERSION = 2;
+    protected static final String Sonic_SESSION_TABLE_NAME = "SessionData";
+
+    /**
+     * SessionData's id
+     */
+    protected static final String SESSION_DATA_COLUMN_SESSION_ID = "sessionID";
+
+    /**
+     * The key of eTag
+     */
+    protected static final String SESSION_DATA_COLUMN_ETAG = "eTag";
+
+    /**
+     * The key of templateTag
+     */
+    protected static final String SESSION_DATA_COLUMN_TEMPLATE_EAG = "templateTag";
+
+    /**
+     * The key of html sha1
+     */
+    protected static final String SESSION_DATA_COLUMN_HTML_SHA1 = "htmlSha1";
+
+    /**
+     * The key of html size
+     */
+    protected static final String SESSION_DATA_COLUMN_HTML_SIZE = "htmlSize";
+
+    /**
+     * The key of template update time
+     */
+    protected static final String SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME = "templateUpdateTime";
+
+    /**
+     * The key of Unavailable Time
+     */
+    protected static final String SESSION_DATA_COLUMN_UNAVAILABLE_TIME = "UnavailableTime";
+
+    /**
+     * The key of cache expired Time
+     */
+    protected static final String SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME = "cacheExpiredTime";
+
+    /**
+     * The key of cache hit count
+     */
+    protected static final String SESSION_DATA_COLUMN_CACHE_HIT_COUNT = "cacheHitCount";
 
     private static SonicDBHelper sInstance = null;
 
@@ -69,6 +114,18 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     }
 
     /**
+     *
+     * @return all of the column in {@code Sonic_SESSION_TABLE_NAME}
+     */
+    static String[] getAllSessionDataColumn() {
+        return new String[] {SESSION_DATA_COLUMN_SESSION_ID, SESSION_DATA_COLUMN_ETAG,
+                SESSION_DATA_COLUMN_TEMPLATE_EAG, SESSION_DATA_COLUMN_HTML_SHA1,
+                SESSION_DATA_COLUMN_UNAVAILABLE_TIME, SESSION_DATA_COLUMN_HTML_SIZE,
+                SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME, SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME,
+                SESSION_DATA_COLUMN_CACHE_HIT_COUNT};
+    }
+
+    /**
      * Called when the database is created for the first time. This is where the
      * creation of tables and the initial population of the tables should happen.
      *
@@ -77,12 +134,22 @@ public class SonicDBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // create sessionData table
-        db.execSQL(SonicDataHelper.CREATE_TABLE_SQL);
+        String createTableSql = "CREATE TABLE IF NOT EXISTS " + Sonic_SESSION_TABLE_NAME + " ( " +
+                "id  integer PRIMARY KEY autoincrement" +
+                " , " + SESSION_DATA_COLUMN_SESSION_ID + " text not null" +
+                " , " + SESSION_DATA_COLUMN_ETAG + " text not null" +
+                " , " + SESSION_DATA_COLUMN_TEMPLATE_EAG + " text" +
+                " , " + SESSION_DATA_COLUMN_HTML_SHA1 + " text not null" +
+                " , " + SESSION_DATA_COLUMN_UNAVAILABLE_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_HTML_SIZE + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_TEMPLATE_UPDATE_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_CACHE_EXPIRED_TIME + " integer default 0" +
+                " , " + SESSION_DATA_COLUMN_CACHE_HIT_COUNT + " integer default 0" +
+                " ); ";
+        db.execSQL(createTableSql);
 
         // upgrade SP if need(session data save in SP on sdk 1.0)
         onUpgrade(db, -1, SONIC_DATABASE_VERSION);
-
-        doUpgrade(db, SONIC_DATABASE_FIRST_VERSION, SONIC_DATABASE_VERSION);
     }
 
     @Override
@@ -114,23 +181,6 @@ public class SonicDBHelper extends SQLiteOpenHelper {
      * @param newVersion The new database version.
      */
     private void doUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        switch (oldVersion) {
-            case 1: //2.0 version
-                upgradeToVersion_2(db);
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * upgrade database from version 1 to version 2.
-     *
-     * @param db The database.
-     */
-    private void upgradeToVersion_2(SQLiteDatabase db) {
-        // create resourceData table
-        db.execSQL(SonicResourceDataHelper.CREATE_TABLE_SQL);
     }
 
     /**

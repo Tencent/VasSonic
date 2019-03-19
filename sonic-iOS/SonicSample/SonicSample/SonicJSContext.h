@@ -35,7 +35,8 @@ JSExportAs(getPerformance,
 
 @interface SonicJSContext : NSObject<SonicJSExport>
 
-@property (nonatomic,weak)SonicWebViewController *owner;
+//fix:https://github.com/Tencent/VasSonic/issues/251, make sure jscontext execute correct
+@property (nonatomic,strong)SonicWebViewController *owner;
 
 - (void)getDiffData:(NSDictionary *)option withCallBack:(JSValue *)jscallback;
 

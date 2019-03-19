@@ -9,7 +9,7 @@
 
 const crypto = require('crypto');
 
-module.exports = function (ctx, buffer, {'sonic-etag-key': sonicEtagKey = 'Etag'}) {
+module.exports = function (ctx, buffer) {
 	let etag = ctx.get('if-none-match');
 	let now = Date.now();
 	let md5 = crypto.createHash('sha1').update(buffer).digest('hex');
@@ -66,8 +66,8 @@ module.exports = function (ctx, buffer, {'sonic-etag-key': sonicEtagKey = 'Etag'
 		let templateMd5 = crypto.createHash('sha1').update(new Buffer(templateHtml)).digest('hex');
 
 		console.info(`获取sonic diff耗时${Date.now() - now3}`);
-        ctx.set('sonic-etag-key', sonicEtagKey);
-		ctx.set(sonicEtagKey, md5);
+
+		ctx.set('Etag', md5);
 		ctx.set('template-tag', templateMd5);
 
 		ctx.set('Cache-Offline', true);

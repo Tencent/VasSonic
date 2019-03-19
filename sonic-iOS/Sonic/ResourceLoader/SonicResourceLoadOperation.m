@@ -97,6 +97,7 @@
 
 - (void)dealloc
 {
+    [self cancel];
     self.lock = nil;
     [_url release];
     _url = nil;
@@ -202,7 +203,9 @@
     
     //Allow custom class to intercept the request
     Class connectionClass = [SonicServer connectionClassForRequest:request];
-    self.connection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[NSOperationQueue currentQueue]];
+    SonicConnection *tmpConnection = [[connectionClass alloc] initWithRequest:request delegate:self delegateQueue:[NSOperationQueue currentQueue]];
+    self.connection = tmpConnection;
+    [tmpConnection release];
     self.connection.supportHTTPRedirection = YES;
     [self.connection startLoading];
     [request release];

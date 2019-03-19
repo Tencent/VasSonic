@@ -340,6 +340,10 @@ typedef NS_ENUM(NSUInteger, SonicCacheType) {
 {
     NSString *sessionID = sonicSessionID(url);
 
+    if (!jsonData) {
+        return nil;
+    }
+    
     NSError *err = nil;
     NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:&err];
     if (err) {

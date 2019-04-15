@@ -151,6 +151,12 @@ typedef NS_ENUM(NSInteger, SonicErrorType) {
 #define SonicHeaderKeyETag     @"etag"
 
 /**
+ * Pass Etag through this field.
+ * This header represents that the "eTag" key can be modified by service.
+ */
+#define SonicHeaderKeyCustomeETag     @"sonic-etag-key"
+
+/**
  * Content-Security-Policy key for header.
  */
 #define SonicHeaderKeyCSPHeader       @"content-security-policy"

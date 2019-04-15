@@ -282,6 +282,18 @@ static NSLock *sonicRequestClassLock;
     return header;
 }
 
+- (NSString *)getSonicHeaderETagWithHeaders:(NSDictionary *)headers
+{
+    NSString *keyETag = [headers objectForKey:[SonicHeaderKeyCustomeETag lowercaseString]];
+    if (keyETag && [keyETag isKindOfClass:[NSString class]] && keyETag.length > 0) {
+        // do nothing
+    } else {
+        keyETag = [SonicHeaderKeyETag lowercaseString];
+    }
+    
+    return [headers objectForKey:keyETag];
+}
+
 - (NSDictionary *)sonicItemForCache
 {
     if (self.isCompletion) {
@@ -294,7 +306,7 @@ static NSLock *sonicRequestClassLock;
                 self.data = splitResult[kSonicDataFieldName];
                 
                 NSMutableDictionary *headers = [[_response.allHeaderFields mutableCopy]autorelease];
-                NSString *responseEtag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
+                NSString *responseEtag = [self getSonicHeaderETagWithHeaders:headers];
                 if (!responseEtag) {
                     responseEtag = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
                     [headers setObject:responseEtag forKey:[SonicHeaderKeyETag lowercaseString]];
@@ -336,7 +348,7 @@ static NSLock *sonicRequestClassLock;
         return NO;
     }
     
-    if ([response.allHeaderFields[SonicHeaderKeyETag] length] == 0) {
+    if ([[self getSonicHeaderETagWithHeaders:response.allHeaderFields] length] == 0) {
         return NO;
     }
     
@@ -381,7 +393,7 @@ static NSLock *sonicRequestClassLock;
         }
         
         // fix Weak-Etag case like -> etag: W/"66f0-m2UmCBEh78dNYPv+boO5ETXk4FU".[https://github.com/Tencent/VasSonic/issues/128]
-        NSString *eTag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
+        NSString *eTag = [self getSonicHeaderETagWithHeaders:headers];
         if ([eTag hasPrefix:@"W/"] && eTag.length > 3) {
             // fix Weak-Etag get value length error
             NSString *eTagValue = [eTag substringFromIndex:2];
@@ -463,7 +475,7 @@ static NSLock *sonicRequestClassLock;
                     [headers setValue:@"true" forKey:[SonicHeaderKeyCacheOffline lowercaseString]];
                 }
                 NSString *htmlSha1 = nil;
-                NSString *responseEtag = [headers objectForKey:[SonicHeaderKeyETag lowercaseString]];
+                NSString *responseEtag = [self getSonicHeaderETagWithHeaders:headers];
                 if (!responseEtag) {
                     responseEtag = htmlSha1 = getDataSha1([self.htmlString dataUsingEncoding:NSUTF8StringEncoding]);
                     [headers setObject:responseEtag forKey:[SonicHeaderKeyETag lowercaseString]];

@@ -257,6 +257,7 @@
     }
     [self setupSonicServer];
     self.isFirstLoad = self.cacheConfigHeaders.count > 0 ? NO:YES;
+    self.isUpdate = YES;
     [self setupRequestHeaders];
     [self start];
     

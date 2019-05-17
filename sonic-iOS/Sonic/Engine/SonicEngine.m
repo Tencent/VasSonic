@@ -225,6 +225,8 @@ static bool ValidateSessionDelegate(id<SonicSessionDelegate> aWebDelegate)
         
         if (existSession.delegate == nil) {
             existSession.delegate = aWebDelegate;
+            //fix delegate bind error
+            existSession.delegateId = [NSString stringWithFormat:@"%ld", (long)aWebDelegate.hash];
         }
     }
     

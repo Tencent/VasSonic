@@ -1,6 +1,7 @@
 package com.github.tencent;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -31,9 +32,7 @@ class TemplateReplace extends AbstractReplaceCallBack {
             tagName = matcher.group(1);
         }
         else {
-            StringBuilder sb = new StringBuilder();
-            sb.append(tagPrefix).append(diffIndex++);
-            tagName = sb.toString();
+            tagName = tagPrefix + diffIndex++;
         }
         diffTagNames.put(tagName, matcher.group(0));
         return tagBuilder.append("{").append(tagName).append("}").toString();
@@ -89,7 +88,7 @@ public class SonicFilter implements Filter {
                 out.close();
                 return;
             }
-            htmlContent = new String(copy, "UTF-8");
+            htmlContent = new String(copy, StandardCharsets.UTF_8);
             htmlContentSha1 = SonicUtil.encrypt(htmlContent, "sha-1");
         }
         // if not modified, return 304
@@ -122,9 +121,7 @@ public class SonicFilter implements Filter {
         Map<String, String> dataMap = new HashMap<String, String>();
         dataMap.put("{title}", htmlTitle);
         for (Map.Entry<String, String> entry : TemplateReplace.diffTagNames.entrySet()) {
-            StringBuilder strKey = new StringBuilder();
-            strKey.append("{").append(entry.getKey()).append("}");
-            dataMap.put(strKey.toString(), entry.getValue());
+            dataMap.put("{" + entry.getKey() + "}", entry.getValue());
         }
 
         TemplateReplace.reset();
@@ -143,8 +140,8 @@ public class SonicFilter implements Filter {
             resultStr = htmlContent;
         }
         ServletOutputStream out = httpResponse.getOutputStream();
-        out.write(resultStr.getBytes("UTF-8"));
-        httpResponse.addHeader("Content-Length", String.valueOf(resultStr.getBytes("UTF-8").length));
+        out.write(resultStr.getBytes(StandardCharsets.UTF_8));
+        httpResponse.addHeader("Content-Length", String.valueOf(resultStr.getBytes(StandardCharsets.UTF_8).length));
         out.close();
     }
 

@@ -1,14 +1,13 @@
 package com.github.tencent;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-
 public class ServletOutputStreamCopier extends ServletOutputStream {
 
-    private ByteArrayOutputStream copy;
+    private final ByteArrayOutputStream copy;
 
     public ServletOutputStreamCopier() {
         this.copy = new ByteArrayOutputStream();
@@ -25,12 +24,12 @@ public class ServletOutputStreamCopier extends ServletOutputStream {
 
     @Override
     public boolean isReady() {
-        return this.isReady();
+        return true;
     }
 
     @Override
     public void setWriteListener(WriteListener writeListener) {
-        this.setWriteListener(writeListener);
+        throw new UnsupportedOperationException();
     }
 
 }

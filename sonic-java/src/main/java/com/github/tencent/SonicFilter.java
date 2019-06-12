@@ -1,8 +1,10 @@
 package com.github.tencent;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,11 +20,12 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.*;
 
 class TemplateReplace extends AbstractReplaceCallBack {
-    public static boolean shoudSonicDiffBodyReplace = false; 
+    public static boolean shoudSonicDiffBodyReplace = false;
     public static int diffIndex = 0;
     public static String tagPrefix = "auto";
-    public static HashMap<String, String> diffTagNames = new HashMap<String, String>(); 
+    public static HashMap<String, String> diffTagNames = new HashMap<String, String>();
 
+    @Override
     public String doReplace(String text, int index, Matcher matcher) {
         StringBuilder tagBuilder = new StringBuilder();
         String tagName;
@@ -31,9 +34,7 @@ class TemplateReplace extends AbstractReplaceCallBack {
             tagName = matcher.group(1);
         }
         else {
-            StringBuilder sb = new StringBuilder();
-            sb.append(tagPrefix).append(diffIndex++);
-            tagName = sb.toString();
+            tagName = tagPrefix + diffIndex++;
         }
         diffTagNames.put(tagName, matcher.group(0));
         return tagBuilder.append("{").append(tagName).append("}").toString();
@@ -65,7 +66,7 @@ public class SonicFilter implements Filter {
         Map<String,String> headerMap = SonicUtil.getAllHttpHeaders(httpRequest);
         String etag = "";
         String htmlContent;
-        String htmlContentSha1 =""; 
+        String htmlContentSha1 ="";
         String value = headerMap.get("accept-diff");
         if (headerMap.containsKey("accept-diff") && value.equals("true")) {
             httpResponse.addHeader("Cache-Control", "no-cache");
@@ -89,7 +90,7 @@ public class SonicFilter implements Filter {
                 out.close();
                 return;
             }
-            htmlContent = new String(copy, "UTF-8");
+            htmlContent = new String(copy, StandardCharsets.UTF_8);
             htmlContentSha1 = SonicUtil.encrypt(htmlContent, "sha-1");
         }
         // if not modified, return 304
@@ -106,7 +107,7 @@ public class SonicFilter implements Filter {
         if(headerMap.containsKey("template-tag")) {
             clientTemplateTag = headerMap.get("template-tag");
         }
-        
+
         String stringTitlePattern = "<title(.*?)<\\/title>";
         htmlTitle = SonicUtil.pregMatch(htmlContent, stringTitlePattern);
         String htmlTemplate= htmlContent.replaceAll(stringTitlePattern,"{title}");
@@ -118,13 +119,12 @@ public class SonicFilter implements Filter {
 
         String templateMd5 = SonicUtil.encrypt(htmlTemplate, "sha-1");
         httpResponse.addHeader("template-tag", templateMd5);
-        Map<String, Object> result = new HashMap<String, Object>();
-        Map<String, String> dataMap = new HashMap<String, String>();
+        Map<String, Object> result = new HashMap<String, Object>(4);
+        Set<Map.Entry<String, String>> diffTagNamesEntrySet = TemplateReplace.diffTagNames.entrySet();
+        Map<String, String> dataMap = new HashMap<String, String>(diffTagNamesEntrySet.size()+1);
         dataMap.put("{title}", htmlTitle);
-        for (Map.Entry<String, String> entry : TemplateReplace.diffTagNames.entrySet()) {
-            StringBuilder strKey = new StringBuilder();
-            strKey.append("{").append(entry.getKey()).append("}");
-            dataMap.put(strKey.toString(), entry.getValue());
+        for (Map.Entry<String, String> entry : diffTagNamesEntrySet) {
+            dataMap.put("{" + entry.getKey() + "}", entry.getValue());
         }
 
         TemplateReplace.reset();
@@ -143,8 +143,8 @@ public class SonicFilter implements Filter {
             resultStr = htmlContent;
         }
         ServletOutputStream out = httpResponse.getOutputStream();
-        out.write(resultStr.getBytes("UTF-8"));
-        httpResponse.addHeader("Content-Length", String.valueOf(resultStr.getBytes("UTF-8").length));
+        out.write(resultStr.getBytes(StandardCharsets.UTF_8));
+        httpResponse.addHeader("Content-Length", String.valueOf(resultStr.getBytes(StandardCharsets.UTF_8).length));
         out.close();
     }
 

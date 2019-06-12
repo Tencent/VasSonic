@@ -6,6 +6,7 @@ public abstract class AbstractReplaceCallBack implements ReplaceCallBack {
 
     protected Matcher matcher;
 
+    @Override
     final public String replace(String text, int index, Matcher matcher) {
         this.matcher = matcher;
         try {

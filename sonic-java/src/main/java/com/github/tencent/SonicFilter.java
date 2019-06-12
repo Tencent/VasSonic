@@ -19,11 +19,12 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.gson.*;
 
 class TemplateReplace extends AbstractReplaceCallBack {
-    public static boolean shoudSonicDiffBodyReplace = false; 
+    public static boolean shoudSonicDiffBodyReplace = false;
     public static int diffIndex = 0;
     public static String tagPrefix = "auto";
-    public static HashMap<String, String> diffTagNames = new HashMap<String, String>(); 
+    public static HashMap<String, String> diffTagNames = new HashMap<String, String>();
 
+    @Override
     public String doReplace(String text, int index, Matcher matcher) {
         StringBuilder tagBuilder = new StringBuilder();
         String tagName;
@@ -64,7 +65,7 @@ public class SonicFilter implements Filter {
         Map<String,String> headerMap = SonicUtil.getAllHttpHeaders(httpRequest);
         String etag = "";
         String htmlContent;
-        String htmlContentSha1 =""; 
+        String htmlContentSha1 ="";
         String value = headerMap.get("accept-diff");
         if (headerMap.containsKey("accept-diff") && value.equals("true")) {
             httpResponse.addHeader("Cache-Control", "no-cache");
@@ -105,7 +106,7 @@ public class SonicFilter implements Filter {
         if(headerMap.containsKey("template-tag")) {
             clientTemplateTag = headerMap.get("template-tag");
         }
-        
+
         String stringTitlePattern = "<title(.*?)<\\/title>";
         htmlTitle = SonicUtil.pregMatch(htmlContent, stringTitlePattern);
         String htmlTemplate= htmlContent.replaceAll(stringTitlePattern,"{title}");

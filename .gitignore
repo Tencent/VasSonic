@@ -3,4 +3,8 @@
 
 # Windows
 *.txt
-.idea/
+
+**/.idea
+**/*.iml
+**/target
+

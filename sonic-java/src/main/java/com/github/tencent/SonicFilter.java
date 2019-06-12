@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -118,10 +119,11 @@ public class SonicFilter implements Filter {
 
         String templateMd5 = SonicUtil.encrypt(htmlTemplate, "sha-1");
         httpResponse.addHeader("template-tag", templateMd5);
-        Map<String, Object> result = new HashMap<String, Object>();
-        Map<String, String> dataMap = new HashMap<String, String>();
+        Map<String, Object> result = new HashMap<String, Object>(4);
+        Set<Map.Entry<String, String>> diffTagNamesEntrySet = TemplateReplace.diffTagNames.entrySet();
+        Map<String, String> dataMap = new HashMap<String, String>(diffTagNamesEntrySet.size()+1);
         dataMap.put("{title}", htmlTitle);
-        for (Map.Entry<String, String> entry : TemplateReplace.diffTagNames.entrySet()) {
+        for (Map.Entry<String, String> entry : diffTagNamesEntrySet) {
             dataMap.put("{" + entry.getKey() + "}", entry.getValue());
         }
 
